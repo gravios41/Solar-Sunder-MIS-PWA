@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sunder Solar MIS — DFD Level 1</title>
+<style>
+:root {
+  --bg:       #0D1520;
+  --surface:  #121E2C;
+  --border:   #1C3050;
+  --pk:       #F59E0B;
+  --fk:       #60A5FA;
+  --text-hi:  #DDE8F5;
+  --text-lo:  #6888A8;
+  --text-dim: #384E68;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text-hi);font-family:system-ui,-apple-system,'Segoe UI',sans-serif;display:flex;flex-direction:column}
+
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 28px;background:#080E18;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:10px;flex-shrink:0}
+.hdr-title{font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--pk)}
+.hdr-sub{font-size:11px;color:var(--text-lo);margin-left:10px}
+.legend{display:flex;gap:16px;flex-wrap:wrap;align-items:center}
+.leg{display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--text-lo)}
+.leg-shape{width:20px;height:13px;flex-shrink:0}
+.leg-ent{border:1.5px solid var(--text-lo);border-radius:2px}
+.leg-proc{border:1.5px solid var(--fk);border-radius:6px;background:rgba(96,165,250,.08)}
+.leg-store{border-top:1.5px solid var(--pk);border-bottom:1.5px solid var(--pk)}
+
+.scroller{flex:1;overflow:auto;background-image:linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);background-size:28px 28px;background-color:var(--bg)}
+.canvas{position:relative}
+#csvg{position:absolute;top:0;left:0;pointer-events:none;z-index:1;overflow:visible}
+
+.node{position:absolute;z-index:10;transition:border-color .12s,box-shadow .12s,opacity .12s;cursor:default;user-select:none}
+.node.dim{opacity:.28}
+.node.lit{box-shadow:0 0 16px rgba(96,165,250,.16)}
+.node.src{box-shadow:0 0 20px rgba(245,158,11,.2)}
+
+.entity{border:1.5px solid var(--text-lo);border-radius:3px;background:var(--surface);padding:9px 12px;display:flex;flex-direction:column;justify-content:center}
+.entity.lit{border-color:var(--fk)}
+.entity.src{border-color:var(--pk)}
+.entity .name{font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px}
+.entity .sub{font-size:9px;color:var(--text-lo);margin-top:3px}
+
+.process{border:1.5px solid var(--fk);border-radius:14px;background:radial-gradient(circle at 30% 20%, rgba(96,165,250,.12), var(--surface) 75%);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:8px 12px}
+.process.src{border-color:var(--pk)}
+.process .num{font-size:9px;color:var(--fk);font-weight:700;letter-spacing:.05em}
+.process .name{font-size:11.5px;font-weight:700;line-height:1.25;margin-top:3px}
+
+.store{display:flex;align-items:stretch;border-top:1.5px solid var(--pk);border-bottom:1.5px solid var(--pk);background:var(--surface)}
+.store.lit{border-color:var(--fk)}
+.store .dnum{flex-shrink:0;width:34px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--pk);border-right:1px solid var(--border)}
+.store.lit .dnum{color:var(--fk)}
+.store .dname{flex:1;display:flex;align-items:center;padding:0 10px;font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.note{position:absolute;font-size:10px;color:var(--text-dim);line-height:1.5;max-width:230px}
+.boundary{position:absolute;border:1.5px dashed #223A5C;border-radius:10px;z-index:0}
+.boundary-label{position:absolute;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#223A5C;background:var(--bg);padding:2px 10px;z-index:2}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div>
+    <span class="hdr-title">Sunder Solar MIS</span>
+    <span class="hdr-sub">DFD · Level 1 — 5 external entities · 10 processes · 12 data stores</span>
+  </div>
+  <div class="legend">
+    <div class="leg"><div class="leg-shape leg-ent"></div> External Entity</div>
+    <div class="leg"><div class="leg-shape leg-proc"></div> Process</div>
+    <div class="leg"><div class="leg-shape leg-store"></div> Data Store</div>
+    <div class="leg" style="color:var(--text-dim)">Hover any node to trace its flows</div>
+  </div>
+</div>
+
+<div class="scroller">
+  <div class="canvas" id="canvas">
+    <svg id="csvg"></svg>
+  </div>
+</div>
+
+<script>
+// ---- Data ----------------------------------------------------------------
+
+const ENTITIES = [
+  { id:'management', label:'Management', icon:'👑', sub:'Super Admin + Owner', col:0, row:0 },
+  { id:'admin',       label:'Admin',       icon:'🛠', sub:'Operational staff', col:0, row:1 },
+  { id:'employee',    label:'Employee',    icon:'👷', sub:'Field/task staff', col:0, row:2 },
+  { id:'customer',    label:'Customer',    icon:'🏠', sub:'Installation client', col:0, row:3 },
+  { id:'supplier',    label:'Supplier',    icon:'🚚', sub:'Equipment vendor', col:0, row:4 },
+];
+
+const PROCESSES = [
+  { id:'p1',  num:'1.0',  label:'Manage Authentication & Access',     col:1, row:0 },
+  { id:'p2',  num:'2.0',  label:'Manage Customers',                    col:1, row:1 },
+  { id:'p3',  num:'3.0',  label:'Manage Projects',                     col:1, row:2 },
+  { id:'p4',  num:'4.0',  label:'Manage Quotations',                   col:2, row:0 },
+  { id:'p5',  num:'5.0',  label:'Manage Installations',                col:2, row:1 },
+  { id:'p6',  num:'6.0',  label:'Manage Tasks',                        col:2, row:2 },
+  { id:'p7',  num:'7.0',  label:'Manage Inventory & Purchase Orders',  col:3, row:0 },
+  { id:'p8',  num:'8.0',  label:'Generate Reports',                    col:3, row:1 },
+  { id:'p9',  num:'9.0',  label:'Manage Archives',                     col:3, row:2 },
+  { id:'p10', num:'10.0', label:'Manage Users',                        col:3, row:3 },
+];
+
+const STORES = [
+  { id:'d1',  num:'D1',  label:'Users',             col:4, row:0 },
+  { id:'d2',  num:'D2',  label:'Customers',         col:4, row:1 },
+  { id:'d3',  num:'D3',  label:'Projects',          col:4, row:2 },
+  { id:'d4',  num:'D4',  label:'Quotations',        col:4, row:3 },
+  { id:'d5',  num:'D5',  label:'Quotation Items',   col:4, row:4 },
+  { id:'d6',  num:'D6',  label:'Installations',     col:4, row:5 },
+  { id:'d7',  num:'D7',  label:'Tasks',             col:4, row:6 },
+  { id:'d8',  num:'D8',  label:'Inventory',         col:4, row:7 },
+  { id:'d9',  num:'D9',  label:'Inventory Orders',  col:4, row:8 },
+  { id:'d10', num:'D10', label:'Reports',           col:4, row:9 },
+  { id:'d11', num:'D11', label:'Archives',          col:4, row:10 },
+  { id:'d12', num:'D12', label:'Activity Logs',     col:4, row:11 },
+];
+
+// [from, to, label]
+const EDGES = [
+  // Authentication
+  ['management','p1','Login credentials'], ['p1','management','Session / access'],
+  ['admin','p1','Login credentials'],       ['p1','admin','Session / access'],
+  ['employee','p1','Login credentials'],     ['p1','employee','Session / access'],
+  ['d1','p1','Verify user & role'],
+  ['p1','d12','Log login/logout event'],
+
+  // Customers
+  ['customer','p2','Customer details'],
+  ['management','p2','Customer management request'],
+  ['p2','management','Customer records'],
+  ['p2','d2','Create/update customer'],
+  ['p2','d11','Archive customer'],
+
+  // Projects
+  ['management','p3','Project management request'],
+  ['p3','management','Project records'],
+  ['p3','admin','Project status'],
+  ['p3','employee','Project status'],
+  ['p3','d3','Create/update project'],
+  ['d2','p3','Customer reference'],
+  ['p3','d11','Archive project'],
+
+  // Quotations
+  ['management','p4','Quotation approval'],
+  ['p4','customer','Quotation'],
+  ['p4','admin','Quotation status'],
+  ['p4','employee','Quotation status'],
+  ['p4','d4','Create/update quotation'],
+  ['p4','d5','Quotation line items'],
+  ['d3','p4','Project reference'],
+  ['d2','p4','Customer reference'],
+  ['p4','d11','Archive quotation'],
+
+  // Installations
+  ['management','p5','Installation scheduling'],
+  ['p5','customer','Installation schedule'],
+  ['p5','admin','Installation status'],
+  ['p5','employee','Installation status'],
+  ['p5','d6','Create/update installation'],
+  ['d3','p5','Project reference'],
+  ['d2','p5','Customer reference'],
+  ['p5','d11','Archive installation'],
+
+  // Tasks
+  ['management','p6','Task oversight'],
+  ['admin','p6','Task updates'],
+  ['employee','p6','Task status updates'],
+  ['p6','employee','Assigned tasks'],
+  ['p6','d7','Create/update task'],
+  ['d3','p6','Project reference'],
+  ['p6','d11','Archive task'],
+
+  // Inventory & Purchase Orders
+  ['management','p7','Inventory / PO management'],
+  ['admin','p7','Inventory updates'],
+  ['supplier','p7','Delivery confirmation, stock info'],
+  ['p7','supplier','Purchase order'],
+  ['p7','d8','Create/update inventory item'],
+  ['p7','d9','Create/update purchase order'],
+  ['p7','d11','Archive inventory item'],
+
+  // Reports
+  ['management','p8','Report generation request'],
+  ['p8','management','Report'],
+  ['p8','admin','Report'],
+  ['p8','employee','Report'],
+  ['p8','d10','Save generated report'],
+  ['d2','p8','Customer data'],
+  ['d3','p8','Project data'],
+  ['d8','p8','Inventory data'],
+
+  // Archives
+  ['management','p9','Restore request'],
+  ['p9','management','Archived record list'],
+  ['p9','admin','Archived record list'],
+  ['d11','p9','Read archived records'],
+
+  // Users
+  ['management','p10','User & role management request'],
+  ['p10','management','User records'],
+  ['p10','d1','Create/update user'],
+];
+
+// ---- Layout ---------------------------------------------------------------
+
+const EW=190, PW=210, SW=230;
+const EH=58, PH=76, SH=38;
+const PAD=50, GAP=22;
+const COL_W=[EW,PW,PW,PW,SW];
+const COL_GAP=[90,60,60,90];
+const COL_X=[PAD];
+for(let i=1;i<COL_W.length;i++) COL_X.push(COL_X[i-1]+COL_W[i-1]+COL_GAP[i-1]);
+
+const ALL = [...ENTITIES, ...PROCESSES, ...STORES];
+function widthOf(n){ return n.col===0?EW : n.col===4?SW : PW; }
+function hOf(n){ return n.col===0?EH : n.col===4?SH : PH; }
+
+function colY(n){
+  let y=PAD;
+  ALL.filter(o=>o.col===n.col&&o.row<n.row)
+    .sort((a,b)=>a.row-b.row)
+    .forEach(o=>{ y+=hOf(o)+GAP; });
+  return y;
+}
+
+const pos={};
+ALL.forEach(n=>{ pos[n.id]={x:COL_X[n.col], y:colY(n), w:widthOf(n), h:hOf(n)}; });
+
+const maxW=Math.max(...ALL.map(n=>pos[n.id].x+pos[n.id].w))+PAD;
+const maxH=Math.max(...ALL.map(n=>pos[n.id].y+pos[n.id].h))+PAD+70;
+
+const canvas=document.getElementById('canvas');
+canvas.style.width=maxW+'px';
+canvas.style.height=maxH+'px';
+
+const svg=document.getElementById('csvg');
+svg.setAttribute('width',maxW);
+svg.setAttribute('height',maxH);
+
+// boundary around the process columns (1-3)
+(function(){
+  const procs = PROCESSES.map(p=>pos[p.id]);
+  const bx = Math.min(...procs.map(p=>p.x))-20, by = Math.min(...procs.map(p=>p.y))-34;
+  const bw = Math.max(...procs.map(p=>p.x+p.w))-bx+20, bh = Math.max(...procs.map(p=>p.y+p.h))-by+20;
+  const b=document.createElement('div');
+  b.className='boundary';
+  b.style.left=bx+'px'; b.style.top=by+'px'; b.style.width=bw+'px'; b.style.height=bh+'px';
+  canvas.appendChild(b);
+  const lbl=document.createElement('div');
+  lbl.className='boundary-label';
+  lbl.textContent='Sunder Solar MIS — decomposed';
+  lbl.style.left=(bx+16)+'px'; lbl.style.top=(by-9)+'px';
+  canvas.appendChild(lbl);
+})();
+
+const note=document.createElement('div');
+note.className='note';
+note.innerHTML='<b style="color:var(--text-lo)">D12 Activity Logs</b> also receives a write from every other process (1.0–10.0) on each create/edit/delete action — only the login/logout write is drawn, to keep the diagram legible.';
+note.style.left=(COL_X[4])+'px';
+note.style.top=(colY({col:4,row:12}))+'px';
+note.style.width=SW+'px';
+canvas.appendChild(note);
+
+// ---- Render nodes ----------------------------------------------------------
+
+const elMap={};
+
+ENTITIES.forEach(n=>{
+  const p=pos[n.id];
+  const div=document.createElement('div');
+  div.className='node entity';
+  div.style.left=p.x+'px'; div.style.top=p.y+'px'; div.style.width=p.w+'px'; div.style.height=p.h+'px';
+  div.innerHTML=`<div class="name">${n.icon} ${n.label}</div><div class="sub">${n.sub}</div>`;
+  canvas.appendChild(div);
+  elMap[n.id]=div;
+});
+
+PROCESSES.forEach(n=>{
+  const p=pos[n.id];
+  const div=document.createElement('div');
+  div.className='node process';
+  div.style.left=p.x+'px'; div.style.top=p.y+'px'; div.style.width=p.w+'px'; div.style.height=p.h+'px';
+  div.innerHTML=`<div class="num">PROCESS ${n.num}</div><div class="name">${n.label}</div>`;
+  canvas.appendChild(div);
+  elMap[n.id]=div;
+});
+
+STORES.forEach(n=>{
+  const p=pos[n.id];
+  const div=document.createElement('div');
+  div.className='node store';
+  div.style.left=p.x+'px'; div.style.top=p.y+'px'; div.style.width=p.w+'px'; div.style.height=p.h+'px';
+  div.innerHTML=`<div class="dnum">${n.num}</div><div class="dname">${n.label}</div>`;
+  canvas.appendChild(div);
+  elMap[n.id]=div;
+});
+
+// ---- Edges ------------------------------------------------------------------
+
+const defs=document.createElementNS('http://www.w3.org/2000/svg','defs');
+defs.innerHTML=`
+  <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse">
+    <path d="M0,1 L9,5 L0,9 Z" fill="#1E3454"/>
+  </marker>
+  <marker id="arr-hi" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse">
+    <path d="M0,1 L9,5 L0,9 Z" fill="#3B82F6"/>
+  </marker>
+`;
+svg.appendChild(defs);
+
+const edgeObjs=[];
+EDGES.forEach(([from,to,label])=>{
+  const p=pos[from], c=pos[to];
+  if(!p||!c) return;
+  const forward = c.x >= p.x;
+  const py = p.y + p.h/2, cy = c.y + c.h/2;
+  let x1,y1,x2,y2,cx1,cy1,cx2,cy2;
+  if(forward){
+    x1=p.x+p.w; y1=py; x2=c.x; y2=cy;
+    const span=Math.max(x2-x1,1);
+    const bend=Math.max(span*0.4,40);
+    cx1=x1+bend; cy1=y1; cx2=x2-bend; cy2=y2;
+  } else {
+    x1=p.x; y1=py; x2=c.x+c.w; y2=cy;
+    const span=Math.max(x1-x2,1);
+    const bend=Math.max(span*0.4,40);
+    cx1=x1-bend; cy1=y1; cx2=x2+bend; cy2=y2;
+  }
+  const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+  path.setAttribute('d',`M${x1},${y1} C${cx1},${cy1},${cx2},${cy2},${x2},${y2}`);
+  path.setAttribute('fill','none');
+  path.setAttribute('stroke','#1E3454');
+  path.setAttribute('stroke-width','1.2');
+  path.setAttribute('opacity','0.55');
+  path.setAttribute('marker-end','url(#arr)');
+  svg.appendChild(path);
+  edgeObjs.push({path,from,to,label});
+});
+
+// ---- Hover interaction --------------------------------------------------------
+
+function clearHighlight(){
+  Object.values(elMap).forEach(el=>el.classList.remove('dim','lit','src'));
+  edgeObjs.forEach(({path})=>{
+    path.setAttribute('stroke','#1E3454');
+    path.setAttribute('stroke-width','1.2');
+    path.setAttribute('opacity','0.55');
+    path.setAttribute('marker-end','url(#arr)');
+  });
+}
+
+function highlight(nodeId){
+  const related = new Set([nodeId]);
+  edgeObjs.forEach(({from,to})=>{
+    if(from===nodeId||to===nodeId){ related.add(from); related.add(to); }
+  });
+  Object.entries(elMap).forEach(([id,el])=>{
+    el.classList.remove('dim','lit','src');
+    if(id===nodeId) el.classList.add('src');
+    else if(related.has(id)) el.classList.add('lit');
+    else el.classList.add('dim');
+  });
+  edgeObjs.forEach(({path,from,to})=>{
+    const active = from===nodeId||to===nodeId;
+    path.setAttribute('stroke',active?'#3B82F6':'#111C2A');
+    path.setAttribute('stroke-width',active?'2':'1');
+    path.setAttribute('opacity',active?'0.95':'0.18');
+    path.setAttribute('marker-end',active?'url(#arr-hi)':'url(#arr)');
+  });
+}
+
+Object.keys(elMap).forEach(id=>{
+  elMap[id].addEventListener('mouseenter',()=>highlight(id));
+  elMap[id].addEventListener('mouseleave',clearHighlight);
+  elMap[id].title = EDGES.filter(([f,t])=>f===id||t===id).map(([f,t,l])=>`${f===id?'→':'←'} ${f===id?t:f}: ${l}`).join('\n');
+});
+</script>
+</body>
+</html>

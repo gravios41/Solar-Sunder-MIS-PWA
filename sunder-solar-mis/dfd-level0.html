@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sunder Solar MIS — DFD Level 0 (Context Diagram)</title>
+<style>
+:root {
+  --bg:       #0D1520;
+  --surface:  #121E2C;
+  --border:   #1C3050;
+  --pk:       #F59E0B;
+  --fk:       #60A5FA;
+  --text-hi:  #DDE8F5;
+  --text-lo:  #6888A8;
+  --text-dim: #384E68;
+  --conn:     #3B82F6;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--text-hi);font-family:system-ui,-apple-system,'Segoe UI',sans-serif;display:flex;flex-direction:column;overflow:hidden}
+
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 28px;background:#080E18;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:10px;flex-shrink:0}
+.hdr-title{font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--pk)}
+.hdr-sub{font-size:11px;color:var(--text-lo);margin-left:10px}
+.legend{display:flex;gap:16px;flex-wrap:wrap;align-items:center}
+.leg{display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--text-lo)}
+.leg-shape{width:22px;height:14px;flex-shrink:0}
+.leg-ent{border:1.5px solid var(--text-lo);border-radius:2px}
+.leg-proc{border:1.5px solid var(--fk);border-radius:7px;background:rgba(96,165,250,.08)}
+.leg-store{border-top:1.5px solid var(--pk);border-bottom:1.5px solid var(--pk)}
+
+.scroller{flex:1;overflow:auto;background-image:linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);background-size:28px 28px;background-color:var(--bg)}
+.canvas{position:relative;width:1540px;height:820px}
+#csvg{position:absolute;top:0;left:0;pointer-events:none;overflow:visible}
+
+.entity{position:absolute;width:230px;border:1.5px solid var(--text-lo);border-radius:3px;background:var(--surface);padding:10px 14px;z-index:5}
+.entity .name{font-size:13px;font-weight:700;color:var(--text-hi);display:flex;align-items:center;gap:7px}
+.entity .desc{font-size:10px;color:var(--text-lo);margin-top:5px;line-height:1.4}
+
+.process{position:absolute;width:280px;height:280px;border-radius:50%;border:2px solid var(--fk);background:radial-gradient(circle at 35% 30%, rgba(96,165,250,.14), var(--surface) 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;z-index:5;box-shadow:0 0 40px rgba(96,165,250,.1)}
+.process .num{font-size:11px;color:var(--fk);font-weight:700;letter-spacing:.05em}
+.process .name{font-size:17px;font-weight:700;color:var(--text-hi);margin-top:6px;line-height:1.3}
+.process .sub{font-size:10.5px;color:var(--text-lo);margin-top:10px;line-height:1.5}
+
+.flow-label{position:absolute;font-size:10px;background:var(--bg);padding:1px 6px;border-radius:3px;color:var(--text-hi);white-space:nowrap;z-index:6}
+.flow-label.out{color:#8FC1FB}
+.flow-label.in{color:#F3C77E}
+
+.note{position:absolute;font-size:10.5px;color:var(--text-dim);line-height:1.5;max-width:420px}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div>
+    <span class="hdr-title">Sunder Solar MIS</span>
+    <span class="hdr-sub">DFD · Level 0 — Context Diagram</span>
+  </div>
+  <div class="legend">
+    <div class="leg"><div class="leg-shape leg-ent"></div> External Entity</div>
+    <div class="leg"><div class="leg-shape leg-proc"></div> Process</div>
+    <div class="leg" style="color:#F3C77E">— in</div>
+    <div class="leg" style="color:#8FC1FB">— out</div>
+  </div>
+</div>
+
+<div class="scroller">
+  <div class="canvas" id="canvas">
+    <svg id="csvg" width="1540" height="820"></svg>
+
+    <div class="process" style="left:630px;top:270px">
+      <div class="num">PROCESS 0.0</div>
+      <div class="name">Sunder Solar MIS</div>
+      <div class="sub">Management Information System<br>for customers, projects, quotations,<br>installations, inventory &amp; reporting</div>
+    </div>
+
+    <div class="entity" id="e-management" style="left:60px;top:40px">
+      <div class="name">👑 Management</div>
+      <div class="desc">Super Admin + Owner — full oversight, user &amp; system administration</div>
+    </div>
+    <div class="entity" id="e-admin" style="left:60px;top:290px">
+      <div class="name">🛠 Admin</div>
+      <div class="desc">Operational view/edit across customers, projects, inventory, tasks</div>
+    </div>
+    <div class="entity" id="e-employee" style="left:60px;top:540px">
+      <div class="name">👷 Employee</div>
+      <div class="desc">Field/task-level staff — view-only + own task updates</div>
+    </div>
+
+    <div class="entity" id="e-customer" style="left:1250px;top:130px">
+      <div class="name">🏠 Customer</div>
+      <div class="desc">Solar installation client — origin of service requests</div>
+    </div>
+    <div class="entity" id="e-supplier" style="left:1250px;top:470px">
+      <div class="name">🚚 Supplier</div>
+      <div class="desc">Equipment / materials vendor</div>
+    </div>
+
+    <div class="note" style="left:60px;top:760px">Role-level permission detail (who may create/edit/delete which record) is covered by the companion Use Case Diagram — this context diagram shows only the data that crosses the system boundary.</div>
+  </div>
+</div>
+
+<script>
+const svg=document.getElementById('csvg');
+const NS='http://www.w3.org/2000/svg';
+
+function addLabel(text,x,y,cls){
+  const d=document.createElement('div');
+  d.className='flow-label '+cls;
+  d.textContent=text;
+  d.style.left=x+'px'; d.style.top=y+'px';
+  document.getElementById('canvas').appendChild(d);
+}
+
+function addArrow(x1,y1,x2,y2){
+  const path=document.createElementNS(NS,'path');
+  const midx=(x1+x2)/2;
+  path.setAttribute('d',`M${x1},${y1} C${midx},${y1} ${midx},${y2} ${x2},${y2}`);
+  path.setAttribute('fill','none');
+  path.setAttribute('stroke','var(--conn)');
+  path.setAttribute('stroke-width','1.6');
+  path.setAttribute('marker-end','url(#arr)');
+  svg.appendChild(path);
+}
+
+const defs=document.createElementNS(NS,'defs');
+defs.innerHTML=`<marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+  <path d="M0,1 L9,5 L0,9 Z" fill="#3B82F6"/>
+</marker>`;
+svg.appendChild(defs);
+
+// Management
+addArrow(290, 100, 630, 355);
+addLabel('Login credentials, user & role mgmt requests', 330, 210, 'in');
+addArrow(630, 405, 290, 130);
+addLabel('Dashboards, full business & audit reports', 330, 60, 'out');
+
+// Admin
+addArrow(290, 350, 630, 400);
+addLabel('Login credentials, customer/project/inventory/task updates', 300, 460, 'in');
+addArrow(630, 440, 290, 380);
+addLabel('Operational records & reports', 330, 330, 'out');
+
+// Employee
+addArrow(290, 600, 630, 470);
+addLabel('Login credentials, task status updates', 320, 610, 'in');
+addArrow(630, 500, 290, 630);
+addLabel('Assigned tasks, schedules, view-only records', 300, 660, 'out');
+
+// Customer
+addArrow(1250, 190, 910, 380);
+addLabel('Customer details, service requests', 970, 250, 'in');
+addArrow(910, 420, 1250, 220);
+addLabel('Quotations, installation schedule', 970, 400, 'out');
+
+// Supplier
+addArrow(1250, 520, 910, 480);
+addLabel('Delivery confirmations, stock/pricing info', 940, 550, 'in');
+addArrow(910, 510, 1250, 550);
+addLabel('Purchase orders', 1010, 480, 'out');
+</script>
+</body>
+</html>

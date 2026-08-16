@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sunder Solar MIS — Use Case Diagram</title>
+<style>
+:root {
+  --bg:       #0D1520;
+  --surface:  #121E2C;
+  --border:   #1C3050;
+  --pk:       #F59E0B;
+  --fk:       #60A5FA;
+  --ext:      #A78BFA;
+  --inc:      #34D399;
+  --text-hi:  #DDE8F5;
+  --text-lo:  #6888A8;
+  --text-dim: #384E68;
+  --conn:     #1E3454;
+  --conn-hi:  #3B82F6;
+  --boundary: #223A5C;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text-hi);font-family:system-ui,-apple-system,'Segoe UI',sans-serif;display:flex;flex-direction:column}
+
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 28px;background:#080E18;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:10px;flex-shrink:0}
+.hdr-title{font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--pk)}
+.hdr-sub{font-size:11px;color:var(--text-lo);margin-left:10px}
+.legend{display:flex;gap:16px;flex-wrap:wrap}
+.leg{display:flex;align-items:center;gap:5px;font-size:10.5px;color:var(--text-lo)}
+.leg-mark{font-size:11px;font-weight:700}
+.leg-line{width:20px;height:2px;border-radius:1px}
+.leg-line.dashed{background:none;border-top:2px dashed var(--text-dim)}
+
+.scroller{flex:1;overflow:auto;background-image:linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);background-size:28px 28px;background-color:var(--bg)}
+.canvas{position:relative}
+#csvg{position:absolute;top:0;left:0;pointer-events:none;z-index:1;overflow:visible}
+.boundary{position:absolute;border:1.5px dashed var(--boundary);border-radius:10px;z-index:0}
+.boundary-label{position:absolute;font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--boundary);background:var(--bg);padding:2px 10px;z-index:2}
+
+.card{position:absolute;background:var(--surface);border:1px solid var(--border);border-radius:6px;overflow:hidden;z-index:10;transition:border-color .12s,box-shadow .12s;cursor:default;user-select:none}
+.card.dim{border-color:#0D1824;opacity:.3}
+.card.lit{border-color:var(--fk);box-shadow:0 0 18px rgba(96,165,250,.12)}
+.card.src{border-color:var(--pk);box-shadow:0 0 18px rgba(245,158,11,.14)}
+.card.actor{}
+.card.actor.abstract{border-style:dashed}
+
+.ch{background:#0A1624;border-bottom:1px solid var(--border);padding:7px 10px 7px 12px;display:flex;align-items:center;gap:7px}
+.ch-ico{font-size:13px;line-height:1}
+.ch-name{font-size:12px;font-weight:600;color:var(--text-hi);letter-spacing:.01em}
+.ch-name.abstract{font-style:italic;color:var(--text-lo)}
+
+.caption{padding:6px 12px 8px;font-size:10px;color:var(--text-lo);line-height:1.35}
+
+.ufl{list-style:none}
+.uf{display:flex;align-items:center;height:27px;padding:0 8px 0 10px;gap:6px}
+.uf .pill{flex:1;min-width:0;display:flex;align-items:center;gap:4px;background:rgba(96,165,250,.06);border:1px solid rgba(96,165,250,.14);border-radius:13px;padding:0 10px;height:20px}
+.uf .pill.common{background:rgba(245,158,11,.07);border-color:rgba(245,158,11,.16)}
+.uf-mark{font-size:9px;flex-shrink:0}
+.uf-mark.ext{color:var(--ext)}
+.uf-mark.inc{color:var(--inc)}
+.uf-name{font-size:10.5px;color:var(--text-hi);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
+.uf-roles{font-size:8.5px;color:var(--text-dim);font-family:'Menlo','Consolas','Courier New',monospace;letter-spacing:.02em;flex-shrink:0;cursor:help}
+
+.note{position:absolute;font-size:10px;color:var(--text-dim);line-height:1.5;max-width:210px;z-index:2}
+.note b{color:var(--text-lo)}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div>
+    <span class="hdr-title">Sunder Solar MIS</span>
+    <span class="hdr-sub">Use Case Diagram · 4 roles · 11 packages · 50 use cases</span>
+  </div>
+  <div class="legend">
+    <div class="leg"><div class="leg-line" style="background:var(--conn)"></div> Association</div>
+    <div class="leg"><span class="leg-mark" style="color:var(--text-lo)">▷</span> Generalization</div>
+    <div class="leg"><span class="leg-mark inc-c" style="color:var(--inc)">⊂</span> «include» permission check</div>
+    <div class="leg"><span class="leg-mark" style="color:var(--ext)">↳</span> «extend» optional flow</div>
+    <div class="leg" style="color:var(--text-dim)">Hover a role or package to trace access</div>
+  </div>
+</div>
+
+<div class="scroller" id="scroller">
+  <div class="canvas" id="canvas">
+    <svg id="csvg"></svg>
+  </div>
+</div>
+
+<script>
+// ---- Data -------------------------------------------------------------
+
+const ROLE_ABBR = { auth_user:'ALL', super_admin:'SA', owner:'O', admin:'A', employee:'E' };
+
+const ACTORS = [
+  { id:'auth_user',   type:'actor', abstract:true, icon:'◇', label:'Authenticated User', col:0, row:0,
+    caption:'Abstract role — anyone signed in. Every concrete role inherits its use cases.' },
+  { id:'super_admin', type:'actor', icon:'👑', label:'Super Admin', col:0, row:1,
+    caption:'Full control of every module, incl. deleting/reassigning other Super Admins.' },
+  { id:'owner',       type:'actor', icon:'🏛', label:'Owner', col:0, row:2,
+    caption:'Same as Super Admin, except cannot create/promote Super Admin or Owner accounts, and Settings is view/edit only.' },
+  { id:'admin',       type:'actor', icon:'🛠', label:'Admin', col:0, row:3,
+    caption:'View + limited edit on operational modules. No create/delete anywhere. No access to Users.' },
+  { id:'employee',    type:'actor', icon:'👷', label:'Employee', col:0, row:4,
+    caption:'View-only across the business, except own Tasks (full) and own Settings. No Customers, Inventory, Archives or Users.' },
+];
+
+// use-case row: [id, label, access[], marker?('ext'|'inc'), tip?]
+const PACKAGES = [
+  { id:'account', icon:'🔑', label:'Account & Access', col:1, row:0, rows:[
+    ['login','Log In',['auth_user']],
+    ['logout','Log Out',['auth_user']],
+    ['view_dashboard','View Dashboard',['auth_user']],
+    ['view_profile','View Own Profile',['auth_user']],
+    ['edit_profile','Edit Own Profile',['super_admin','owner','employee']],
+    ['change_password','Change Password',['super_admin','owner','employee']],
+    ['upload_avatar','Upload Avatar',['super_admin','owner','employee']],
+  ]},
+  { id:'customers', icon:'🏢', label:'Customer Management', col:1, row:1, rows:[
+    ['view_customers','View Customers',['super_admin','owner','admin']],
+    ['create_customer','Create Customer',['super_admin','owner'],'inc','«include» Verify Role Permission'],
+    ['edit_customer','Edit Customer',['super_admin','owner','admin'],'inc','«include» Verify Role Permission'],
+    ['archive_customer','Archive Customer',['super_admin','owner'],'inc','«include» Verify Role Permission'],
+  ]},
+  { id:'projects', icon:'🔆', label:'Project Management', col:1, row:2, rows:[
+    ['view_projects','View Projects',['super_admin','owner','admin','employee']],
+    ['create_project','Create Project',['super_admin','owner'],'inc','«include» Verify Role Permission'],
+    ['edit_project','Update Project / Progress',['super_admin','owner'],'inc','«include» Verify Role Permission'],
+    ['archive_project','Archive Project',['super_admin','owner'],'inc','«include» Verify Role Permission'],
+  ]},
+  { id:'quotations', icon:'📄', label:'Quotations', col:2, row:0, rows:[
+    ['view_quotations','View Quotations',['super_admin','owner','admin','employee']],
+    ['create_quotation','Create Quotation',['super_admin','owner']],
+    ['edit_quotation','Edit Quotation',['super_admin','owner']],
+    ['archive_quotation','Archive Quotation',['super_admin','owner']],
+  ]},
+  { id:'installations', icon:'⚡', label:'Installations', col:2, row:1, rows:[
+    ['view_installations','View Installations',['super_admin','owner','admin','employee']],
+    ['create_installation','Schedule Installation',['super_admin','owner']],
+    ['edit_installation','Update Status / Assign Technician',['super_admin','owner']],
+    ['archive_installation','Archive Installation',['super_admin','owner']],
+  ]},
+  { id:'tasks', icon:'✅', label:'Task Management', col:2, row:2, rows:[
+    ['view_tasks','View Tasks',['super_admin','owner','admin','employee']],
+    ['create_task','Create Task',['super_admin','owner','employee']],
+    ['edit_task','Update Task Status',['super_admin','owner','admin','employee']],
+    ['delete_task','Delete Task',['super_admin','owner']],
+  ]},
+  { id:'inventory', icon:'🔧', label:'Inventory', col:3, row:0, rows:[
+    ['view_inventory','View Inventory',['super_admin','owner','admin']],
+    ['create_inventory','Add Inventory Item',['super_admin','owner']],
+    ['edit_inventory','Edit Inventory Item',['super_admin','owner','admin']],
+    ['delete_inventory','Delete Inventory Item',['super_admin','owner']],
+  ]},
+  { id:'purchase_orders', icon:'🚚', label:'Purchase Orders', col:3, row:1, rows:[
+    ['view_po','View Purchase Orders',['super_admin','owner','admin']],
+    ['create_po','Create Purchase Order',['super_admin','owner']],
+    ['edit_po','Update Purchase Order',['super_admin','owner','admin']],
+    ['delete_po','Delete Purchase Order',['super_admin','owner']],
+  ]},
+  { id:'reports', icon:'📊', label:'Reports', col:3, row:2, rows:[
+    ['view_reports','View Reports',['super_admin','owner','admin','employee']],
+    ['generate_report','Generate Report',['super_admin','owner']],
+    ['download_csv','Download Report (CSV)',['super_admin','owner','admin','employee'],'ext','«extend» View Reports'],
+    ['print_pdf','Print Report (PDF)',['super_admin','owner','admin','employee'],'ext','«extend» View Reports'],
+    ['delete_report','Delete Report',['super_admin','owner']],
+  ]},
+  { id:'archives', icon:'🗄', label:'Archives', col:4, row:0, rows:[
+    ['view_archives','View Archived Records',['super_admin','owner','admin']],
+    ['restore_record','Restore Record',['super_admin','owner'],'ext','«extend» View Archived Records'],
+  ]},
+  { id:'user_management', icon:'👤', label:'User Management', col:4, row:1, rows:[
+    ['view_users','View Users',['super_admin','owner']],
+    ['create_user','Create User',['super_admin','owner'],'inc','«include» Verify Role Permission — Owner cannot create Super Admin/Owner'],
+    ['edit_user','Edit User / Role',['super_admin','owner'],'inc','«include» Verify Role Permission'],
+    ['delete_user','Delete User',['super_admin','owner'],'inc','«include» Verify Role Permission — only Super Admin may delete a Super Admin'],
+  ]},
+];
+
+const notes = [
+  { col:4, text:'<b>Archives</b> is hidden entirely from Employee (hard-coded role gate, not the permission matrix).' },
+  { col:0, text:'<b>Admin</b> cannot edit its own Settings (settings.edit = false) — the one module where Admin has less than Owner/Employee.' },
+];
+
+// ---- Layout -------------------------------------------------------------
+
+const AW=208, PW=272, TH=32, FH=27, CAP=54, PAD=50, GAP=26;
+const COL_W=[AW,PW,PW,PW,PW];
+const COL_GAP=[110,70,70,70];
+const COL_X=[PAD];
+for(let i=1;i<COL_W.length;i++) COL_X.push(COL_X[i-1]+COL_W[i-1]+COL_GAP[i-1]);
+
+function nodeH(n){
+  if(n.type==='actor') return TH+CAP;
+  return TH + n.rows.length*FH;
+}
+
+const ALL_NODES = [...ACTORS, ...PACKAGES];
+
+function colY(n){
+  let y=PAD;
+  ALL_NODES.filter(o=>o.col===n.col&&o.row<n.row)
+    .sort((a,b)=>a.row-b.row)
+    .forEach(o=>{ y+=nodeH(o)+GAP; });
+  return y;
+}
+
+const pos={};
+ALL_NODES.forEach(n=>{ pos[n.id]={x:COL_X[n.col],y:colY(n),w:(n.type==='actor'?AW:PW)}; });
+
+const maxW=Math.max(...ALL_NODES.map(n=>pos[n.id].x+pos[n.id].w))+PAD+230;
+const maxH=Math.max(...ALL_NODES.map(n=>pos[n.id].y+nodeH(n)))+PAD;
+
+const canvas=document.getElementById('canvas');
+canvas.style.width=maxW+'px';
+canvas.style.height=maxH+'px';
+
+const svg=document.getElementById('csvg');
+svg.setAttribute('width',maxW);
+svg.setAttribute('height',maxH);
+
+// system boundary around package columns (col 1..4)
+(function drawBoundary(){
+  const xs = PACKAGES.map(p=>pos[p.id].x);
+  const xe = PACKAGES.map(p=>pos[p.id].x+pos[p.id].w);
+  const ys = PACKAGES.map(p=>pos[p.id].y);
+  const ye = PACKAGES.map(p=>pos[p.id].y+nodeH(p));
+  const bx = Math.min(...xs)-24, by = Math.min(...ys)-38;
+  const bw = Math.max(...xe)-bx+24, bh = Math.max(...ye)-by+24;
+  const b=document.createElement('div');
+  b.className='boundary';
+  b.style.left=bx+'px'; b.style.top=by+'px'; b.style.width=bw+'px'; b.style.height=bh+'px';
+  canvas.appendChild(b);
+  const lbl=document.createElement('div');
+  lbl.className='boundary-label';
+  lbl.textContent='Sunder Solar MIS — System Boundary';
+  lbl.style.left=(bx+16)+'px'; lbl.style.top=(by-9)+'px';
+  canvas.appendChild(lbl);
+})();
+
+// notes — placed in the gap below the last node of their column
+notes.forEach(n=>{
+  const div=document.createElement('div');
+  div.className='note';
+  div.innerHTML=n.text;
+  const colCount = ALL_NODES.filter(o=>o.col===n.col).length;
+  const x = COL_X[n.col];
+  const y = colY({col:n.col,row:colCount});
+  div.style.left=x+'px';
+  div.style.top=y+'px';
+  div.style.width=(n.col===0?AW:PW)+'px';
+  canvas.appendChild(div);
+});
+
+// ---- Render cards -------------------------------------------------------
+
+const elMap={};
+const rowElMap={}; // "pkgId::rowId" -> li element
+
+ACTORS.forEach(a=>{
+  const p=pos[a.id];
+  const div=document.createElement('div');
+  div.className='card actor'+(a.abstract?' abstract':'');
+  div.id='n-'+a.id;
+  div.style.left=p.x+'px'; div.style.top=p.y+'px'; div.style.width=p.w+'px';
+  div.innerHTML=`<div class="ch"><span class="ch-ico">${a.icon}</span><span class="ch-name${a.abstract?' abstract':''}">${a.label}</span></div>
+    <div class="caption">${a.caption}</div>`;
+  canvas.appendChild(div);
+  elMap[a.id]=div;
+});
+
+PACKAGES.forEach(pk=>{
+  const p=pos[pk.id];
+  const div=document.createElement('div');
+  div.className='card';
+  div.id='n-'+pk.id;
+  div.style.left=p.x+'px'; div.style.top=p.y+'px'; div.style.width=p.w+'px';
+  const hdr=document.createElement('div');
+  hdr.className='ch';
+  hdr.innerHTML=`<span class="ch-ico">${pk.icon}</span><span class="ch-name">${pk.label}</span>`;
+  div.appendChild(hdr);
+  const ul=document.createElement('ul');
+  ul.className='ufl';
+  pk.rows.forEach(r=>{
+    const [id,label,access,marker,tip]=r;
+    const li=document.createElement('li');
+    li.className='uf';
+    const common = access.length===1 && access[0]==='auth_user';
+    const roleTxt = common ? 'ALL' : access.map(a=>ROLE_ABBR[a]).join('·');
+    const markSpan = marker ? `<span class="uf-mark ${marker}" title="${tip}">${marker==='ext'?'↳':'⊂'}</span>` : '';
+    li.innerHTML=`<div class="pill${common?' common':''}">${markSpan}<span class="uf-name">${label}</span></div><span class="uf-roles" title="Accessible to: ${common?'all authenticated roles':access.map(a=>ROLE_ABBR[a]).join(', ')}">${roleTxt}</span>`;
+    ul.appendChild(li);
+    rowElMap[pk.id+'::'+id]=li;
+  });
+  div.appendChild(ul);
+  canvas.appendChild(div);
+  elMap[pk.id]=div;
+});
+
+// ---- Relationships (association lines) -----------------------------------
+
+const defs=document.createElementNS('http://www.w3.org/2000/svg','defs');
+defs.innerHTML=`
+  <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+    <path d="M0,1 L9,5 L0,9 Z" fill="#1E3454"/>
+  </marker>
+  <marker id="arr-hi" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+    <path d="M0,1 L9,5 L0,9 Z" fill="#3B82F6"/>
+  </marker>
+  <marker id="tick" viewBox="-2 0 4 10" refX="0" refY="5" markerWidth="4" markerHeight="10" orient="auto-start-reverse">
+    <line x1="0" y1="0" x2="0" y2="10" stroke="#1E3454" stroke-width="1.5"/>
+  </marker>
+  <marker id="tick-hi" viewBox="-2 0 4 10" refX="0" refY="5" markerWidth="4" markerHeight="10" orient="auto-start-reverse">
+    <line x1="0" y1="0" x2="0" y2="10" stroke="#3B82F6" stroke-width="1.5"/>
+  </marker>
+  <marker id="tri" viewBox="0 0 12 10" refX="11" refY="5" markerWidth="11" markerHeight="9" orient="auto-start-reverse">
+    <path d="M0,0 L11,5 L0,10 Z" fill="#0D1520" stroke="#6888A8" stroke-width="1"/>
+  </marker>
+`;
+svg.appendChild(defs);
+
+// build association rels: actorId -> {pkgId, rowId}
+const assocRels=[]; // {actor, pkg, rowIdx, li}
+PACKAGES.forEach(pk=>{
+  pk.rows.forEach((r,ri)=>{
+    const access=r[2];
+    access.forEach(actorId=>{
+      assocRels.push({actor:actorId, pkg:pk.id, rowIdx:ri});
+    });
+  });
+});
+
+const assocPaths=[];
+assocRels.forEach(rel=>{
+  const p=pos[rel.actor], c=pos[rel.pkg];
+  if(!p||!c) return;
+  const py = p.y + nodeH(ACTORS.find(a=>a.id===rel.actor))/2;
+  const cy = c.y + TH + rel.rowIdx*FH + FH/2;
+  const x1 = p.x + p.w, y1 = py;
+  const x2 = c.x, y2 = cy;
+  const span = x2-x1;
+  const bend = Math.max(span*0.4, 50);
+  const cx1=x1+bend, cy1=y1;
+  const cx2=x2-bend, cy2=y2;
+  const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+  path.setAttribute('d',`M${x1},${y1} C${cx1},${cy1},${cx2},${cy2},${x2},${y2}`);
+  path.setAttribute('fill','none');
+  path.setAttribute('stroke','#1E3454');
+  path.setAttribute('stroke-width','1.3');
+  path.setAttribute('opacity','0.55');
+  svg.appendChild(path);
+  assocPaths.push({path,rel});
+});
+
+// generalization spine: concrete actors -> auth_user
+const genPaths=[];
+(function drawGen(){
+  const base = pos['auth_user'];
+  const spineX = base.x - 26;
+  const baseCenterY = base.y + nodeH(ACTORS[0])/2;
+  const concrete = ACTORS.filter(a=>!a.abstract);
+  const lastY = pos[concrete[concrete.length-1].id].y + nodeH(concrete[concrete.length-1])/2;
+
+  const spine=document.createElementNS('http://www.w3.org/2000/svg','path');
+  spine.setAttribute('d',`M${spineX},${baseCenterY} L${spineX},${lastY}`);
+  spine.setAttribute('stroke','#2A4468');
+  spine.setAttribute('stroke-width','1.3');
+  spine.setAttribute('fill','none');
+  svg.appendChild(spine);
+
+  const trunk=document.createElementNS('http://www.w3.org/2000/svg','path');
+  trunk.setAttribute('d',`M${spineX},${baseCenterY} L${base.x},${baseCenterY}`);
+  trunk.setAttribute('stroke','#2A4468');
+  trunk.setAttribute('stroke-width','1.3');
+  trunk.setAttribute('fill','none');
+  trunk.setAttribute('marker-end','url(#tri)');
+  svg.appendChild(trunk);
+
+  concrete.forEach(a=>{
+    const ay = pos[a.id].y + nodeH(a)/2;
+    const branch=document.createElementNS('http://www.w3.org/2000/svg','path');
+    branch.setAttribute('d',`M${spineX},${ay} L${pos[a.id].x},${ay}`);
+    branch.setAttribute('stroke','#2A4468');
+    branch.setAttribute('stroke-width','1.3');
+    branch.setAttribute('fill','none');
+    svg.appendChild(branch);
+    genPaths.push({el:[spine,trunk,branch],actor:a.id});
+  });
+})();
+
+// ---- Hover interaction ----------------------------------------------------
+
+function effectiveAccess(access){
+  if(access.length===1 && access[0]==='auth_user') return ['auth_user','super_admin','owner','admin','employee'];
+  return access;
+}
+
+function clearHighlight(){
+  Object.values(elMap).forEach(el=>el.classList.remove('dim','lit','src'));
+  Object.values(rowElMap).forEach(li=>li.querySelector('.pill').style.background='');
+  assocPaths.forEach(({path})=>{
+    path.setAttribute('stroke','#1E3454');
+    path.setAttribute('stroke-width','1.3');
+    path.setAttribute('opacity','0.55');
+  });
+  genPaths.forEach(({el})=>el.forEach(p=>p.setAttribute('stroke','#2A4468')));
+}
+
+function highlightForActor(actorId){
+  const trace = actorId==='auth_user' ? ['auth_user'] : [actorId,'auth_user'];
+  Object.entries(elMap).forEach(([id,el])=>{
+    el.classList.remove('dim','lit','src');
+    if(id===actorId) el.classList.add('src');
+    else if(trace.includes(id)) el.classList.add('lit');
+    else if(ACTORS.some(a=>a.id===id)) el.classList.add('dim');
+  });
+  PACKAGES.forEach(pk=>{
+    let touched=false;
+    pk.rows.forEach((r,ri)=>{
+      const eff=effectiveAccess(r[2]);
+      const li=rowElMap[pk.id+'::'+r[0]];
+      if(eff.includes(actorId)){
+        li.querySelector('.pill').style.background='rgba(59,130,246,.16)';
+        touched=true;
+      } else {
+        li.querySelector('.pill').style.background='';
+      }
+    });
+    if(touched) elMap[pk.id].classList.add('lit');
+    else elMap[pk.id].classList.add('dim');
+  });
+  assocPaths.forEach(({path,rel})=>{
+    const active = trace.includes(rel.actor);
+    path.setAttribute('stroke',active?'#3B82F6':'#111C2A');
+    path.setAttribute('stroke-width',active?'2':'1');
+    path.setAttribute('opacity',active?'0.95':'0.25');
+  });
+  genPaths.forEach(({el,actor})=>{
+    const active = actorId==='auth_user' ? true : actor===actorId;
+    el.forEach(p=>p.setAttribute('stroke',active?'#3B82F6':'#2A4468'));
+  });
+}
+
+function highlightForPackage(pkgId){
+  const pk = PACKAGES.find(p=>p.id===pkgId);
+  const actorsInvolved = new Set();
+  pk.rows.forEach(r=>effectiveAccess(r[2]).forEach(a=>actorsInvolved.add(a)));
+  Object.entries(elMap).forEach(([id,el])=>{
+    el.classList.remove('dim','lit','src');
+    if(id===pkgId) el.classList.add('src');
+    else if(actorsInvolved.has(id)) el.classList.add('lit');
+    else el.classList.add('dim');
+  });
+  assocPaths.forEach(({path,rel})=>{
+    const active = rel.pkg===pkgId;
+    path.setAttribute('stroke',active?'#3B82F6':'#111C2A');
+    path.setAttribute('stroke-width',active?'2':'1');
+    path.setAttribute('opacity',active?'0.95':'0.2');
+  });
+}
+
+ACTORS.forEach(a=>{
+  elMap[a.id].addEventListener('mouseenter',()=>highlightForActor(a.id));
+  elMap[a.id].addEventListener('mouseleave',clearHighlight);
+});
+PACKAGES.forEach(pk=>{
+  elMap[pk.id].addEventListener('mouseenter',()=>highlightForPackage(pk.id));
+  elMap[pk.id].addEventListener('mouseleave',clearHighlight);
+});
+</script>
+</body>
+</html>

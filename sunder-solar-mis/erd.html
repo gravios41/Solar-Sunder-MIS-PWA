@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sunder Solar MIS — ERD</title>
+<style>
+:root {
+  --bg:       #0D1520;
+  --surface:  #121E2C;
+  --border:   #1C3050;
+  --pk:       #F59E0B;
+  --fk:       #60A5FA;
+  --text-hi:  #DDE8F5;
+  --text-lo:  #6888A8;
+  --text-dim: #384E68;
+  --conn:     #1E3454;
+  --conn-hi:  #3B82F6;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text-hi);font-family:system-ui,-apple-system,'Segoe UI',sans-serif;display:flex;flex-direction:column}
+
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 28px;background:#080E18;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:10px;flex-shrink:0}
+.hdr-title{font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--pk)}
+.hdr-sub{font-size:11px;color:var(--text-lo);margin-left:10px}
+.legend{display:flex;gap:18px;flex-wrap:wrap}
+.leg{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-lo)}
+.leg-badge{padding:1px 4px;border-radius:2px;font-size:8.5px;font-family:'Menlo','Consolas',monospace;text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+.lbk{background:rgba(245,158,11,.12);color:var(--pk);border:1px solid rgba(245,158,11,.22)}
+.lbf{background:rgba(96,165,250,.1);color:var(--fk);border:1px solid rgba(96,165,250,.2)}
+.leg-line{width:22px;height:2px;border-radius:1px}
+
+.scroller{flex:1;overflow:auto;background-image:linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);background-size:28px 28px;background-color:var(--bg)}
+.canvas{position:relative}
+#csvg{position:absolute;top:0;left:0;pointer-events:none;z-index:1;overflow:visible}
+
+.ert{position:absolute;width:222px;background:var(--surface);border:1px solid var(--border);border-radius:5px;overflow:hidden;z-index:10;transition:border-color .1s,box-shadow .1s;cursor:default;user-select:none}
+.ert.dim{border-color:#0D1824;opacity:.35}
+.ert.lit{border-color:var(--fk);box-shadow:0 0 18px rgba(96,165,250,.1)}
+.ert.src{border-color:var(--pk);box-shadow:0 0 18px rgba(245,158,11,.12)}
+.eth{background:#0A1624;border-bottom:1px solid var(--border);padding:7px 10px 7px 12px;display:flex;align-items:center;gap:7px}
+.eth-ico{font-size:12px;line-height:1}
+.eth-name{font-size:12px;font-weight:600;color:var(--text-hi);font-family:'Menlo','Consolas','Courier New',monospace;letter-spacing:.02em}
+.efl{list-style:none}
+.ef{display:flex;align-items:center;height:26px;padding:0 8px 0 10px;gap:5px;border-bottom:1px solid rgba(255,255,255,.025);font-family:'Menlo','Consolas','Courier New',monospace}
+.ef:last-child{border-bottom:none}
+.ebadge{flex-shrink:0;font-size:8px;padding:0 3px;border-radius:2px;line-height:14px;min-width:20px;text-align:center;letter-spacing:.04em;text-transform:uppercase;font-weight:700}
+.epk{background:rgba(245,158,11,.1);color:var(--pk);border:1px solid rgba(245,158,11,.18)}
+.efk{background:rgba(96,165,250,.08);color:var(--fk);border:1px solid rgba(96,165,250,.16)}
+.ecol{background:transparent;color:transparent;border:1px solid transparent}
+.efname{flex:1;font-size:11px;color:var(--text-hi);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.efname.pk{color:var(--pk)}
+.efname.fk{color:var(--fk)}
+.edtype{font-size:9px;color:var(--text-dim);font-style:italic;flex-shrink:0;white-space:nowrap}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div>
+    <span class="hdr-title">Sunder Solar MIS</span>
+    <span class="hdr-sub">Entity Relationship Diagram · 12 tables</span>
+  </div>
+  <div class="legend">
+    <div class="leg"><span class="leg-badge lbk">PK</span> Primary Key</div>
+    <div class="leg"><span class="leg-badge lbf">FK</span> Foreign Key</div>
+    <div class="leg"><div class="leg-line" style="background:var(--conn)"></div> Relationship</div>
+    <div class="leg"><div class="leg-line" style="background:var(--conn-hi)"></div> Active</div>
+    <div class="leg" style="color:var(--text-dim);font-size:10px">Hover a table to trace connections</div>
+  </div>
+</div>
+
+<div class="scroller" id="scroller">
+  <div class="canvas" id="canvas">
+    <svg id="csvg"></svg>
+  </div>
+</div>
+
+<script>
+const TABLES = [
+  { id:'users',            label:'users',            icon:'👤', col:0, row:0,
+    fields:[
+      {n:'id',           k:'pk', d:'uuid'},
+      {n:'full_name',    k:'col',d:'text'},
+      {n:'email',        k:'col',d:'text'},
+      {n:'role',         k:'col',d:'enum'},
+      {n:'avatar_url',   k:'col',d:'text'},
+      {n:'created_at',   k:'col',d:'timestamptz'},
+    ]},
+  { id:'customers',        label:'customers',        icon:'🏢', col:1, row:0,
+    fields:[
+      {n:'id',           k:'pk', d:'uuid'},
+      {n:'customer_code',k:'col',d:'text'},
+      {n:'name',         k:'col',d:'text'},
+      {n:'email',        k:'col',d:'text'},
+      {n:'phone',        k:'col',d:'text'},
+      {n:'address',      k:'col',d:'text'},
+      {n:'customer_type',k:'col',d:'text'},
+      {n:'status',       k:'col',d:'text'},
+    ]},
+  { id:'activity_logs',    label:'activity_logs',    icon:'📋', col:1, row:1,
+    fields:[
+      {n:'id',           k:'pk', d:'uuid'},
+      {n:'user_id',      k:'fk', d:'uuid', ref:'users'},
+      {n:'action',       k:'col',d:'text'},
+      {n:'module',       k:'col',d:'text'},
+      {n:'description',  k:'col',d:'text'},
+      {n:'created_at',   k:'col',d:'timestamptz'},
+    ]},
+  { id:'archives',         label:'archives',         icon:'🗄', col:1, row:2,
+    fields:[
+      {n:'id',           k:'pk', d:'uuid'},
+      {n:'archived_by',  k:'fk', d:'uuid', ref:'users'},
+      {n:'record_type',  k:'col',d:'text'},
+      {n:'record_id',    k:'col',d:'uuid'},
+      {n:'archived_at',  k:'col',d:'timestamptz'},
+    ]},
+  { id:'projects',         label:'projects',         icon:'🔆', col:2, row:0,
+    fields:[
+      {n:'id',               k:'pk', d:'uuid'},
+      {n:'project_code',     k:'col',d:'text'},
+      {n:'project_name',     k:'col',d:'text'},
+      {n:'customer_id',      k:'fk', d:'uuid', ref:'customers'},
+      {n:'status',           k:'col',d:'text'},
+      {n:'progress',         k:'col',d:'int'},
+      {n:'estimated_cost',   k:'col',d:'numeric'},
+      {n:'start_date',       k:'col',d:'date'},
+      {n:'expected_end_date',k:'col',d:'date'},
+    ]},
+  { id:'inventory',        label:'inventory',        icon:'🔧', col:2, row:1,
+    fields:[
+      {n:'id',           k:'pk', d:'uuid'},
+      {n:'item_code',    k:'col',d:'text'},
+      {n:'item_name',    k:'col',d:'text'},
+      {n:'category',     k:'col',d:'text'},
+      {n:'quantity',     k:'col',d:'int'},
+      {n:'unit_price',   k:'col',d:'numeric'},
+      {n:'reorder_level',k:'col',d:'int'},
+      {n:'supplier',     k:'col',d:'text'},
+    ]},
+  { id:'quotations',       label:'quotations',       icon:'📄', col:3, row:0,
+    fields:[
+      {n:'id',               k:'pk', d:'uuid'},
+      {n:'quotation_number', k:'col',d:'text'},
+      {n:'customer_id',      k:'fk', d:'uuid', ref:'customers'},
+      {n:'project_id',       k:'fk', d:'uuid', ref:'projects'},
+      {n:'status',           k:'col',d:'text'},
+      {n:'total_amount',     k:'col',d:'numeric'},
+      {n:'quotation_date',   k:'col',d:'date'},
+      {n:'valid_until',      k:'col',d:'date'},
+    ]},
+  { id:'installations',    label:'installations',    icon:'⚡', col:3, row:1,
+    fields:[
+      {n:'id',                k:'pk', d:'uuid'},
+      {n:'installation_code', k:'col',d:'text'},
+      {n:'customer_id',       k:'fk', d:'uuid', ref:'customers'},
+      {n:'project_id',        k:'fk', d:'uuid', ref:'projects'},
+      {n:'installation_date', k:'col',d:'date'},
+      {n:'completion_date',   k:'col',d:'date'},
+      {n:'status',            k:'col',d:'text'},
+      {n:'progress',          k:'col',d:'int'},
+      {n:'technician',        k:'col',d:'text'},
+    ]},
+  { id:'tasks',            label:'tasks',            icon:'✅', col:3, row:2,
+    fields:[
+      {n:'id',             k:'pk', d:'uuid'},
+      {n:'task_title',     k:'col',d:'text'},
+      {n:'project_id',     k:'fk', d:'uuid', ref:'projects'},
+      {n:'priority',       k:'col',d:'text'},
+      {n:'status',         k:'col',d:'text'},
+      {n:'assigned_to',    k:'col',d:'text'},
+      {n:'due_date',       k:'col',d:'date'},
+      {n:'completed_date', k:'col',d:'date'},
+    ]},
+  { id:'quotation_items',  label:'quotation_items',  icon:'📦', col:4, row:0,
+    fields:[
+      {n:'id',           k:'pk', d:'uuid'},
+      {n:'quotation_id', k:'fk', d:'uuid', ref:'quotations'},
+      {n:'item_name',    k:'col',d:'text'},
+      {n:'quantity',     k:'col',d:'int'},
+      {n:'unit_price',   k:'col',d:'numeric'},
+      {n:'total_price',  k:'col',d:'numeric'},
+    ]},
+  { id:'inventory_orders', label:'inventory_orders', icon:'🚚', col:4, row:1,
+    fields:[
+      {n:'id',               k:'pk', d:'uuid'},
+      {n:'inventory_id',     k:'fk', d:'uuid', ref:'inventory'},
+      {n:'item_name',        k:'col',d:'text'},
+      {n:'quantity_ordered', k:'col',d:'int'},
+      {n:'supplier',         k:'col',d:'text'},
+      {n:'order_date',       k:'col',d:'date'},
+      {n:'expected_delivery',k:'col',d:'date'},
+      {n:'actual_delivery',  k:'col',d:'date'},
+      {n:'status',           k:'col',d:'text'},
+      {n:'ordered_by',       k:'fk', d:'uuid', ref:'users'},
+    ]},
+  { id:'reports',          label:'reports',          icon:'📊', col:4, row:2,
+    fields:[
+      {n:'id',          k:'pk', d:'uuid'},
+      {n:'report_name', k:'col',d:'text'},
+      {n:'report_type', k:'col',d:'text'},
+      {n:'period',      k:'col',d:'text'},
+      {n:'date_from',   k:'col',d:'date'},
+      {n:'date_to',     k:'col',d:'date'},
+      {n:'created_by',  k:'col',d:'text'},
+      {n:'created_at',  k:'col',d:'timestamptz'},
+    ]},
+];
+
+const TW=222, TH=36, FH=26, PAD=40, GAP=30;
+const COL_X=[PAD, PAD+260, PAD+520, PAD+780, PAD+1040];
+
+function th(t){ return TH + t.fields.length*FH; }
+
+function colY(t){
+  let y=PAD;
+  TABLES.filter(o=>o.col===t.col&&o.row<t.row)
+        .sort((a,b)=>a.row-b.row)
+        .forEach(o=>{y+=th(o)+GAP;});
+  return y;
+}
+
+const pos={};
+TABLES.forEach(t=>{ pos[t.id]={x:COL_X[t.col],y:colY(t)}; });
+
+const maxW=Math.max(...TABLES.map(t=>pos[t.id].x+TW))+PAD;
+const maxH=Math.max(...TABLES.map(t=>pos[t.id].y+th(t)))+PAD;
+
+const canvas=document.getElementById('canvas');
+canvas.style.width=maxW+'px';
+canvas.style.height=maxH+'px';
+
+const svg=document.getElementById('csvg');
+svg.setAttribute('width',maxW);
+svg.setAttribute('height',maxH);
+
+const defs=document.createElementNS('http://www.w3.org/2000/svg','defs');
+defs.innerHTML=`
+  <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+    <path d="M0,1 L9,5 L0,9 Z" fill="#1E3454"/>
+  </marker>
+  <marker id="arr-hi" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+    <path d="M0,1 L9,5 L0,9 Z" fill="#3B82F6"/>
+  </marker>
+  <marker id="tick" viewBox="-2 0 4 10" refX="0" refY="5" markerWidth="4" markerHeight="10" orient="auto-start-reverse">
+    <line x1="0" y1="0" x2="0" y2="10" stroke="#1E3454" stroke-width="1.5"/>
+  </marker>
+  <marker id="tick-hi" viewBox="-2 0 4 10" refX="0" refY="5" markerWidth="4" markerHeight="10" orient="auto-start-reverse">
+    <line x1="0" y1="0" x2="0" y2="10" stroke="#3B82F6" stroke-width="1.5"/>
+  </marker>
+`;
+svg.appendChild(defs);
+
+const elMap={};
+TABLES.forEach(t=>{
+  const p=pos[t.id];
+  const div=document.createElement('div');
+  div.className='ert';
+  div.id='et-'+t.id;
+  div.setAttribute('data-id',t.id);
+  div.style.left=p.x+'px';
+  div.style.top=p.y+'px';
+
+  const hdr=document.createElement('div');
+  hdr.className='eth';
+  hdr.innerHTML=`<span class="eth-ico">${t.icon}</span><span class="eth-name">${t.label}</span>`;
+  div.appendChild(hdr);
+
+  const ul=document.createElement('ul');
+  ul.className='efl';
+  t.fields.forEach(f=>{
+    const li=document.createElement('li');
+    li.className='ef';
+    const bk=f.k==='pk'?'epk':f.k==='fk'?'efk':'ecol';
+    const bt=f.k==='pk'?'PK':f.k==='fk'?'FK':'';
+    const nk=f.k==='pk'?'pk':f.k==='fk'?'fk':'';
+    const ref=f.ref?` ↗${f.ref}`:'';
+    li.innerHTML=`<span class="ebadge ${bk}">${bt}</span><span class="efname ${nk}">${f.n}</span><span class="edtype">${f.d}${ref}</span>`;
+    ul.appendChild(li);
+  });
+  div.appendChild(ul);
+  canvas.appendChild(div);
+  elMap[t.id]=div;
+});
+
+const rels=[];
+TABLES.forEach(child=>{
+  child.fields.forEach((f,fi)=>{
+    if(f.k==='fk'&&f.ref) rels.push({from:f.ref,to:child.id,fkIdx:fi});
+  });
+});
+
+const paths=[];
+rels.forEach(rel=>{
+  const p=pos[rel.from], c=pos[rel.to];
+  if(!p||!c) return;
+
+  const py=p.y+TH+FH/2;
+  const cy=c.y+TH+rel.fkIdx*FH+FH/2;
+
+  let x1,y1,x2,y2,cx1,cy1a,cx2,cy2a;
+
+  if(c.x>=p.x){
+    x1=p.x+TW; y1=py;
+    x2=c.x;    y2=cy;
+    const span=x2-x1;
+    const bend=Math.max(span*0.45,60);
+    cx1=x1+bend; cy1a=y1;
+    cx2=x2-bend; cy2a=y2;
+  } else {
+    x1=p.x+TW; y1=py;
+    x2=c.x+TW; y2=cy;
+    const top=Math.min(p.y,c.y)-55;
+    cx1=x1+70; cy1a=top;
+    cx2=x2+70; cy2a=top;
+  }
+
+  const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+  path.setAttribute('d',`M${x1},${y1} C${cx1},${cy1a},${cx2},${cy2a},${x2},${y2}`);
+  path.setAttribute('fill','none');
+  path.setAttribute('stroke','#1E3454');
+  path.setAttribute('stroke-width','1.5');
+  path.setAttribute('marker-start','url(#tick)');
+  path.setAttribute('marker-end','url(#arr)');
+  path.setAttribute('data-from',rel.from);
+  path.setAttribute('data-to',rel.to);
+  svg.appendChild(path);
+  paths.push({path,rel});
+});
+
+TABLES.forEach(t=>{
+  const el=elMap[t.id];
+  el.addEventListener('mouseenter',()=>{
+    const related=new Set([t.id]);
+    paths.forEach(({rel})=>{
+      if(rel.from===t.id||rel.to===t.id){
+        related.add(rel.from); related.add(rel.to);
+      }
+    });
+    TABLES.forEach(o=>{
+      const oe=elMap[o.id];
+      oe.classList.remove('dim','lit','src');
+      if(!related.has(o.id)) oe.classList.add('dim');
+      else if(o.id===t.id) oe.classList.add('src');
+      else oe.classList.add('lit');
+    });
+    paths.forEach(({path,rel})=>{
+      const active=rel.from===t.id||rel.to===t.id;
+      path.setAttribute('stroke',active?'#3B82F6':'#111C2A');
+      path.setAttribute('stroke-width',active?'2':'1');
+      path.setAttribute('marker-start',active?'url(#tick-hi)':'url(#tick)');
+      path.setAttribute('marker-end',active?'url(#arr-hi)':'url(#arr)');
+    });
+  });
+  el.addEventListener('mouseleave',()=>{
+    TABLES.forEach(o=>elMap[o.id].classList.remove('dim','lit','src'));
+    paths.forEach(({path})=>{
+      path.setAttribute('stroke','#1E3454');
+      path.setAttribute('stroke-width','1.5');
+      path.setAttribute('marker-start','url(#tick)');
+      path.setAttribute('marker-end','url(#arr)');
+    });
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+# Apache configuration for Sunder Solar MIS
+
+RewriteEngine On
+
+# PWA service workers require HTTPS outside localhost.
+RewriteCond %{HTTPS} off
+RewriteCond %{HTTP:X-Forwarded-Proto} !https [NC]
+RewriteCond %{HTTP_HOST} !^(localhost|127\.0\.0\.1)(:\d+)?$ [NC]
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+
+# Remove .php extension.
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME}.php -f
+RewriteRule ^([^/]+)/?$ $1.php [L]
+
+# API routing.
+RewriteRule ^api/([^/]+)/?$ api/$1-api.php [L]
+
+# Module routing.
+RewriteRule ^modules/([^/]+)/?$ modules/$1.php [L]
+
+# PWA and security headers.
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "DENY"
+    Header set X-XSS-Protection "1; mode=block"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+    <FilesMatch "manifest\.json$">
+        Header set Content-Type "application/manifest+json"
+    </FilesMatch>
+    <FilesMatch "sw\.js$">
+        Header set Cache-Control "no-cache"
+    </FilesMatch>
+</IfModule>
+
+# Prevent directory listing.
+Options -Indexes
+
+# Protect sensitive files.
+<FilesMatch "\.(sql|log|ini|config)$">
+    Require all denied
+</FilesMatch>
+
+AddDefaultCharset UTF-8

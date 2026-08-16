@@ -1,0 +1,8 @@
+.git
+.agents
+.codex
+*.zip
+*.log
+node_modules
+.DS_Store
+Thumbs.db
