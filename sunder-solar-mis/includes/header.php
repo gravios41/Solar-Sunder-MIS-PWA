@@ -17,6 +17,7 @@ $appBasePath = defined('APP_BASE_PATH') ? APP_BASE_PATH : '/';
     <title><?php echo isset($pageTitle) ? htmlspecialchars($pageTitle) . ' — ' : ''; ?>Sunder Solar MIS</title>
 
     <link rel="manifest" href="<?php echo htmlspecialchars($appBasePath); ?>manifest.json">
+    <link rel="icon" type="image/jpg" sizes="192x192" href="<?php echo htmlspecialchars($appBasePath); ?>assets/images/logo.jpg">
     <link rel="apple-touch-icon" href="<?php echo htmlspecialchars($appBasePath); ?>assets/images/icons/icon-192.png">
 
     <!-- Main Stylesheet -->
