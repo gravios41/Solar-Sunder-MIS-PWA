@@ -33,6 +33,7 @@ $errorMessage = $msgs[$error] ?? '';
     <title>Sign In — Sunder Solar MIS</title>
     <script>window.APP_BASE_PATH = <?php echo json_encode($appBasePath); ?>;</script>
     <link rel="manifest" href="<?php echo htmlspecialchars($appBasePath); ?>manifest.json">
+    <link rel="icon" type="image/jpg" sizes="192x192" href="<?php echo htmlspecialchars($appBasePath); ?>assets/images/logo.jpg">
     <link rel="apple-touch-icon" href="<?php echo htmlspecialchars($appBasePath); ?>assets/images/icons/icon-192.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
