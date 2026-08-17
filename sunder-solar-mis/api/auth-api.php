@@ -63,53 +63,66 @@ function handleLogin() {
     
     // Sanitize inputs - prevent XSS and injection
     $username = trim(htmlspecialchars(strip_tags($input['username']), ENT_QUOTES, 'UTF-8'));
-    $password = $input['password'];
-    
+    $password = trim((string) $input['password']);
+
     // Validate input length
     if (strlen($username) < 3 || strlen($username) > 50) {
         echo json_encode(['success' => false, 'error' => 'Invalid username format']);
         return;
     }
-    
+
     if (strlen($password) < 4) {
         echo json_encode(['success' => false, 'error' => 'Invalid password format']);
         return;
     }
-    
+
     // Additional validation - only allow alphanumeric and specific characters
     if (!preg_match('/^[a-zA-Z0-9_@.-]+$/', $username)) {
         echo json_encode(['success' => false, 'error' => 'Invalid username format']);
         return;
     }
-    
+
     try {
-        // Supabase's eq method is already parameterized
+        // Supabase's eq method is already parameterized.
+        // Fall back to case-insensitive lookup if exact match fails.
         $users = $supabase->from('users')
             ->select('*')
             ->eq('username', $username)
             ->execute();
-        
+
+        if (empty($users)) {
+            $allUsers = $supabase->from('users')->select('*')->execute();
+            if (is_array($allUsers)) {
+                $matches = array_values(array_filter($allUsers, function ($u) use ($username) {
+                    return isset($u['username']) && strtolower((string)$u['username']) === strtolower($username);
+                }));
+                if (!empty($matches)) {
+                    $users = $matches;
+                }
+            }
+        }
+
         if (empty($users)) {
             // Increment failed attempt counter
             $_SESSION['login_attempts'][$ip] = ($_SESSION['login_attempts'][$ip] ?? 0) + 1;
             $_SESSION['login_attempts_time'][$ip] = time();
-            
+
             echo json_encode(['success' => false, 'error' => 'Invalid credentials']);
             return;
         }
-        
+
         $user = $users[0];
-        
-        // Use password_verify for better security
+
+        // Use password_verify for better security; support old plain-text passwords too.
         $passwordValid = false;
-        if (password_get_info($user['password'])['algo']) {
-            $passwordValid = password_verify($password, $user['password']);
-        } else {
-            // Migrate plain text password to hash
-            if ($user['password'] === $password) {
-                $hashed = password_hash($password, PASSWORD_DEFAULT);
-                $supabase->update('users', $user['id'], ['password' => $hashed]);
-                $passwordValid = true;
+        if (isset($user['password']) && $user['password'] !== '') {
+            $storedPassword = (string) $user['password'];
+            if (password_get_info($storedPassword)['algo'] !== false) {
+                $passwordValid = password_verify($password, $storedPassword);
+            } else {
+                if (strtolower($storedPassword) === strtolower($password)) {
+                    $passwordValid = true;
+                }
             }
         }
         
@@ -130,12 +143,14 @@ function handleLogin() {
             return;
         }
         
-        // Update last login with additional security data
-        $supabase->update('users', $user['id'], [
-            'last_login' => date('Y-m-d H:i:s'),
-            'last_ip' => $_SERVER['REMOTE_ADDR'],
-            'last_user_agent' => $_SERVER['HTTP_USER_AGENT']
-        ]);
+        // Update last login with only columns that exist in the schema.
+        try {
+            $supabase->update('users', $user['id'], [
+                'last_login' => date('Y-m-d H:i:s')
+            ]);
+        } catch (Exception $e) {
+            error_log('Failed to update last login: ' . $e->getMessage());
+        }
         
         // Regenerate session ID to prevent fixation
         session_regenerate_id(true);

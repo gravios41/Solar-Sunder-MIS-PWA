@@ -5,6 +5,8 @@ services:
     plan: free
     healthCheckPath: /auth/login.php
     envVars:
+      - key: APP_ENV
+        value: production
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_ANON_KEY

@@ -8,16 +8,25 @@ RewriteCond %{HTTP:X-Forwarded-Proto} !https [NC]
 RewriteCond %{HTTP_HOST} !^(localhost|127\.0\.0\.1)(:\d+)?$ [NC]
 RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
 
-# Remove .php extension.
+# Do not rewrite requests that already map to a real file or directory.
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Remove .php extension only when the target file actually exists.
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_FILENAME}.php -f
-RewriteRule ^([^/]+)/?$ $1.php [L]
+RewriteRule ^(.+?)/?$ $1.php [L,QSA]
 
-# API routing.
-RewriteRule ^api/([^/]+)/?$ api/$1-api.php [L]
+# API routing for clean URLs.
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^api/([^/]+)/?$ api/$1-api.php [L,QSA]
 
-# Module routing.
-RewriteRule ^modules/([^/]+)/?$ modules/$1.php [L]
+# Module routing for clean URLs.
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^modules/([^/]+)/?$ modules/$1.php [L,QSA]
 
 # PWA and security headers.
 <IfModule mod_headers.c>
