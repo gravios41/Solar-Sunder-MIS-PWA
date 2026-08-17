@@ -415,6 +415,89 @@ $errorMessage = $msgs[$error] ?? '';
         .btn-submit.loading .btn-text { display: none; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
+        /* ── PWA Installation Instructions ── */
+        .pwa-instructions-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 28px;
+        }
+
+        .pwa-instructions {
+            background: rgba(249, 115, 22, 0.06);
+            border: 1.5px solid rgba(249, 115, 22, 0.2);
+            border-radius: 12px;
+            padding: 16px;
+            transition: all 0.2s ease;
+        }
+
+        .pwa-instructions:hover {
+            background: rgba(249, 115, 22, 0.1);
+            border-color: rgba(249, 115, 22, 0.35);
+        }
+
+        .instructions-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            color: #fff;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .instructions-header i {
+            font-size: 1.2rem;
+            color: var(--orange);
+        }
+
+        .instructions-body {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.8);
+            line-height: 1.6;
+        }
+
+        .instruction-text {
+            margin: 0;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-left: 3px solid var(--orange);
+            border-radius: 4px;
+        }
+
+        .instructions-list {
+            margin: 0;
+            padding-left: 20px;
+            list-style-position: inside;
+        }
+
+        .instructions-list li {
+            margin-bottom: 8px;
+            padding-left: 4px;
+        }
+
+        .instructions-list li:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Mobile: Stack layout */
+        @media (max-width: 768px) {
+            .pwa-instructions-container {
+                grid-template-columns: 1fr;
+            }
+
+            .desktop-instructions {
+                display: none;
+            }
+        }
+
+        /* Desktop: Show only desktop, hide phone instructions */
+        @media (min-width: 769px) {
+            .phone-instructions {
+                display: none;
+            }
+        }
+
         /* Footer */
         .card-footer {
             padding: 16px 40px;
@@ -728,6 +811,36 @@ $errorMessage = $msgs[$error] ?? '';
                     <span class="btn-text"><i class="fas fa-sign-in-alt"></i> Sign In</span>
                 </button>
             </form>
+
+            <!-- PWA Installation Instructions -->
+            <div class="pwa-instructions-container">
+                <!-- Desktop Instructions -->
+                <div class="pwa-instructions desktop-instructions">
+                    <div class="instructions-header">
+                        <i class="fas fa-desktop"></i>
+                        <span>Desktop Installation</span>
+                    </div>
+                    <div class="instructions-body">
+                        <p class="instruction-text">In desktop just click install</p>
+                    </div>
+                </div>
+
+                <!-- Phone Instructions -->
+                <div class="pwa-instructions phone-instructions">
+                    <div class="instructions-header">
+                        <i class="fas fa-mobile-alt"></i>
+                        <span>Phone Installation</span>
+                    </div>
+                    <div class="instructions-body">
+                        <ol class="instructions-list">
+                            <li><strong>Open Menu</strong> - Tap the 3-dot menu icon (⋮)</li>
+                            <li><strong>Select Desktop Mode</strong> - Enable "Desktop site"</li>
+                            <li><strong>Install App</strong> - Tap menu → "Install app"</li>
+                            <li><strong>Confirm</strong> - Tap "Install" to add to home screen</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
 
         </div>
 
