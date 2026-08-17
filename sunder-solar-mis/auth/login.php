@@ -61,7 +61,8 @@ $errorMessage = $msgs[$error] ?? '';
             justify-content: center;
             padding: 20px;
             position: relative;
-            overflow: hidden;
+            overflow: auto;
+            -webkit-overflow-scrolling: touch;
             -webkit-font-smoothing: antialiased;
         }
 
@@ -426,10 +427,72 @@ $errorMessage = $msgs[$error] ?? '';
 
         /* Responsive */
         @media (max-width: 700px) {
-            .card { grid-template-columns: 1fr; }
-            .panel-left { border-right: none; border-bottom: 1px solid var(--border); padding: 28px; }
-            .panel-right { padding: 28px; }
-            .card-footer { padding: 14px 28px; }
+            /* Allow scrolling on mobile */
+            body {
+                align-items: flex-start;
+                padding-top: 60px;
+                padding-bottom: 60px;
+            }
+
+            .login-wrap {
+                width: 100%;
+                max-width: 100%;
+            }
+
+            .card { 
+                grid-template-columns: 1fr;
+                max-height: none;
+            }
+            
+            .panel-left { 
+                border-right: none; 
+                border-bottom: 1px solid var(--border); 
+                padding: 28px;
+                max-height: 400px;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            .panel-right { 
+                padding: 28px;
+            }
+
+            .card-footer { 
+                padding: 14px 28px;
+            }
+
+            /* Make role cards scrollable on small screens */
+            .role-cards {
+                max-height: 280px;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            /* Modal scrolling on mobile */
+            #forgotModal {
+                display: flex !important;
+                align-items: flex-start;
+                padding-top: 60px;
+                padding-bottom: 60px;
+            }
+
+            /* Prevent iOS auto-zoom on input focus */
+            .form-input,
+            input[type="text"],
+            input[type="email"],
+            input[type="password"],
+            textarea {
+                font-size: 16px !important;
+                padding: 14px 16px 14px 44px !important;
+            }
+
+            .form-label {
+                font-size: 0.85rem !important;
+            }
+
+            .checkbox-wrap {
+                font-size: 0.875rem !important;
+            }
         }
     </style>
 </head>
@@ -446,7 +509,7 @@ $errorMessage = $msgs[$error] ?? '';
 </div>
 
 <!-- ── Forgot Password Modal ── -->
-<div id="forgotModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:999;align-items:center;justify-content:center;padding:20px">
+<div id="forgotModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:999;align-items:center;justify-content:center;padding:20px;overflow-y:auto;-webkit-overflow-scrolling:touch">
     <div style="background:#1E293B;border:1px solid rgba(255,255,255,0.12);border-radius:20px;padding:36px 32px;width:100%;max-width:420px;position:relative;animation:cardEntry 0.3s ease">
         <button onclick="closeForgotModal()" style="position:absolute;top:16px;right:18px;background:none;border:none;color:rgba(255,255,255,0.4);font-size:1.4rem;cursor:pointer;line-height:1">&times;</button>
 
