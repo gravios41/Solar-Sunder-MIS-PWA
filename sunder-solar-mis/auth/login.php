@@ -415,6 +415,116 @@ $errorMessage = $msgs[$error] ?? '';
         .btn-submit.loading .btn-text { display: none; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
+        /* ── PWA Installation Instructions ── */
+        .pwa-install-banner {
+            margin-top: 24px;
+            padding: 16px;
+            background: rgba(249, 115, 22, 0.08);
+            border: 1.5px solid rgba(249, 115, 22, 0.25);
+            border-radius: 12px;
+            animation: slideDown 0.3s ease;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .pwa-install-banner .banner-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .pwa-install-banner .banner-header i {
+            font-size: 1.1rem;
+            color: var(--orange);
+        }
+        .pwa-install-banner .banner-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #fff;
+            flex: 1;
+        }
+        .pwa-install-banner .banner-toggle {
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.6);
+            transition: transform 0.3s ease;
+        }
+        .pwa-install-banner.collapsed .banner-toggle {
+            transform: rotate(-90deg);
+        }
+        .pwa-install-banner .banner-content {
+            max-height: 500px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            margin-top: 12px;
+        }
+        .pwa-install-banner.collapsed .banner-content {
+            max-height: 0;
+            opacity: 0;
+            margin-top: 0;
+        }
+        .pwa-install-banner .instruction-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .pwa-install-banner .instruction-item {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 10px;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.85);
+            line-height: 1.5;
+        }
+        .pwa-install-banner .instruction-item:last-child {
+            margin-bottom: 0;
+        }
+        .pwa-install-banner .step-number {
+            min-width: 24px;
+            height: 24px;
+            background: var(--orange);
+            color: #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        .pwa-install-banner .install-button {
+            margin-top: 12px;
+            padding: 10px 16px;
+            background: var(--orange);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: none;
+        }
+        .pwa-install-banner .install-button.visible {
+            display: inline-block;
+        }
+        .pwa-install-banner .install-button:hover {
+            background: #EA6C00;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(249, 115, 22, 0.4);
+        }
+        .pwa-install-banner .install-button:active {
+            transform: translateY(0);
+        }
+
+        /* Hide banner on desktop */
+        @media (min-width: 769px) {
+            .pwa-install-banner {
+                display: none;
+            }
+        }
+
         /* Footer */
         .card-footer {
             padding: 16px 40px;
@@ -728,6 +838,38 @@ $errorMessage = $msgs[$error] ?? '';
                     <span class="btn-text"><i class="fas fa-sign-in-alt"></i> Sign In</span>
                 </button>
             </form>
+
+            <!-- PWA Installation Instructions -->
+            <div class="pwa-install-banner" id="pwaInstallBanner">
+                <div class="banner-header" onclick="togglePwaInstructions()">
+                    <i class="fas fa-mobile-alt"></i>
+                    <span class="banner-title">Install Sunder Solar MIS App</span>
+                    <i class="fas fa-chevron-down banner-toggle"></i>
+                </div>
+                <div class="banner-content">
+                    <ul class="instruction-list">
+                        <li class="instruction-item">
+                            <span class="step-number">1</span>
+                            <span><strong>Open Menu:</strong> Tap the 3-dot menu icon (⋮) in your browser's top-right corner</span>
+                        </li>
+                        <li class="instruction-item">
+                            <span class="step-number">2</span>
+                            <span><strong>Select Desktop Mode:</strong> Look for "Desktop site" or "Request desktop site" and enable it</span>
+                        </li>
+                        <li class="instruction-item">
+                            <span class="step-number">3</span>
+                            <span><strong>Install App:</strong> Tap the menu again and select "Install app" or "Add to Home Screen"</span>
+                        </li>
+                        <li class="instruction-item">
+                            <span class="step-number">4</span>
+                            <span><strong>Confirm:</strong> Tap "Install" in the popup to add Sunder Solar MIS to your home screen</span>
+                        </li>
+                    </ul>
+                    <button type="button" class="install-button" id="pwaInstallBtn" onclick="triggerPwaInstall()">
+                        <i class="fas fa-download"></i> Install Now
+                    </button>
+                </div>
+            </div>
         </div>
 
         <!-- Footer -->
@@ -896,6 +1038,76 @@ function toggleFpPw(inputId, iconId) {
 
 document.getElementById('forgotModal').addEventListener('click', function(e) {
     if (e.target === this) closeForgotModal();
+});
+
+/* ── PWA Installation Handler ── */
+let deferredPrompt = null;
+let pwaInstallAvailable = false;
+
+// Listen for the beforeinstallprompt event
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    pwaInstallAvailable = true;
+    
+    // Show the install button if available
+    const installBtn = document.getElementById('pwaInstallBtn');
+    if (installBtn) {
+        installBtn.classList.add('visible');
+    }
+});
+
+// Handle app install completion
+window.addEventListener('appinstalled', () => {
+    console.log('PWA was installed');
+    deferredPrompt = null;
+    pwaInstallAvailable = false;
+    
+    const banner = document.getElementById('pwaInstallBanner');
+    if (banner) {
+        banner.style.display = 'none';
+    }
+});
+
+// Toggle PWA instructions banner
+function togglePwaInstructions() {
+    const banner = document.getElementById('pwaInstallBanner');
+    if (banner) {
+        banner.classList.toggle('collapsed');
+    }
+}
+
+// Trigger PWA install prompt
+function triggerPwaInstall() {
+    if (!deferredPrompt || !pwaInstallAvailable) {
+        alert('Install option is not available on your device. Please follow the instructions above.');
+        return;
+    }
+    
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then((choiceResult) => {
+        if (choiceResult.outcome === 'accepted') {
+            console.log('User accepted the install prompt');
+        } else {
+            console.log('User dismissed the install prompt');
+        }
+    });
+}
+
+// Check if app is running in standalone mode
+function isAppRunningStandalone() {
+    return window.matchMedia('(display-mode: standalone)').matches 
+        || window.navigator.standalone === true;
+}
+
+// Hide banner if already installed
+window.addEventListener('load', () => {
+    if (isAppRunningStandalone()) {
+        const banner = document.getElementById('pwaInstallBanner');
+        if (banner) {
+            banner.style.display = 'none';
+        }
+    }
 });
 </script>
 <script src="<?php echo htmlspecialchars($appBasePath); ?>assets/js/pwa.js"></script>
