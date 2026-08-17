@@ -198,9 +198,59 @@ class ModuleLoader {
         // Re-attach any event handlers needed for the module
         this.reAttachModuleHandlers(moduleName);
 
+        // Ensure all modal data is visible on mobile
+        if (this.isMobile()) {
+            setTimeout(() => {
+                this.optimizeModalsForMobile();
+                this.ensureDataVisibility();
+            }, 100);
+        }
+
         // Trigger any module-specific initialization
         const event = new CustomEvent('moduleLoaded', { detail: { module: moduleName } });
         document.dispatchEvent(event);
+    }
+
+    /**
+     * Ensure all data elements are visible on mobile
+     */
+    ensureDataVisibility() {
+        const mainContent = document.querySelector('.main-content, .page-body, [data-content]');
+        if (!mainContent) return;
+
+        // Check all hidden elements
+        mainContent.querySelectorAll('*').forEach(el => {
+            const style = window.getComputedStyle(el);
+            
+            // Fix display: none elements that should be visible
+            if (style.display === 'none' && !el.classList.contains('modal')) {
+                if (el.textContent && el.textContent.trim() && el.offsetParent === null) {
+                    el.style.display = 'block';
+                }
+            }
+
+            // Fix overflow issues
+            if (style.overflow === 'hidden' && el.scrollHeight > el.offsetHeight) {
+                el.style.overflow = 'auto';
+                el.style.overflowX = 'hidden';
+            }
+
+            // Fix text truncation issues
+            if (style.whiteSpace === 'nowrap' && el.textContent && el.textContent.trim()) {
+                el.style.whiteSpace = 'normal';
+                el.style.wordBreak = 'break-word';
+            }
+        });
+
+        // Specifically check table rows for visibility
+        mainContent.querySelectorAll('table tbody tr').forEach(row => {
+            row.style.display = 'table-row';
+            row.querySelectorAll('td').forEach(cell => {
+                cell.style.display = 'table-cell';
+                cell.style.visibility = 'visible';
+                cell.style.opacity = '1';
+            });
+        });
     }
 
     /**
@@ -217,6 +267,88 @@ class ModuleLoader {
         const actionButtons = document.querySelectorAll('[data-action]');
         actionButtons.forEach(button => {
             button.addEventListener('click', (e) => this.handleActionButton(e, moduleName));
+        });
+
+        // Re-attach modal handlers
+        this.attachModalHandlers();
+
+        // Ensure modals are visible on mobile
+        this.optimizeModalsForMobile();
+    }
+
+    /**
+     * Attach modal close and open handlers
+     */
+    attachModalHandlers() {
+        // Find all modal close buttons
+        const closeButtons = document.querySelectorAll('[class*="modal-close"], [onclick*="closeModal"], [onclick*="closeDetail"]');
+        closeButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const modal = btn.closest('.modal') || btn.closest('.gmModal');
+                if (modal) {
+                    modal.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+        });
+
+        // Attach modal backdrop click handlers
+        const modals = document.querySelectorAll('.modal, .gmModal');
+        modals.forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
+        });
+    }
+
+    /**
+     * Optimize modals for mobile visibility
+     */
+    optimizeModalsForMobile() {
+        if (!this.isMobile()) return;
+
+        const modals = document.querySelectorAll('.modal, .gmModal');
+        modals.forEach(modal => {
+            // Ensure modal is properly displayed when active
+            if (modal.classList.contains('active')) {
+                modal.style.display = 'flex';
+                modal.style.zIndex = '9999';
+                document.body.style.overflow = 'hidden';
+            }
+
+            // Fix modal content visibility
+            const content = modal.querySelector('.modal-content, .gmModal-box');
+            if (content) {
+                content.style.display = 'block';
+                content.style.visibility = 'visible';
+                content.style.opacity = '1';
+            }
+
+            // Ensure all form fields are visible
+            const formFields = modal.querySelectorAll('input, textarea, select, [contenteditable]');
+            formFields.forEach(field => {
+                field.style.visibility = 'visible';
+                field.style.display = 'block';
+                field.style.opacity = '1';
+                if (field.offsetHeight === 0) {
+                    console.warn('Form field has zero height:', field);
+                }
+            });
+
+            // Ensure all text content is visible
+            const textElements = modal.querySelectorAll('p, span, div, label, td');
+            textElements.forEach(el => {
+                if (el.textContent && el.textContent.trim()) {
+                    el.style.visibility = 'visible';
+                    el.style.display = 'block';
+                    el.style.opacity = '1';
+                }
+            });
         });
     }
 
