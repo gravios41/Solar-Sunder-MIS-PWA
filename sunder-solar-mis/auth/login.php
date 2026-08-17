@@ -425,6 +425,31 @@ $errorMessage = $msgs[$error] ?? '';
             grid-column: 1 / -1;
         }
 
+        /* Modal close button */
+        .modal-close-btn {
+            position: absolute;
+            top: 16px;
+            right: 18px;
+            background: none;
+            border: none;
+            color: rgba(255,255,255,0.5);
+            font-size: 1.4rem;
+            cursor: pointer;
+            line-height: 1;
+            padding: 8px;
+            min-width: 40px;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s;
+            z-index: 1000;
+        }
+
+        .modal-close-btn:hover {
+            color: rgba(255,255,255,0.9);
+        }
+
         /* Responsive */
         @media (max-width: 700px) {
             /* Allow scrolling on mobile */
@@ -470,6 +495,10 @@ $errorMessage = $msgs[$error] ?? '';
 
             /* Modal scrolling on mobile */
             #forgotModal {
+                display: none !important;
+            }
+
+            #forgotModal.active {
                 display: flex !important;
                 align-items: flex-start;
                 padding-top: 60px;
@@ -511,7 +540,7 @@ $errorMessage = $msgs[$error] ?? '';
 <!-- ── Forgot Password Modal ── -->
 <div id="forgotModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:999;align-items:center;justify-content:center;padding:20px;overflow-y:auto;-webkit-overflow-scrolling:touch">
     <div style="background:#1E293B;border:1px solid rgba(255,255,255,0.12);border-radius:20px;padding:36px 32px;width:100%;max-width:420px;position:relative;animation:cardEntry 0.3s ease">
-        <button onclick="closeForgotModal()" style="position:absolute;top:16px;right:18px;background:none;border:none;color:rgba(255,255,255,0.4);font-size:1.4rem;cursor:pointer;line-height:1">&times;</button>
+        <button onclick="closeForgotModal()" class="modal-close-btn" aria-label="Close modal">&times;</button>
 
         <div style="text-align:center;margin-bottom:24px">
             <div style="width:52px;height:52px;background:linear-gradient(135deg,#F97316,#F59E0B);border-radius:14px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:12px">
@@ -755,7 +784,7 @@ document.getElementById('loginForm').addEventListener('submit', function() {
 let fpUserId = null;
 
 function openForgotModal() {
-    document.getElementById('forgotModal').style.display = 'flex';
+    document.getElementById('forgotModal').classList.add('active');
     document.getElementById('fpStep1').style.display = 'block';
     document.getElementById('fpStep2').style.display = 'none';
     document.getElementById('fpUsername').value = '';
@@ -766,7 +795,7 @@ function openForgotModal() {
 }
 
 function closeForgotModal() {
-    document.getElementById('forgotModal').style.display = 'none';
+    document.getElementById('forgotModal').classList.remove('active');
 }
 
 function fpShowAlert(msg, type) {
