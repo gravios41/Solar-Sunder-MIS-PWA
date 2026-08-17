@@ -40,10 +40,11 @@ include_once __DIR__ . '/../includes/header.php';
         <div>
             <div style="font-weight:600;color:#333">Install Sunder Solar MIS</div>
             <div style="font-size:0.875rem;color:#666">Get quick access to the app on your device</div>
+
             <div style="font-weight:600;color:#333">Instructions</div>
             <div style="font-size:0.875rem;color:#666">1. 📱 Open Menu - Tap 3-dot menu icon (⋮)</div>
             <div style="font-size:0.875rem;color:#666">2. 🖥️ Select Desktop Mode - Enable "Desktop site"</div>
-            <div style="font-size:0.875rem;color:#666">3. ⬇️ Install App - Tap menu → "Install app"</div>
+            <div style="font-size:0.875rem;color:#666">3. ⬇️ Install App - "Install app"</div>
             <div style="font-size:0.875rem;color:#666">4.✅ Confirm - Tap "Install" to add to home screen</div>
 
         </div>

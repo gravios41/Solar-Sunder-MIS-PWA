@@ -3,12 +3,16 @@ const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 const staticAssets = [
+  './',
+  './index.php',
   './offline.html',
   './assets/css/style.css',
   './assets/js/main.js',
   './assets/js/sidebar.js',
   './assets/js/charts.js',
   './assets/js/pwa.js',
+  './assets/js/dashboard-mobile.js',
+  './assets/js/ajax-loader.js',
   './assets/images/logo.jpg',
   './assets/images/icons/icon-192.png',
   './assets/images/icons/icon-512.png'
