@@ -1149,22 +1149,195 @@ body {
 }
 
 /* ============================================
-   PHONE MODAL STYLES (Desktop Design Adapted)
+   PHONE MODAL UI DESIGN
    ============================================ */
+
+/* Phone Modal Container */
 .modal.phone-modal {
-    align-items: center;
-    justify-content: center;
-    padding: 12px;
+    padding: 0;
+    background: rgba(0, 0, 0, 0.4);
+    align-items: flex-end;
+    justify-content: flex-end;
 }
 
 .phone-modal .modal-content {
     width: 100%;
     max-width: 100%;
-    max-height: 90vh;
-    border-radius: var(--radius-2xl);
-    margin: 0;
-    box-shadow: var(--shadow-xl);
-    animation: scaleIn 0.25s var(--ease-out);
+    max-height: 92vh;
+    border-radius: 24px 24px 0 0;
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.25);
+    animation: slideUpModal 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    overflow: hidden;
+}
+
+/* Phone Modal Header */
+.phone-modal .modal-header {
+    padding: 16px 20px;
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    position: relative;
+}
+
+.phone-modal .modal-header::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 36px;
+    height: 4px;
+    background: #D1D5DB;
+    border-radius: 2px;
+}
+
+.phone-modal .modal-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-top: 8px;
+    letter-spacing: -0.01em;
+}
+
+.phone-modal .modal-close {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: #F3F4F6;
+    border: none;
+    color: var(--text-dark);
+    font-size: 1.3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.phone-modal .modal-close:active {
+    background: #E5E7EB;
+    transform: scale(0.95);
+}
+
+/* Phone Modal Body */
+.phone-modal .modal-body {
+    padding: 20px;
+    background: var(--white);
+    max-height: calc(92vh - 120px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.phone-modal .modal-body form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.phone-modal .modal-body .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.phone-modal .modal-body .form-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-dark);
+    letter-spacing: -0.01em;
+}
+
+.phone-modal .modal-body input,
+.phone-modal .modal-body textarea,
+.phone-modal .modal-body select {
+    font-size: 16px;
+    padding: 14px 14px;
+    border: 2px solid #E5E7EB;
+    border-radius: 12px;
+    font-family: inherit;
+    width: 100%;
+    transition: all 0.2s ease;
+    background: #FAFAFA;
+}
+
+.phone-modal .modal-body input:focus,
+.phone-modal .modal-body textarea:focus,
+.phone-modal .modal-body select:focus {
+    outline: none;
+    background: var(--white);
+    border-color: var(--solar-orange);
+    box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.1);
+}
+
+.phone-modal .modal-body textarea {
+    min-height: 110px;
+    resize: vertical;
+}
+
+/* Phone Modal Footer */
+.phone-modal .modal-footer {
+    padding: 16px 20px;
+    background: #F9FAFB;
+    border-top: 1px solid #E5E7EB;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.phone-modal .modal-footer .btn {
+    width: 100%;
+    min-height: 48px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.phone-modal .modal-footer .btn:active {
+    transform: scale(0.98);
+}
+
+.phone-modal .modal-footer .btn-primary {
+    background: var(--solar-orange);
+    color: var(--white);
+    order: -1;
+}
+
+.phone-modal .modal-footer .btn-primary:active {
+    background: #EA6C00;
+}
+
+.phone-modal .modal-footer .btn-secondary {
+    background: #E5E7EB;
+    color: var(--text-dark);
+}
+
+.phone-modal .modal-footer .btn-secondary:active {
+    background: #D1D5DB;
+}
+
+.phone-modal .modal-footer .btn-danger {
+    background: #EF4444;
+    color: var(--white);
+}
+
+.phone-modal .modal-footer .btn-danger:active {
+    background: #DC2626;
+}
+
+/* Animations */
+@keyframes slideUpModal {
+    from {
+        opacity: 0;
+        transform: translateY(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* ============================================
