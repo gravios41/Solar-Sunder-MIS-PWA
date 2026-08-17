@@ -236,9 +236,15 @@ function showDetailModal(title, rows) {
         </div>`;
     }).join('');
 
-    modal.classList.add('active');
+    const cleanup = () => {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    };
 
-    const cleanup = () => modal.classList.remove('active');
+    modal.classList.add('active');
+    if (window.innerWidth <= 768) {
+        document.body.style.overflow = 'hidden';
+    }
 
     const newClose  = closeBtn.cloneNode(true);
     const newClose2 = closeBtn2.cloneNode(true);
