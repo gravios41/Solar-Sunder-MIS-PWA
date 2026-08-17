@@ -33,25 +33,34 @@ $lowStockCount     = count(array_filter($inventory, fn($i) => ($i['quantity'] ??
 include_once __DIR__ . '/../includes/header.php';
 ?>
 
-<!-- PWA Install Banner -->
-<div id="pwaInstallBanner" style="margin-bottom:20px;padding:12px 16px;background:#FFF3E0;border:1px solid #FFB74D;border-radius:8px;display:flex;align-items:center;justify-content:space-between;gap:16px">
-    <div style="display:flex;align-items:center;gap:12px;flex:1">
-        <i class="fas fa-mobile-alt" style="font-size:20px;color:#F97316;flex-shrink:0"></i>
-        <div>
-            <div style="font-weight:600;color:#333">Install Sunder Solar MIS</div>
-            <div style="font-size:0.875rem;color:#666">Get quick access to the app on your device</div>
-
-            <div style="font-weight:600;color:#333">Instructions</div>
-            <div style="font-size:0.875rem;color:#666">1. 📱 Open Menu - Tap 3-dot menu icon (⋮)</div>
-            <div style="font-size:0.875rem;color:#666">2. 🖥️ Select Desktop Mode - Enable "Desktop site"</div>
-            <div style="font-size:0.875rem;color:#666">3. ⬇️ Install App - "Install app"</div>
-            <div style="font-size:0.875rem;color:#666">4.✅ Confirm - Tap "Install" to add to home screen</div>
-
+<!-- PWA Installation Instructions -->
+<div class="pwa-instructions-container" style="margin-bottom:24px">
+    <!-- Desktop Instructions -->
+    <div class="pwa-instructions desktop-instructions">
+        <div class="instructions-header">
+            <i class="fas fa-desktop"></i>
+            <span>Desktop Installation</span>
+        </div>
+        <div class="instructions-body">
+            <p class="instruction-text">In desktop just click install</p>
         </div>
     </div>
-    <button type="button" id="pwaInstallBtnBanner" class="btn btn-primary" style="white-space:nowrap;flex-shrink:0;cursor:pointer" onclick="installPWA()">
-        <i class="fas fa-download"></i> Install
-    </button>
+
+    <!-- Phone Instructions -->
+    <div class="pwa-instructions phone-instructions">
+        <div class="instructions-header">
+            <i class="fas fa-mobile-alt"></i>
+            <span>Phone Installation</span>
+        </div>
+        <div class="instructions-body">
+            <ol class="instructions-list">
+                <li><strong>Open Menu</strong> - Tap the 3-dot menu icon (⋮)</li>
+                <li><strong>Select Desktop Mode</strong> - Enable "Desktop site"</li>
+                <li><strong>Install App</strong> - Tap menu → "Install app"</li>
+                <li><strong>Confirm</strong> - Tap "Install" to add to home screen</li>
+            </ol>
+        </div>
+    </div>
 </div>
 
 <!-- ── KPI Stats Row ─────────────────────── -->
