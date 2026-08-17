@@ -1149,6 +1149,25 @@ body {
 }
 
 /* ============================================
+   PHONE MODAL STYLES (Desktop Design Adapted)
+   ============================================ */
+.modal.phone-modal {
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+}
+
+.phone-modal .modal-content {
+    width: 100%;
+    max-width: 100%;
+    max-height: 90vh;
+    border-radius: var(--radius-2xl);
+    margin: 0;
+    box-shadow: var(--shadow-xl);
+    animation: scaleIn 0.25s var(--ease-out);
+}
+
+/* ============================================
    PROJECT CARDS
    ============================================ */
 .projects-grid {

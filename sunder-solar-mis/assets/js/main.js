@@ -184,6 +184,12 @@ function showConfirmModal(message, onConfirm, options = {}) {
 
     if (!modal) { if (confirm(message)) onConfirm(); return; }
 
+    if (window.innerWidth <= 768) {
+        modal.classList.add('phone-modal');
+    } else {
+        modal.classList.remove('phone-modal');
+    }
+
     titleEl.textContent = title;
     msgEl.textContent   = message;
     okBtn.textContent   = confirmText;
@@ -222,6 +228,12 @@ function showDetailModal(title, rows) {
     const closeBtn2= document.getElementById('gmDetailCloseBtn');
 
     if (!modal) return;
+
+    if (window.innerWidth <= 768) {
+        modal.classList.add('phone-modal');
+    } else {
+        modal.classList.remove('phone-modal');
+    }
 
     titleEl.textContent = title;
     rowsEl.innerHTML = rows.map(r => {
@@ -279,6 +291,12 @@ function showPromptModal(message, defaultValue, onConfirm, options = {}) {
         const val = prompt(message, defaultValue);
         if (val !== null) onConfirm(val);
         return;
+    }
+
+    if (window.innerWidth <= 768) {
+        modal.classList.add('phone-modal');
+    } else {
+        modal.classList.remove('phone-modal');
     }
 
     titleEl.textContent = title;
