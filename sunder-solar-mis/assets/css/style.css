@@ -1418,13 +1418,6 @@ body {
     }
 }
 
-/* Desktop: Show only desktop, hide phone instructions */
-@media (min-width: 769px) {
-    .phone-instructions {
-        display: none;
-    }
-}
-
 /* ============================================
    PROJECT CARDS
    ============================================ */
