@@ -1652,6 +1652,12 @@ body {
 }
 
 @media (max-width: 768px) {
+    /* ── Hide desktop collapse arrow on phone; use hamburger only ── */
+    .sidebar-toggle,
+    .sidebar.collapsed .sidebar-toggle {
+        display: none !important;
+    }
+
     /* ── Sidebar Mobile ── */
     .sidebar {
         transform: translateX(-100%);
@@ -1779,6 +1785,38 @@ body {
     .stat-trend {
         font-size: 0.65rem;
         padding: 2px 6px;
+    }
+
+    /* ── Activity Feed Mobile ── */
+    .activity-feed {
+        padding: 4px 12px !important;
+        max-height: none !important;
+    }
+
+    .activity-item {
+        gap: 10px;
+        padding: 12px 0;
+    }
+
+    .activity-dot-wrap {
+        padding-top: 2px;
+    }
+
+    .activity-line {
+        display: none;
+    }
+
+    .activity-action {
+        font-size: 0.8rem;
+    }
+
+    .activity-desc {
+        font-size: 0.76rem;
+        line-height: 1.45;
+    }
+
+    .activity-time {
+        font-size: 0.68rem;
     }
 
     /* ── Cards & Layout ── */

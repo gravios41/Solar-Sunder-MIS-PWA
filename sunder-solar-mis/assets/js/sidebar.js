@@ -9,6 +9,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (!sidebar) return;
 
+    function syncSidebarToggle() {
+        if (!toggleBtn) return;
+        const isMobile = window.innerWidth <= 768;
+        toggleBtn.style.display = isMobile ? 'none' : '';
+    }
+
+    syncSidebarToggle();
+    window.addEventListener('resize', syncSidebarToggle);
+
     /* ── Restore collapsed state ── */
     const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
     if (isCollapsed) {
