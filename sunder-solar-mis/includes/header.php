@@ -68,10 +68,6 @@ $appBasePath = defined('APP_BASE_PATH') ? APP_BASE_PATH : '/';
         </div>
 
         <div class="header-actions">
-            <button class="header-icon-btn pwa-install-btn" id="pwaInstallBtn" aria-label="Install app" data-tip="Install app" hidden>
-                <i class="fas fa-download"></i>
-            </button>
-
             <!-- Search -->
             <div class="search-box hide-mobile">
                 <i class="fas fa-search search-icon"></i>

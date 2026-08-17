@@ -1,53 +1,77 @@
 (function initPwa() {
-    if (!('serviceWorker' in navigator)) return;
+    if (!('serviceWorker' in navigator)) {
+        console.warn('Service Workers not supported');
+        return;
+    }
 
     const scriptUrl = new URL(document.currentScript.src);
     const appBaseUrl = new URL('../../', scriptUrl);
-    const installBtn = document.getElementById('pwaInstallBtn');
-    const installBtnBanner = document.getElementById('pwaInstallBtnBanner');
     const installBanner = document.getElementById('pwaInstallBanner');
     let deferredPrompt = null;
+
+    const showInstallBanner = () => {
+        if (installBanner) {
+            installBanner.style.display = 'flex';
+        }
+    };
+
+    const hideInstallBanner = () => {
+        if (installBanner) {
+            installBanner.style.display = 'none';
+        }
+    };
+
+    console.log('PWA init - Banner found:', !!installBanner);
+
+    window.installPWA = async function() {
+        console.log('installPWA() called - deferredPrompt available:', !!deferredPrompt);
+
+        if (!deferredPrompt) {
+            console.warn('deferredPrompt not available yet. The browser may suppress the install prompt until the app is installable again.');
+            showInstallBanner();
+            return;
+        }
+
+        try {
+            hideInstallBanner();
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log('User response to install prompt:', outcome);
+
+            if (outcome === 'accepted') {
+                deferredPrompt = null;
+                hideInstallBanner();
+                return;
+            }
+
+            deferredPrompt = null;
+            showInstallBanner();
+        } catch (err) {
+            console.error('Error during install prompt:', err);
+            showInstallBanner();
+        }
+    };
 
     window.addEventListener('beforeinstallprompt', function(event) {
         event.preventDefault();
         deferredPrompt = event;
-        if (installBtn) installBtn.hidden = false;
-        if (installBanner) installBanner.style.display = 'flex';
+        showInstallBanner();
+        console.log('beforeinstallprompt event fired - PWA is installable');
     });
 
-    if (installBtn) {
-        installBtn.addEventListener('click', async function() {
-            if (!deferredPrompt) return;
-            installBtn.hidden = true;
-            if (installBanner) installBanner.style.display = 'none';
-            deferredPrompt.prompt();
-            await deferredPrompt.userChoice;
-            deferredPrompt = null;
-        });
-    }
-
-    if (installBtnBanner) {
-        installBtnBanner.addEventListener('click', async function() {
-            if (!deferredPrompt) return;
-            installBtn.hidden = true;
-            if (installBanner) installBanner.style.display = 'none';
-            deferredPrompt.prompt();
-            await deferredPrompt.userChoice;
-            deferredPrompt = null;
-        });
-    }
-
     window.addEventListener('appinstalled', function() {
+        console.log('App installed successfully');
         deferredPrompt = null;
-        if (installBtn) installBtn.hidden = true;
-        if (installBanner) installBanner.style.display = 'none';
+        hideInstallBanner();
     });
 
     window.addEventListener('load', function() {
         navigator.serviceWorker.register(new URL('sw.js', appBaseUrl), {
             scope: appBaseUrl.pathname
+        }).then(function(registration) {
+            console.log('Service Worker registered successfully', registration);
         }).catch(function(error) {
-            console.warn('PWA registration failed:', error);
+            console.warn('PWA Service Worker registration failed:', error);
         });
     });
 })();
