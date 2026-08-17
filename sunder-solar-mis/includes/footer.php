@@ -63,6 +63,8 @@
 <script src="<?php echo htmlspecialchars($footerBasePath); ?>assets/js/sidebar.js"></script>
 <script src="<?php echo htmlspecialchars($footerBasePath); ?>assets/js/main.js"></script>
 <script src="<?php echo htmlspecialchars($footerBasePath); ?>assets/js/pwa.js"></script>
+<script src="<?php echo htmlspecialchars($footerBasePath); ?>assets/js/ajax-loader.js"></script>
+<script src="<?php echo htmlspecialchars($footerBasePath); ?>assets/js/dashboard-mobile.js"></script>
 
 <?php if (isset($_SESSION['toast'])): ?>
 <script>

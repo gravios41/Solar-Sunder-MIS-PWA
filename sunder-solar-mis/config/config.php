@@ -138,4 +138,7 @@ function getCurrentUser() {
     }
     return null;
 }
+
+// AJAX Configuration
+require_once __DIR__ . '/ajax-config.php';
 ?>
