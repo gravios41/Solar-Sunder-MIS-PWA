@@ -13,6 +13,10 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!toggleBtn) return;
         const isMobile = window.innerWidth <= 768;
         toggleBtn.style.display = isMobile ? 'none' : '';
+        toggleBtn.style.visibility = isMobile ? 'hidden' : 'visible';
+        toggleBtn.style.opacity = isMobile ? '0' : '1';
+        toggleBtn.setAttribute('aria-hidden', String(isMobile));
+        toggleBtn.disabled = isMobile;
     }
 
     syncSidebarToggle();

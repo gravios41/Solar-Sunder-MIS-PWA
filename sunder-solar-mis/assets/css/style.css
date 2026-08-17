@@ -1654,8 +1654,14 @@ body {
 @media (max-width: 768px) {
     /* ── Hide desktop collapse arrow on phone; use hamburger only ── */
     .sidebar-toggle,
-    .sidebar.collapsed .sidebar-toggle {
+    .sidebar.collapsed .sidebar-toggle,
+    #sidebarToggle,
+    #sidebarToggle i,
+    .sidebar-toggle i {
         display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
     }
 
     /* ── Sidebar Mobile ── */
@@ -1882,7 +1888,38 @@ body {
     }
 
     /* ── Projects Grid ── */
-    .projects-grid { grid-template-columns: 1fr; }
+    .projects-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .project-card {
+        padding: 14px;
+        border-radius: 12px;
+    }
+
+    .project-card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .project-name {
+        font-size: 0.9rem;
+        line-height: 1.35;
+    }
+
+    .project-meta {
+        font-size: 0.72rem;
+        line-height: 1.4;
+        flex-wrap: wrap;
+    }
+
+    .project-card .flex-between {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
 
     /* ── Tables Mobile ── */
     .table-responsive {
