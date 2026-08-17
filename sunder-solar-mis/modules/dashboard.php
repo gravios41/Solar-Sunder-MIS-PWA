@@ -13,7 +13,7 @@ try {
     $quotations  = $supabase->from('quotations')->select('*')->execute() ?? [];
     $activities  = $supabase->from('activity_logs')
                     ->select('*')
-                    ->order('created_at', ['ascending' => false])
+                    ->order('created_at', false)
                     ->execute() ?? [];
 } catch (Exception $e) {
     error_log("Dashboard error: " . $e->getMessage());

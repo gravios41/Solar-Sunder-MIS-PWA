@@ -7,9 +7,11 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Error reporting (disable in production)
+// Error reporting (disable in production but keep logs)
+$isProduction = getenv('APP_ENV') === 'production' || getenv('RENDER') === 'true';
 error_reporting(E_ALL);
-ini_set('display_errors', 1);
+ini_set('display_errors', $isProduction ? '0' : '1');
+ini_set('log_errors', '1');
 
 // Timezone
 date_default_timezone_set('Asia/Manila');
@@ -19,9 +21,10 @@ define('SITE_NAME', 'Sunder Solar MIS');
 $scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? ''));
 $appBasePath = preg_replace('#/(auth|modules|api)$#', '', $scriptDir);
 $appBasePath = rtrim($appBasePath, '/') . '/';
-$forwardedProto = $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '';
-$scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || $forwardedProto === 'https' ? 'https' : 'http';
-$host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+$forwardedProto = $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? $_SERVER['HTTPS'] ?? '';
+$forwardedHost = $_SERVER['HTTP_X_FORWARDED_HOST'] ?? $_SERVER['SERVER_NAME'] ?? $_SERVER['HTTP_HOST'] ?? 'localhost';
+$scheme = (!empty($forwardedProto) && $forwardedProto !== 'off') ? strtolower($forwardedProto) : ((isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http');
+$host = $forwardedHost ?: 'localhost';
 define('APP_BASE_PATH', $appBasePath);
 define('SITE_URL', $scheme . '://' . $host . APP_BASE_PATH);
 define('SITE_VERSION', '1.0.0');

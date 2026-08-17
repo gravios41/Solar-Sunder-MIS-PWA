@@ -191,8 +191,12 @@ class SupabaseQueryBuilder {
     }
     
     public function order($column, $ascending = true) {
+        if (is_array($ascending)) {
+            $ascending = $ascending['ascending'] ?? true;
+        }
+
         $this->orderField = $column;
-        $this->orderAscending = $ascending;
+        $this->orderAscending = (bool) $ascending;
         return $this;
     }
     
