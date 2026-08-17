@@ -469,6 +469,27 @@ $errorMessage = $msgs[$error] ?? '';
             padding: 0;
             margin: 0;
         }
+        .pwa-phone-only-note {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            background: rgba(249, 115, 22, 0.15);
+            border-radius: 8px;
+            margin-bottom: 14px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #FED7AA;
+        }
+        .pwa-phone-only-note i {
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+        .pwa-install-banner .instruction-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
         .pwa-install-banner .instruction-item {
             display: flex;
             gap: 12px;
@@ -847,14 +868,18 @@ $errorMessage = $msgs[$error] ?? '';
                     <i class="fas fa-chevron-down banner-toggle"></i>
                 </div>
                 <div class="banner-content">
+                    <div class="pwa-phone-only-note">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Instructions for Phone/Mobile Devices Only</span>
+                    </div>
                     <ul class="instruction-list">
                         <li class="instruction-item">
                             <span class="step-number">1</span>
-                            <span><strong>Open Menu:</strong> Tap the 3-dot menu icon (⋮) in your browser's top-right corner</span>
+                            <span><strong>Open Phone Menu:</strong> Tap the 3-dot menu icon (⋮) in your mobile browser's top-right corner</span>
                         </li>
                         <li class="instruction-item">
                             <span class="step-number">2</span>
-                            <span><strong>Select Desktop Mode:</strong> Look for "Desktop site" or "Request desktop site" and enable it</span>
+                            <span><strong>Enable Desktop Mode:</strong> Look for "Desktop site" or "Request desktop site" option and enable it</span>
                         </li>
                         <li class="instruction-item">
                             <span class="step-number">3</span>
@@ -862,7 +887,7 @@ $errorMessage = $msgs[$error] ?? '';
                         </li>
                         <li class="instruction-item">
                             <span class="step-number">4</span>
-                            <span><strong>Confirm:</strong> Tap "Install" in the popup to add Sunder Solar MIS to your home screen</span>
+                            <span><strong>Confirm Install:</strong> Tap "Install" in the popup dialog to add Sunder Solar MIS to your phone's home screen</span>
                         </li>
                     </ul>
                     <button type="button" class="install-button" id="pwaInstallBtn" onclick="triggerPwaInstall()">
