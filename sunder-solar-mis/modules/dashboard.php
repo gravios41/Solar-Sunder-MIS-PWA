@@ -41,22 +41,16 @@ include_once __DIR__ . '/../includes/header.php';
             <div style="font-weight:600;color:#333">Install Sunder Solar MIS</div>
             <div style="font-size:0.875rem;color:#666">Get quick access to the app on your device</div>
 
-            <div style="font-weight:600;color:#333">Instructions</div>
+            <div style="font-weight:600;color:#333;margin-top:8px">Phone Instructions</div>
             <div style="font-size:0.875rem;color:#666">1. 📱 Open Menu - Tap 3-dot menu icon (⋮)</div>
             <div style="font-size:0.875rem;color:#666">2. 🖥️ Select Desktop Mode - Enable "Desktop site"</div>
             <div style="font-size:0.875rem;color:#666">3. ⬇️ Install App - "Install app"</div>
-            <div style="font-size:0.875rem;color:#666">4.✅ Confirm - Tap "Install" to add to home screen</div>
+            <div style="font-size:0.875rem;color:#666">4. ✅ Confirm - Tap "Install" to add to home screen</div>
 
+            <div style="font-weight:600;color:#333;margin-top:8px">Desktop Instructions</div>
+            <div style="font-size:0.875rem;color:#666">1. 🖥️ Click the Install button below</div>
+            <div style="font-size:0.875rem;color:#666">2. ✅ Confirm the installation when prompted</div>
         </div>
-        <div class="pwa-instructions desktop-instructions">
-        <div class="instructions-header">
-            <i class="fas fa-desktop"></i>
-            <span>Desktop Installation</span>
-        </div>
-        <div class="instructions-body">
-            <p class="instruction-text">Click Install</p>
-        </div>
-    </div>
     </div>
     <button type="button" id="pwaInstallBtnBanner" class="btn btn-primary" style="white-space:nowrap;flex-shrink:0;cursor:pointer" onclick="installPWA()">
         <i class="fas fa-download"></i> Install
