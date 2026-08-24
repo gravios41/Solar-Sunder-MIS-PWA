@@ -131,7 +131,7 @@ $errorMessage = $msgs[$error] ?? '';
             position: relative;
             z-index: 1;
             width: 100%;
-            max-width: 1000px;
+            max-width: 520px;
             animation: cardEntry 0.7s cubic-bezier(0.16,1,0.3,1) both;
         }
         @keyframes cardEntry {
@@ -168,7 +168,7 @@ $errorMessage = $msgs[$error] ?? '';
         /* Card container */
         .card {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr;
             background: rgba(30, 41, 59, 0.8);
             backdrop-filter: blur(24px);
             -webkit-backdrop-filter: blur(24px);
@@ -178,89 +178,7 @@ $errorMessage = $msgs[$error] ?? '';
             overflow: hidden;
         }
 
-        /* Left panel */
-        .panel-left {
-            background: linear-gradient(145deg, rgba(249,115,22,0.15) 0%, rgba(245,158,11,0.08) 100%);
-            border-right: 1px solid var(--border);
-            padding: 40px;
-            display: flex;
-            flex-direction: column;
-            animation: slideInLeft 0.6s ease 0.2s both;
-        }
-        @keyframes slideInLeft {
-            from { opacity: 0; transform: translateX(-24px); }
-            to   { opacity: 1; transform: translateX(0); }
-        }
-        .panel-left h2 { font-size: 1.25rem; font-weight: 700; color: #fff; margin-bottom: 6px; }
-        .panel-left p  { font-size: 0.82rem; color: var(--light); margin-bottom: 28px; }
-
-        /* Role cards */
-        .role-cards { display: flex; flex-direction: column; gap: 10px; flex: 1; }
-        .role-card {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            padding: 14px 16px;
-            border-radius: 14px;
-            border: 1.5px solid rgba(255,255,255,0.08);
-            cursor: pointer;
-            transition: all 0.25s ease;
-            background: rgba(255,255,255,0.04);
-            position: relative;
-            overflow: hidden;
-        }
-        .role-card::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, rgba(249,115,22,0.12), rgba(245,158,11,0.06));
-            opacity: 0;
-            transition: opacity 0.2s;
-        }
-        .role-card:hover { border-color: rgba(249,115,22,0.4); transform: translateX(4px); }
-        .role-card:hover::before { opacity: 1; }
-        .role-card.active {
-            border-color: var(--orange);
-            background: rgba(249,115,22,0.12);
-            transform: translateX(4px);
-        }
-        .role-card.active::before { opacity: 1; }
-
-        .role-icon-wrap {
-            width: 40px; height: 40px;
-            border-radius: 10px;
-            background: rgba(255,255,255,0.08);
-            display: flex; align-items: center; justify-content: center;
-            flex-shrink: 0;
-            font-size: 1rem;
-            color: var(--light);
-            transition: all 0.2s ease;
-        }
-        .role-card.active .role-icon-wrap,
-        .role-card:hover .role-icon-wrap {
-            background: rgba(249,115,22,0.2);
-            color: var(--orange);
-        }
-
-        .role-info { flex: 1; }
-        .role-info strong { display: block; font-size: 0.875rem; font-weight: 600; color: #fff; line-height: 1.3; }
-        .role-info span   { font-size: 0.75rem; color: var(--light); }
-
-        .role-check {
-            width: 22px; height: 22px;
-            border-radius: 50%;
-            background: var(--success);
-            display: flex; align-items: center; justify-content: center;
-            flex-shrink: 0;
-            opacity: 0;
-            transform: scale(0);
-            transition: all 0.2s var(--ease-spring, cubic-bezier(0.34,1.56,0.64,1));
-            font-size: 0.65rem;
-            color: #fff;
-        }
-        .role-card.active .role-check { opacity: 1; transform: scale(1); }
-
-        /* Right panel */
+        /* Login panel */
         .panel-right {
             padding: 40px;
             background: rgba(15,23,42,0.6);
@@ -464,19 +382,7 @@ $errorMessage = $msgs[$error] ?? '';
                 max-width: 100%;
             }
 
-            .card { 
-                grid-template-columns: 1fr;
-                max-height: none;
-            }
-            
-            .panel-left { 
-                border-right: none; 
-                border-bottom: 1px solid var(--border); 
-                padding: 28px;
-                max-height: 400px;
-                overflow-y: auto;
-                -webkit-overflow-scrolling: touch;
-            }
+            .card { max-height: none; }
             
             .panel-right { 
                 padding: 28px;
@@ -484,13 +390,6 @@ $errorMessage = $msgs[$error] ?? '';
 
             .card-footer { 
                 padding: 14px 28px;
-            }
-
-            /* Make role cards scrollable on small screens */
-            .role-cards {
-                max-height: 280px;
-                overflow-y: auto;
-                -webkit-overflow-scrolling: touch;
             }
 
             /* Modal scrolling on mobile */
@@ -629,59 +528,7 @@ $errorMessage = $msgs[$error] ?? '';
     </div>
 
     <div class="card">
-        <!-- Left: role selection -->
-        <div class="panel-left">
-            <h2>Select Your Role</h2>
-            <p>Choose your access level to continue</p>
-
-            <div class="role-cards">
-                <div class="role-card" data-role="super_admin" onclick="selectRole('super_admin')">
-                    <div class="role-icon-wrap">
-                        <i class="fas fa-shield-alt"></i>
-                    </div>
-                    <div class="role-info">
-                        <strong>Super Admin</strong>
-                        <span>Full system access &amp; user management</span>
-                    </div>
-                    <div class="role-check"><i class="fas fa-check"></i></div>
-                </div>
-
-                <div class="role-card" data-role="admin" onclick="selectRole('admin')">
-                    <div class="role-icon-wrap">
-                        <i class="fas fa-user-cog"></i>
-                    </div>
-                    <div class="role-info">
-                        <strong>Admin</strong>
-                        <span>Edit &amp; view existing records</span>
-                    </div>
-                    <div class="role-check"><i class="fas fa-check"></i></div>
-                </div>
-
-                <div class="role-card" data-role="owner" onclick="selectRole('owner')">
-                    <div class="role-icon-wrap">
-                        <i class="fas fa-crown"></i>
-                    </div>
-                    <div class="role-info">
-                        <strong>Owner</strong>
-                        <span>Full business access &amp; oversight</span>
-                    </div>
-                    <div class="role-check"><i class="fas fa-check"></i></div>
-                </div>
-
-                <div class="role-card" data-role="employee" onclick="selectRole('employee')">
-                    <div class="role-icon-wrap">
-                        <i class="fas fa-user-tie"></i>
-                    </div>
-                    <div class="role-info">
-                        <strong>Employee</strong>
-                        <span>Quotations, projects &amp; task access</span>
-                    </div>
-                    <div class="role-check"><i class="fas fa-check"></i></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Right: login form -->
+        <!-- Login form -->
         <div class="panel-right">
             <h2>Welcome Back</h2>
             <p>Enter your credentials to access the system</p>
@@ -756,12 +603,6 @@ $errorMessage = $msgs[$error] ?? '';
         container.appendChild(p);
     }
 })();
-
-/* ── Role selection (visual only) ── */
-function selectRole(role) {
-    document.querySelectorAll('.role-card').forEach(c => c.classList.remove('active'));
-    document.querySelector(`[data-role="${role}"]`).classList.add('active');
-}
 
 /* ── Password toggle ── */
 const pwToggle  = document.getElementById('pwToggle');
