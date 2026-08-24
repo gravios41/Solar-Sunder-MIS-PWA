@@ -577,7 +577,6 @@ $errorMessage = $msgs[$error] ?? '';
                         <input type="checkbox" name="remember">
                         <span>Remember me</span>
                     </label>
-                    <a href="#" class="forgot-link" onclick="openForgotModal(); return false;">Forgot password?</a>
                 </div>
 
                 <button type="submit" class="btn-submit" id="submitBtn">
