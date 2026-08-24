@@ -36,7 +36,6 @@ include_once __DIR__ . '/../includes/header.php';
 <!-- PWA Install Banner -->
 <div id="pwaInstallBanner" style="margin-bottom:20px;padding:12px 16px;background:#FFF3E0;border:1px solid #FFB74D;border-radius:8px;display:flex;align-items:center;justify-content:space-between;gap:16px">
     <div style="display:flex;align-items:center;gap:12px;flex:1">
-        <i class="fas fa-mobile-alt" style="font-size:20px;color:#F97316;flex-shrink:0"></i>
         <div>
             <div style="font-weight:600;color:#333">Install Sunder Solar MIS</div>
             <div style="font-size:0.875rem;color:#666">Get quick access to the app on your device</div>
