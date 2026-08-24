@@ -368,6 +368,10 @@ $errorMessage = $msgs[$error] ?? '';
             color: rgba(255,255,255,0.9);
         }
 
+        #forgotModal.active {
+            display: flex !important;
+        }
+
         /* Responsive */
         @media (max-width: 700px) {
             /* Allow scrolling on mobile */
