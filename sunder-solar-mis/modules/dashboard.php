@@ -46,10 +46,6 @@ include_once __DIR__ . '/../includes/header.php';
             <div style="font-size:0.875rem;color:#666">2. 🖥️ Select Desktop Mode - Enable "Desktop site"</div>
             <div style="font-size:0.875rem;color:#666">3. ⬇️ Install App - "Install app"</div>
             <div style="font-size:0.875rem;color:#666">4. ✅ Confirm - Tap "Install" to add to home screen</div>
-
-            <div style="font-weight:600;color:#333;margin-top:8px">Desktop Instructions</div>
-            <div style="font-size:0.875rem;color:#666">1. 🖥️ Click the Install button below</div>
-            <div style="font-size:0.875rem;color:#666">2. ✅ Confirm the installation when prompted</div>
         </div>
     </div>
     <button type="button" id="pwaInstallBtnBanner" class="btn btn-primary" style="white-space:nowrap;flex-shrink:0;cursor:pointer" onclick="installPWA()">
