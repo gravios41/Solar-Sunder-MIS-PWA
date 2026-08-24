@@ -475,12 +475,18 @@ $errorMessage = $msgs[$error] ?? '';
             </div>
             <button onclick="verifyIdentity()" id="fpVerifyBtn"
                     style="width:100%;padding:12px;background:linear-gradient(135deg,#F97316,#F59E0B);color:#fff;border:none;border-radius:11px;font-size:0.9rem;font-weight:700;cursor:pointer;font-family:inherit">
-                <span id="fpVerifyText"><i class="fas fa-arrow-right"></i> Continue</span>
+                <span id="fpVerifyText"><i class="fas fa-envelope"></i> Send Reset Code</span>
             </button>
         </div>
 
-        <!-- Step 2: New password -->
+        <!-- Step 2: Enter code and new password -->
         <div id="fpStep2" style="display:none">
+            <div style="margin-bottom:16px">
+                <label style="display:block;font-size:0.8rem;font-weight:600;color:rgba(255,255,255,0.75);margin-bottom:7px">Email Reset Code</label>
+                <input type="text" id="fpResetCode" placeholder="Enter the 8-character code"
+                       autocomplete="one-time-code" maxlength="8" style="width:100%;background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.1);border-radius:11px;padding:11px 14px;color:#fff;font-size:0.875rem;outline:none;font-family:inherit;text-transform:uppercase"
+                       onfocus="this.style.borderColor='#F97316'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
+            </div>
             <div style="margin-bottom:16px">
                 <label style="display:block;font-size:0.8rem;font-weight:600;color:rgba(255,255,255,0.75);margin-bottom:7px">New Password</label>
                 <div style="position:relative">
@@ -623,14 +629,13 @@ document.getElementById('loginForm').addEventListener('submit', function() {
 });
 
 /* ── Forgot Password ── */
-let fpUserId = null;
-
 function openForgotModal() {
     document.getElementById('forgotModal').classList.add('active');
     document.getElementById('fpStep1').style.display = 'block';
     document.getElementById('fpStep2').style.display = 'none';
     document.getElementById('fpUsername').value = '';
     document.getElementById('fpEmail').value = '';
+    document.getElementById('fpResetCode').value = '';
     fpShowAlert('', '');
     document.getElementById('fpSubtitle').textContent = 'Enter your username and registered email';
     setTimeout(() => document.getElementById('fpUsername').focus(), 100);
@@ -669,11 +674,10 @@ async function verifyIdentity() {
         const result = await res.json();
 
         if (result.success) {
-            fpUserId = result.user_id;
-            fpShowAlert('', '');
+            fpShowAlert(result.message, 'success');
             document.getElementById('fpStep1').style.display = 'none';
             document.getElementById('fpStep2').style.display = 'block';
-            document.getElementById('fpSubtitle').textContent = `Hi ${result.full_name} — set your new password`;
+            document.getElementById('fpSubtitle').textContent = 'Enter the code sent to your email, then set a new password';
             setTimeout(() => document.getElementById('fpNewPw').focus(), 100);
         } else {
             fpShowAlert(result.error, 'error');
@@ -682,13 +686,15 @@ async function verifyIdentity() {
         fpShowAlert('Connection error. Please try again.', 'error');
     }
 
-    document.getElementById('fpVerifyText').innerHTML = '<i class="fas fa-arrow-right"></i> Continue';
+    document.getElementById('fpVerifyText').innerHTML = '<i class="fas fa-envelope"></i> Send Reset Code';
     btn.disabled = false;
 }
 
 async function resetPassword() {
+    const resetCode = document.getElementById('fpResetCode').value.trim();
     const newPw     = document.getElementById('fpNewPw').value;
     const confirmPw = document.getElementById('fpConfirmPw').value;
+    if (!resetCode)        { fpShowAlert('Please enter the reset code from your email.', 'error'); return; }
     if (!newPw || !confirmPw) { fpShowAlert('Please fill in both password fields.', 'error'); return; }
     if (newPw.length < 6)     { fpShowAlert('Password must be at least 6 characters.', 'error'); return; }
     if (newPw !== confirmPw)  { fpShowAlert('Passwords do not match.', 'error'); return; }
@@ -701,7 +707,7 @@ async function resetPassword() {
         const res    = await fetch('reset-password.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ step: 'reset', user_id: fpUserId, new_password: newPw, confirm_password: confirmPw })
+            body: JSON.stringify({ step: 'reset', reset_code: resetCode, new_password: newPw, confirm_password: confirmPw })
         });
         const result = await res.json();
 
@@ -724,6 +730,7 @@ async function resetPassword() {
 function goBackStep1() {
     document.getElementById('fpStep2').style.display = 'none';
     document.getElementById('fpStep1').style.display = 'block';
+    document.getElementById('fpResetCode').value = '';
     document.getElementById('fpSubtitle').textContent = 'Enter your username and registered email';
     fpShowAlert('', '');
 }
