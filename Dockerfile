@@ -2,6 +2,13 @@ FROM php:8.3-apache
 
 RUN a2enmod rewrite headers
 
+# Tesseract OCR — used by api/bill-upload-ocr.php to read kWh/billing period
+# off an uploaded electric bill. Without this the binary simply doesn't
+# exist in the container and every OCR request fails, forcing manual entry.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends tesseract-ocr \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY docker/apache-site.conf /etc/apache2/sites-available/000-default.conf
 COPY ["sunder-solar-mis/", "/var/www/html/"]
 

@@ -94,15 +94,13 @@ if (!move_uploaded_file($file['tmp_name'], $filePath)) {
     exit;
 }
 
-// Run Tesseract OCR
-$tesseractPath = 'C:\\Program Files\\Tesseract-OCR\\tesseract.exe';
-if (!file_exists($tesseractPath)) {
-    $tesseractPath = 'C:\\Program Files (x86)\\Tesseract-OCR\\tesseract.exe';
-}
-
-if (!file_exists($tesseractPath)) {
+// Run Tesseract OCR — the binary lives at a different path depending on
+// whether this is running on a local Windows/XAMPP dev box or the Linux
+// Docker container on Render (see Dockerfile, which apt-installs it there).
+$tesseractPath = findTesseractBinary();
+if (!$tesseractPath) {
     http_response_code(500);
-    echo json_encode(['error' => 'Tesseract not found on system']);
+    echo json_encode(['error' => 'Tesseract OCR is not installed on this server']);
     exit;
 }
 
@@ -184,6 +182,29 @@ try {
     echo json_encode([
         'error' => 'Database error: ' . $e->getMessage()
     ]);
+}
+
+/**
+ * Locate the Tesseract binary regardless of platform: hardcoded Windows
+ * install paths for local dev, common Linux paths for the Docker/Render
+ * deployment, falling back to a PATH lookup for any other install layout.
+ */
+function findTesseractBinary() {
+    $candidates = [
+        'C:\\Program Files\\Tesseract-OCR\\tesseract.exe',
+        'C:\\Program Files (x86)\\Tesseract-OCR\\tesseract.exe',
+        '/usr/bin/tesseract',
+        '/usr/local/bin/tesseract',
+    ];
+    foreach ($candidates as $path) {
+        if (file_exists($path)) {
+            return $path;
+        }
+    }
+
+    $isWindows = stripos(PHP_OS, 'WIN') === 0;
+    $which = trim((string)@shell_exec($isWindows ? 'where tesseract 2>NUL' : 'command -v tesseract 2>/dev/null'));
+    return $which !== '' ? $which : null;
 }
 
 /**
