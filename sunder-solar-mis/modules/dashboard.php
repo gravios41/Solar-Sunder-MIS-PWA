@@ -161,7 +161,7 @@ include_once __DIR__ . '/../includes/header.php';
 <?php endif; ?>
 
 <!-- ── Content Grid ────────────────────── -->
-<div style="display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start">
+<div class="dashboard-content-grid" style="display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start">
 
     <!-- Recent Projects -->
     <div class="card" style="margin-bottom:0">

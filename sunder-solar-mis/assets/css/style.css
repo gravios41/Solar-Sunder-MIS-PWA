@@ -1930,6 +1930,14 @@ body {
     .projects-grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
     .tasks-board   { grid-template-columns: 1fr; gap: 14px; }
     .grid-cols-4   { grid-template-columns: repeat(2, 1fr); }
+
+    /* Dashboard's Recent Projects / Recent Activity row is a fixed
+       "1fr 340px" inline-styled grid meant for desktop widths — needs
+       !important to beat that inline style once the viewport narrows
+       (including phones with "Desktop site" forced on, which fake a
+       ~980px viewport and land in this range), otherwise both cards get
+       squeezed into half-width columns and their text truncates hard. */
+    .dashboard-content-grid { grid-template-columns: 1fr !important; }
 }
 
 @media (max-width: 768px) {
