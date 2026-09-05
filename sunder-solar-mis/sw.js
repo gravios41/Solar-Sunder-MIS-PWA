@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'sunder-solar-mis-v1';
+const CACHE_VERSION = 'sunder-solar-mis-v2';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
@@ -53,6 +53,23 @@ self.addEventListener('fetch', (event) => {
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request).catch(() => caches.match('./offline.html'))
+    );
+    return;
+  }
+
+  // CSS/JS: network-first, falling back to cache only when offline — a
+  // cache-first strategy here meant every deploy was invisible until a
+  // user cleared site data, since the service worker never re-asked the
+  // network for files it already had a cached copy of.
+  if (/\.(css|js)$/.test(requestUrl.pathname)) {
+    event.respondWith(
+      fetch(request).then((response) => {
+        if (response && response.status === 200 && response.type === 'basic') {
+          const copy = response.clone();
+          caches.open(RUNTIME_CACHE).then((cache) => cache.put(request, copy));
+        }
+        return response;
+      }).catch(() => caches.match(request))
     );
     return;
   }
