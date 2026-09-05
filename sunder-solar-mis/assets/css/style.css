@@ -2124,6 +2124,20 @@ body {
     .task-card { padding: 12px !important; }
     #projectTasksModalGrid { gap: 10px !important; }
 
+    /* PWA install banner: its text sits inline-flex next to the Install
+       button on desktop, but the global .btn{width:100%} mobile rule
+       (below) forces that same button to claim the row's full width while
+       it also refuses to shrink — squeezing the text into a sliver that
+       wraps one word per line and pushing the button past the card edge.
+       Stacking it into a column on mobile puts the now-full-width button
+       in its own row below the text instead, which reads correctly. */
+    #pwaInstallBanner {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 12px !important;
+    }
+    #pwaInstallBanner > div:first-child { width: 100%; }
+
     .card-header {
         padding: 12px;
         flex-wrap: wrap;
