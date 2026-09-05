@@ -38,7 +38,12 @@ switch ($method) {
 // ============================================
 function handleGetReports() {
     global $supabase;
-    
+
+    if (!hasPermission('reports', 'view')) {
+        echo json_encode(['success' => false, 'error' => 'Permission denied']);
+        return;
+    }
+
     $id = $_GET['id'] ?? null;
     $type = $_GET['type'] ?? '';
     $period = $_GET['period'] ?? '';

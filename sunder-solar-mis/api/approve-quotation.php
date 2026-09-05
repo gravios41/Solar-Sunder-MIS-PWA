@@ -149,13 +149,90 @@ try {
     $projectRow = $supabase->getById('projects', $projectId);
     $startDate = $projectRow['start_date'] ?? date('Y-m-d');
     $standardTasks = [
-        ['title' => 'Site Survey & Roof Assessment', 'description' => 'Inspect roof structure and identify optimal panel placement (est. 2 hrs)', 'days_offset' => 0],
-        ['title' => 'Obtain Permits & Approvals', 'description' => 'File necessary permits with local authorities (est. 8 hrs)', 'days_offset' => 2],
-        ['title' => 'Equipment Procurement', 'description' => 'Order and receive all system components', 'days_offset' => 5],
-        ['title' => 'Electrical Wiring & Panel Installation', 'description' => 'Install mounting system and solar panels (est. 8 hrs)', 'days_offset' => 9],
-        ['title' => 'Inverter & Battery Installation', 'description' => 'Install inverter and connect to system (est. 4 hrs)', 'days_offset' => 11],
-        ['title' => 'Grid Connection & Testing', 'description' => 'Connect to grid and perform comprehensive testing (est. 2 hrs)', 'days_offset' => 12],
-        ['title' => 'Customer Training & Handover', 'description' => 'Train customer on system operation and monitoring (est. 1 hr)', 'days_offset' => 13],
+        [
+            'title' => 'Site Survey & Roof Assessment',
+            'description' => 'Inspect roof structure and identify optimal panel placement (est. 2 hrs)',
+            'days_offset' => 0,
+            'checklist' => [
+                'Inspect roof structure and condition',
+                'Measure available roof/mounting area',
+                'Check roof orientation and shading',
+                'Assess main electrical panel and breaker box location',
+                'Document findings and take site photos',
+            ],
+        ],
+        [
+            'title' => 'Obtain Permits & Approvals',
+            'description' => 'File necessary permits with local authorities (est. 8 hrs)',
+            'days_offset' => 2,
+            'checklist' => [
+                'Prepare permit application documents',
+                'Submit application to local building office',
+                'Submit utility interconnection application',
+                'Follow up on permit status',
+                'Receive approved permits',
+            ],
+        ],
+        [
+            'title' => 'Equipment Procurement',
+            'description' => 'Order and receive all system components',
+            'days_offset' => 5,
+            'checklist' => [
+                'Confirm equipment list against approved quotation',
+                'Order solar panels',
+                'Order inverter and battery',
+                'Order mounting hardware and cables',
+                'Receive and inspect delivered equipment',
+            ],
+        ],
+        [
+            'title' => 'Electrical Wiring & Panel Installation',
+            'description' => 'Install mounting system and solar panels (est. 8 hrs)',
+            'days_offset' => 9,
+            'checklist' => [
+                'Install roof mounting brackets/rails',
+                'Mounting the panels onto racking',
+                'Secure panel wirings and connectors',
+                'Route DC cables to inverter location',
+                'Install grounding and lightning protection',
+            ],
+        ],
+        [
+            'title' => 'Inverter & Battery Installation',
+            'description' => 'Install inverter and connect to system (est. 4 hrs)',
+            'days_offset' => 11,
+            'checklist' => [
+                'Mounting the inverter',
+                'Mounting the battery',
+                'Connect inverter to battery bank',
+                'Wire inverter to panel DC input',
+                'Mounting the breaker/disconnect switch',
+            ],
+        ],
+        [
+            'title' => 'Grid Connection & Testing',
+            'description' => 'Connect to grid and perform comprehensive testing (est. 2 hrs)',
+            'days_offset' => 12,
+            'checklist' => [
+                'Connect system to main electrical panel/breaker',
+                'Perform continuity and insulation testing',
+                'Power on system and check inverter readings',
+                'Verify grid synchronization and net metering',
+                'Run full system test under load',
+            ],
+        ],
+        [
+            'title' => 'Customer Training & Handover',
+            'description' => 'Train customer on system operation and monitoring (est. 1 hr)',
+            'days_offset' => 13,
+            'checklist' => [
+                'Walk customer through system components',
+                'Demonstrate monitoring app/dashboard',
+                'Explain maintenance and safety procedures',
+                'Provide warranty documents and manuals',
+                'Obtain customer sign-off',
+            ],
+        ],
     ];
 
     $createdTasks = [];
@@ -168,11 +245,31 @@ try {
             'assigned_to' => '',
             'priority' => 'medium',
             'due_date' => date('Y-m-d', strtotime("+{$taskTemplate['days_offset']} days", strtotime($startDate))),
+            'checklist_count' => count($taskTemplate['checklist']),
+            'checklist_completed' => 0,
+            'progress_percent' => 0,
             'created_at' => date('Y-m-d H:i:s'),
             'updated_at' => date('Y-m-d H:i:s')
         ];
         $taskResponse = $supabase->insert('tasks', $taskData);
-        $createdTasks[] = $taskResponse[0] ?? $taskResponse;
+        $task = $taskResponse[0] ?? $taskResponse;
+        $createdTasks[] = $task;
+
+        // Pre-populate the checklist with the concrete installation steps
+        // for this task, so the assigned employee checks off real work
+        // instead of having to type every item themselves first.
+        $taskId = $task['id'] ?? null;
+        if ($taskId) {
+            foreach ($taskTemplate['checklist'] as $sequence => $item) {
+                $supabase->insert('task_checklists', [
+                    'task_id' => $taskId,
+                    'checklist_item' => $item,
+                    'is_completed' => false,
+                    'sequence' => $sequence + 1,
+                    'created_by' => $_SESSION['user_id'],
+                ]);
+            }
+        }
     }
 
     // Mark the quotation approved

@@ -34,6 +34,11 @@ switch ($method) {
 }
 
 function handleGetInventory($supabase) {
+    if (!hasPermission('inventory', 'view')) {
+        echo json_encode(['success' => false, 'error' => 'Permission denied']);
+        return;
+    }
+
     $id = $_GET['id'] ?? null;
     $category = $_GET['category'] ?? '';
     $status = $_GET['status'] ?? '';

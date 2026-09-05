@@ -124,9 +124,22 @@ function displayToast() {
 function checkPageAccess($module) {
     if (!hasPermission($module, 'view')) {
         setToast('You do not have permission to access this page', 'error');
-        header('Location: ' . SITE_URL . 'modules/dashboard.php');
+        header('Location: ' . SITE_URL . firstAccessibleModuleUrl());
         exit();
     }
+}
+
+// The first module (in priority order) the current role actually has 'view'
+// on — used as a safe redirect target so a role locked out of dashboard.php
+// itself (e.g. admin) doesn't get bounced right back into another denial.
+function firstAccessibleModuleUrl() {
+    $priority = ['dashboard', 'tasks', 'customers', 'quotations', 'projects', 'installations', 'reports', 'inventory', 'energy-assessments'];
+    foreach ($priority as $module) {
+        if (hasPermission($module, 'view')) {
+            return "modules/$module.php";
+        }
+    }
+    return 'auth/logout.php';
 }
 
 // Get user initials
@@ -193,5 +206,68 @@ function archiveRecord($entityType, $id) {
     }
     $supabase->delete($entityType, $id);
     return true;
+}
+
+// Called whenever a task's status becomes 'completed'. If every task on that
+// task's project is now completed too, the whole pipeline is closed out:
+// the project and its installation(s) are marked completed, and a
+// completion report is auto-generated. This is the "Task -> Report" link
+// shared by both automated approval chains (Assessment/Quotation -> Project
+// -> Installation -> Task -> Report) — kept as a single function so both
+// task-checklist-api.php and tasks-api.php can call it without duplicating
+// the completion logic.
+function completeProjectPipelineIfDone($supabase, $projectId) {
+    if (!$projectId) return;
+
+    try {
+        $project = $supabase->getById('projects', $projectId);
+        if (!$project || ($project['status'] ?? '') === 'completed') {
+            return; // no project, or pipeline already closed out
+        }
+
+        $tasks = $supabase->getAll('tasks', ['project_id' => 'eq.' . $projectId, 'deleted_at' => 'is.null', 'select' => 'status']) ?: [];
+        if (empty($tasks)) return;
+
+        foreach ($tasks as $t) {
+            if (($t['status'] ?? '') !== 'completed') {
+                return; // still work left to do
+            }
+        }
+
+        $today = date('Y-m-d');
+
+        $supabase->update('projects', $projectId, [
+            'status'     => 'completed',
+            'progress'   => 100,
+            'updated_at' => date('Y-m-d H:i:s'),
+        ]);
+
+        $installations = $supabase->getAll('installations', ['project_id' => 'eq.' . $projectId, 'deleted_at' => 'is.null']) ?: [];
+        foreach ($installations as $inst) {
+            $supabase->update('installations', $inst['id'], [
+                'status'     => 'completed',
+                'progress'   => 100,
+                'updated_at' => date('Y-m-d H:i:s'),
+            ]);
+        }
+
+        $customer = !empty($project['customer_id']) ? $supabase->getById('customers', $project['customer_id']) : null;
+
+        $supabase->insert('reports', [
+            'report_name'    => sprintf('Installation Completion — %s (%s)', $project['project_name'] ?? 'Project', $customer['name'] ?? 'Customer'),
+            'report_type'    => 'Installations',
+            'period'         => date('F Y'),
+            'date_from'      => $project['start_date'] ?? null,
+            'date_to'        => $today,
+            'generated_date' => $today,
+            'format'         => 'PDF',
+            'file_size'      => '—',
+            'created_at'     => date('Y-m-d H:i:s'),
+        ]);
+
+        logActivity($_SESSION['user_id'] ?? 0, 'update', 'projects', "All tasks complete — project \"{$project['project_name']}\" and its installation auto-marked completed, completion report generated");
+    } catch (Exception $e) {
+        error_log('completeProjectPipelineIfDone failed: ' . $e->getMessage());
+    }
 }
 ?>

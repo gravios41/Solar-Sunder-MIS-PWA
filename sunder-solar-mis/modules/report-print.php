@@ -2,6 +2,7 @@
 // modules/report-print.php — Comprehensive printable report
 require_once __DIR__ . '/../config/config.php';
 if (!isset($_SESSION['user_id'])) { header('Location: ../auth/login.php'); exit(); }
+if (!hasPermission('reports', 'view')) { http_response_code(403); die('Permission denied'); }
 
 $id = $_GET['id'] ?? null;
 if (!$id) die('Report ID required');

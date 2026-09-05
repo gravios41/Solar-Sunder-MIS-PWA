@@ -233,21 +233,27 @@ function renderTasks() {
         }
         return taskList.map(t => {
             const project = projects.find(p => p.id === t.project_id);
+            // Quick Start/Complete bypasses the checklist entirely, so it's
+            // limited to the same roles that can edit a task outright — for
+            // an employee, task progress is driven only by the checklist,
+            // and admin/owner-without-edit view tasks read-only.
             let statusBtn = '';
-            if (t.status === 'pending') {
-                statusBtn = `
-                    <div class="flex gap-2 pt-2 border-t">
-                        <button onclick="updateTaskStatus(${t.id}, 'in_progress')" class="btn btn-secondary btn-sm flex-1">
-                            <i class="fas fa-play"></i> Start
-                        </button>
-                    </div>`;
-            } else if (t.status === 'in_progress') {
-                statusBtn = `
-                    <div class="flex gap-2 pt-2 border-t">
-                        <button onclick="updateTaskStatus(${t.id}, 'completed')" class="btn btn-success btn-sm flex-1">
-                            <i class="fas fa-check"></i> Complete
-                        </button>
-                    </div>`;
+            if (USER_ROLE === 'super_admin' || USER_ROLE === 'owner') {
+                if (t.status === 'pending') {
+                    statusBtn = `
+                        <div class="flex gap-2 pt-2 border-t">
+                            <button onclick="updateTaskStatus(${t.id}, 'in_progress')" class="btn btn-secondary btn-sm flex-1">
+                                <i class="fas fa-play"></i> Start
+                            </button>
+                        </div>`;
+                } else if (t.status === 'in_progress') {
+                    statusBtn = `
+                        <div class="flex gap-2 pt-2 border-t">
+                            <button onclick="updateTaskStatus(${t.id}, 'completed')" class="btn btn-success btn-sm flex-1">
+                                <i class="fas fa-check"></i> Complete
+                            </button>
+                        </div>`;
+                }
             }
             const editBtn = (USER_ROLE === 'super_admin' || USER_ROLE === 'owner')
                 ? `<button onclick="editTask(${t.id})" class="btn-icon" title="Edit"><i class="fas fa-edit" style="color:#F97316"></i></button>`
@@ -331,11 +337,23 @@ async function updateTaskStatus(id, newStatus) {
 }
 
 function viewTask(id) {
-    const t = tasks.find(t => t.id === id);
-    if (!t) return;
-    
-    // Open task detail with checklist modal
-    openTaskDetailModal(t);
+    // Compare as strings — protects against any number/string ID mismatch
+    // between the tasks array and the onclick-handler argument, which
+    // would otherwise fail this lookup silently (no error, modal just
+    // never opens).
+    const t = tasks.find(t => String(t.id) === String(id));
+    if (!t) {
+        console.error('viewTask: no task found with id', id, 'in', tasks.map(x => x.id));
+        showToast('Could not open this task — please refresh and try again', 'error');
+        return;
+    }
+
+    try {
+        openTaskDetailModal(t);
+    } catch (error) {
+        console.error('Error opening task detail modal:', error);
+        showToast('Error opening task: ' + error.message, 'error');
+    }
 }
 
 function openTaskModal(task = null) {
@@ -527,15 +545,23 @@ async function loadChecklist() {
         const result = await response.json();
         
         if (result.success) {
+            // The modal (and currentTaskId) may have been closed while this
+            // fetch was in flight — bail out quietly instead of throwing on
+            // elements that no longer exist.
+            if (!currentTaskId) return;
+
             const checklists = result.data || [];
             const summary = result.summary || {};
-            
-            // Update progress bar
-            document.getElementById('progressFill').style.width = (summary.progress_percent || 0) + '%';
-            document.getElementById('progressText').textContent = (summary.progress_percent || 0) + '%';
-            
-            // Render checklists
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
             const container = document.getElementById('checklistContainer');
+            if (!progressFill || !progressText || !container) return;
+
+            // Update progress bar
+            progressFill.style.width = (summary.progress_percent || 0) + '%';
+            progressText.textContent = (summary.progress_percent || 0) + '%';
+
+            // Render checklists
             if (checklists.length === 0) {
                 container.innerHTML = '<p style="text-align: center; color: #94a3b8;">No checklist items yet</p>';
             } else {
@@ -550,7 +576,8 @@ async function loadChecklist() {
         }
     } catch (error) {
         console.error('Error loading checklist:', error);
-        document.getElementById('checklistContainer').innerHTML = '<p style="color: #dc2626;">Error loading checklist</p>';
+        const container = document.getElementById('checklistContainer');
+        if (container) container.innerHTML = '<p style="color: #dc2626;">Error loading checklist</p>';
     }
 }
 

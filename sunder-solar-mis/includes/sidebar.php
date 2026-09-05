@@ -32,6 +32,7 @@ function isActive($page) {
     <nav class="sidebar-nav">
 
         <!-- Main -->
+        <?php if (hasPermission('dashboard', 'view')): ?>
         <div class="sidebar-section">
             <div class="sidebar-section-title">Main</div>
 
@@ -46,12 +47,13 @@ function isActive($page) {
         </div>
 
         <div class="sidebar-divider"></div>
+        <?php endif; ?>
 
         <!-- CRM & Sales -->
         <div class="sidebar-section">
             <div class="sidebar-section-title">CRM &amp; Sales</div>
 
-            <?php if ($userRole !== 'employee'): ?>
+            <?php if (hasPermission('customers', 'view')): ?>
             <div class="nav-item">
                 <a href="<?php echo htmlspecialchars($appBasePath); ?>modules/customers.php"
                    class="nav-link <?= isActive('customers.php') ?>"
@@ -71,6 +73,7 @@ function isActive($page) {
                 </a>
             </div>
 
+            <?php if (hasPermission('energy-assessments', 'view')): ?>
             <div class="nav-item">
                 <a href="<?php echo htmlspecialchars($appBasePath); ?>modules/energy-assessments.php"
                    class="nav-link <?= isActive('energy-assessments.php') ?>"
@@ -79,6 +82,7 @@ function isActive($page) {
                     <span>Energy Assessments</span>
                 </a>
             </div>
+            <?php endif; ?>
         </div>
 
         <div class="sidebar-divider"></div>
@@ -114,7 +118,7 @@ function isActive($page) {
                 </a>
             </div>
 
-            <?php if ($userRole !== 'employee'): ?>
+            <?php if (hasPermission('inventory', 'view')): ?>
             <div class="nav-item">
                 <a href="<?php echo htmlspecialchars($appBasePath); ?>modules/inventory.php"
                    class="nav-link <?= isActive('inventory.php') ?>"
@@ -129,6 +133,7 @@ function isActive($page) {
         <div class="sidebar-divider"></div>
 
         <!-- Analytics & Settings -->
+        <?php if (hasPermission('reports', 'view')): ?>
         <div class="sidebar-section">
             <div class="sidebar-section-title">Analytics</div>
 
@@ -143,11 +148,13 @@ function isActive($page) {
         </div>
 
         <div class="sidebar-divider"></div>
+        <?php endif; ?>
 
         <!-- System -->
         <div class="sidebar-section">
             <div class="sidebar-section-title">System</div>
 
+            <?php if (hasPermission('settings', 'view')): ?>
             <div class="nav-item">
                 <a href="<?php echo htmlspecialchars($appBasePath); ?>modules/settings.php"
                    class="nav-link <?= isActive('settings.php') ?>"
@@ -156,6 +163,7 @@ function isActive($page) {
                     <span>Settings</span>
                 </a>
             </div>
+            <?php endif; ?>
 
             <?php if (hasPermission('users', 'view')): ?>
             <div class="nav-item">
@@ -168,7 +176,7 @@ function isActive($page) {
             </div>
             <?php endif; ?>
 
-            <?php if (in_array($userRole, ['super_admin', 'admin', 'owner'])): ?>
+            <?php if (in_array($userRole, ['super_admin', 'owner'])): ?>
             <div class="nav-item">
                 <a href="<?php echo htmlspecialchars($appBasePath); ?>modules/archives.php"
                    class="nav-link <?= isActive('archives.php') ?>"

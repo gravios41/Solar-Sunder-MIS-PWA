@@ -6,6 +6,7 @@ require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../includes/auth.php';
 
 checkAuthentication();
+checkPageAccess('settings');
 
 $pageTitle = 'Settings';
 $pageSubtitle = 'Manage your account and preferences';

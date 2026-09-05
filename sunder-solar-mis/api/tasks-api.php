@@ -175,9 +175,15 @@ function handlePutTask() {
         }
         
         $result = $supabase->update('tasks', $id, $data);
-        
+
         if ($result) {
             logActivity($_SESSION['user_id'], 'update', 'tasks', "Updated task ID: $id");
+
+            if (($data['status'] ?? '') === 'completed') {
+                $task = $supabase->getById('tasks', $id);
+                completeProjectPipelineIfDone($supabase, $task['project_id'] ?? null);
+            }
+
             echo json_encode(['success' => true, 'data' => $result, 'message' => 'Task updated successfully']);
         } else {
             echo json_encode(['success' => false, 'error' => 'Failed to update task']);

@@ -15,7 +15,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $role = $_SESSION['user_role'] ?? '';
-if (!in_array($role, ['super_admin', 'admin', 'owner'])) {
+if (!in_array($role, ['super_admin', 'owner'])) {
     echo json_encode(['success' => false, 'error' => 'Permission denied']);
     exit();
 }

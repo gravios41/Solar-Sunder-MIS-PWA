@@ -2,6 +2,7 @@
 // modules/dashboard.php
 require_once __DIR__ . '/../config/config.php';
 requireAuth();
+checkPageAccess('dashboard');
 
 $pageTitle    = 'Dashboard';
 $pageSubtitle = 'Overview of your solar business';

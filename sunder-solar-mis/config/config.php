@@ -88,20 +88,26 @@ function getRolePermissions() {
             'settings' => ['view' => true, 'edit' => true, 'delete' => true, 'create' => true],
             'users' => ['view' => true, 'edit' => true, 'delete' => true, 'create' => true]
         ],
+        // Admin: access restricted to exactly six modules — Customers,
+        // Quotations, Installations, Projects, Tasks, Reports — all
+        // view-only (reports can still be downloaded/printed since that
+        // only needs 'view'). Dashboard, Inventory, Energy Assessments,
+        // Settings and Users are all off-limits.
         'admin' => [
-            'dashboard' => ['view' => true, 'edit' => false, 'delete' => false, 'create' => false],
-            'customers' => ['view' => true, 'edit' => true, 'delete' => false, 'create' => false],
+            'dashboard' => ['view' => false, 'edit' => false, 'delete' => false, 'create' => false],
+            'customers' => ['view' => true, 'edit' => false, 'delete' => false, 'create' => false],
             'projects' => ['view' => true, 'edit' => false, 'delete' => false, 'create' => false],
-            'inventory' => ['view' => true, 'edit' => true, 'delete' => false, 'create' => false],
+            'inventory' => ['view' => false, 'edit' => false, 'delete' => false, 'create' => false],
             'quotations' => ['view' => true, 'edit' => false, 'delete' => false, 'create' => false],
-            'energy-assessments' => ['view' => true, 'edit' => false, 'delete' => false, 'create' => false],
+            'energy-assessments' => ['view' => false, 'edit' => false, 'delete' => false, 'create' => false],
             'installations' => ['view' => true, 'edit' => false, 'delete' => false, 'create' => false],
-            'tasks' => ['view' => true, 'edit' => true, 'delete' => false, 'create' => false],
+            'tasks' => ['view' => true, 'edit' => false, 'delete' => false, 'create' => false],
             'task-checklist' => ['view' => true, 'edit' => false, 'delete' => false, 'create' => false],
             'reports' => ['view' => true, 'edit' => false, 'delete' => false, 'create' => false],
-            'settings' => ['view' => true, 'edit' => false, 'delete' => false, 'create' => false],
+            'settings' => ['view' => false, 'edit' => false, 'delete' => false, 'create' => false],
             'users' => ['view' => false, 'edit' => false, 'delete' => false, 'create' => false]
         ],
+        // Owner: full access everywhere except user management.
         'owner' => [
             'dashboard' => ['view' => true, 'edit' => true, 'delete' => true, 'create' => true],
             'customers' => ['view' => true, 'edit' => true, 'delete' => true, 'create' => true],
@@ -114,20 +120,23 @@ function getRolePermissions() {
             'task-checklist' => ['view' => true, 'edit' => false, 'delete' => false, 'create' => false],
             'reports' => ['view' => true, 'edit' => true, 'delete' => true, 'create' => true],
             'settings' => ['view' => true, 'edit' => true, 'delete' => false, 'create' => false],
-            'users' => ['view' => true, 'edit' => true, 'delete' => true, 'create' => true]
+            'users' => ['view' => false, 'edit' => false, 'delete' => false, 'create' => false]
         ],
+        // Employee: can view every module except reports and user
+        // management; the only thing they actually work in is a task's
+        // checklist (see task-checklist below) — not the task record itself.
         'employee' => [
             'dashboard'     => ['view' => true,  'edit' => false, 'delete' => false, 'create' => false],
             'quotations'    => ['view' => true,  'edit' => false, 'delete' => false, 'create' => false],
             'energy-assessments' => ['view' => true,  'edit' => false, 'delete' => false, 'create' => false],
             'projects'      => ['view' => true,  'edit' => false, 'delete' => false, 'create' => false],
             'installations' => ['view' => true,  'edit' => false, 'delete' => false, 'create' => false],
-            'tasks'         => ['view' => true,  'edit' => true,  'delete' => false, 'create' => true],
+            'tasks'         => ['view' => true,  'edit' => false, 'delete' => false, 'create' => false],
             'task-checklist' => ['view' => true, 'edit' => true,  'delete' => true,  'create' => true],
-            'reports'       => ['view' => true,  'edit' => false, 'delete' => false, 'create' => false],
+            'reports'       => ['view' => false, 'edit' => false, 'delete' => false, 'create' => false],
             'settings'      => ['view' => true,  'edit' => true,  'delete' => false, 'create' => false],
-            'customers'     => ['view' => false, 'edit' => false, 'delete' => false, 'create' => false],
-            'inventory'     => ['view' => false, 'edit' => false, 'delete' => false, 'create' => false],
+            'customers'     => ['view' => true,  'edit' => false, 'delete' => false, 'create' => false],
+            'inventory'     => ['view' => true,  'edit' => false, 'delete' => false, 'create' => false],
             'users'         => ['view' => false, 'edit' => false, 'delete' => false, 'create' => false],
         ]
     ];

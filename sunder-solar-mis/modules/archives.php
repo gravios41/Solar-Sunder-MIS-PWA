@@ -6,8 +6,8 @@ require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../includes/auth.php';
 checkAuthentication();
 
-if (!in_array($_SESSION['user_role'] ?? '', ['super_admin', 'admin', 'owner'])) {
-    header('Location: ../modules/dashboard.php');
+if (!in_array($_SESSION['user_role'] ?? '', ['super_admin', 'owner'])) {
+    header('Location: ' . SITE_URL . firstAccessibleModuleUrl());
     exit();
 }
 

@@ -3,6 +3,7 @@
 require_once __DIR__ . '/../config/config.php';
 
 if (!isset($_SESSION['user_id'])) { http_response_code(403); exit('Unauthorized'); }
+if (!hasPermission('reports', 'view')) { http_response_code(403); exit('Permission denied'); }
 
 $id = $_GET['id'] ?? null;
 if (!$id) { http_response_code(400); exit('Report ID required'); }
