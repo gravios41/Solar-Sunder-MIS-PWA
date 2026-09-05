@@ -55,6 +55,21 @@ try {
 
 $content = ob_get_clean();
 
+// The module file always includes the full header.php/footer.php chrome
+// (doctype, <title>, sidebar, topbar, global modals, core <script> tags),
+// so pull out just what's inside .page-body — anything else here gets
+// dumped raw into pageBody.innerHTML by ajax-loader.js, and things like
+// <title>/<script> leak onto the page as visible plain text since they
+// aren't valid content in that position.
+$startMarker = '<div class="page-body">';
+$endMarker   = '</div><!-- /.page-body -->';
+$start = strpos($content, $startMarker);
+$end   = strrpos($content, $endMarker);
+if ($start !== false && $end !== false && $end > $start) {
+    $start += strlen($startMarker);
+    $content = substr($content, $start, $end - $start);
+}
+
 // For AJAX requests that expect JSON
 if (isset($_GET['json'])) {
     echo json_encode([
