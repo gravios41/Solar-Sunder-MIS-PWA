@@ -30,7 +30,8 @@
             ['fa-check', 'Tap <strong>Add</strong> in the top-right corner.']
         ],
         android: [
-            ['fa-ellipsis-vertical', 'Tap the <strong>⋮</strong> menu icon (top-right of Chrome).'],
+            ['fa-desktop', 'First, open the <strong>⋮</strong> menu and turn on <strong>Desktop site</strong> — on some Android browsers the install option only appears once the page is in desktop view.'],
+            ['fa-ellipsis-vertical', 'Open the <strong>⋮</strong> menu again.'],
             ['fa-download', 'Tap <strong>Install app</strong> (or <strong>Add to Home screen</strong>).'],
             ['fa-check', 'Confirm by tapping <strong>Install</strong>.']
         ],

@@ -35,16 +35,17 @@ $lowStockCount     = count(array_filter($inventory, fn($i) => ($i['quantity'] ??
 include_once __DIR__ . '/../includes/header.php';
 ?>
 
-<!-- PWA Install Banner — steps are shown accurately, per-device, in the
-     popup that installPWA() opens (see assets/js/pwa.js), not hard-coded
-     here, since the right steps differ between iOS/Android/desktop and a
-     wrong static guess (e.g. telling a phone to "enable Desktop site")
-     just confuses people. Hidden automatically once already installed. -->
+<!-- PWA Install Banner — full per-device steps still live in the popup
+     that installPWA() opens (see assets/js/pwa.js). The description text
+     below leads with "switch to Desktop site" because on Android the
+     browser's install option frequently only shows up once the page is
+     switched to desktop view, and that has to happen before tapping
+     Install, not after. Hidden automatically once already installed. -->
 <div id="pwaInstallBanner" style="margin-bottom:20px;padding:12px 16px;background:#FFF3E0;border:1px solid #FFB74D;border-radius:8px;display:flex;align-items:center;justify-content:space-between;gap:16px">
     <div style="display:flex;align-items:center;gap:12px;flex:1">
         <div>
             <div style="font-weight:600;color:#333">Install Sunder Solar MIS</div>
-            <div style="font-size:0.875rem;color:#666">Get quick access to the app on your device — tap Install for setup steps.</div>
+            <div style="font-size:0.875rem;color:#666">First switch your browser to <strong>Desktop site</strong> (⋮ menu), then tap Install for setup steps.</div>
         </div>
     </div>
     <button type="button" id="pwaInstallBtnBanner" class="btn btn-primary" style="white-space:nowrap;flex-shrink:0;cursor:pointer" onclick="installPWA()">
