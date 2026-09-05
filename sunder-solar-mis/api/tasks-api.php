@@ -20,7 +20,11 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 switch ($method) {
     case 'GET':
-        handleGetTasks();
+        if (isset($_GET['assignable_users'])) {
+            handleGetAssignableUsers();
+        } else {
+            handleGetTasks();
+        }
         break;
     case 'POST':
         handlePostTask();
@@ -35,9 +39,25 @@ switch ($method) {
         echo json_encode(['success' => false, 'error' => 'Method not allowed']);
 }
 
+function handleGetAssignableUsers() {
+    global $supabase;
+
+    if (!hasPermission('tasks', 'view')) {
+        echo json_encode(['success' => false, 'error' => 'Permission denied']);
+        return;
+    }
+
+    try {
+        $users = $supabase->getAll('users', ['select' => 'id,full_name,role', 'order' => 'full_name.asc']) ?: [];
+        echo json_encode(['success' => true, 'data' => $users]);
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    }
+}
+
 function handleGetTasks() {
     global $supabase;
-    
+
     $id = $_GET['id'] ?? null;
     $projectId = $_GET['project_id'] ?? null;
     $assignedTo = $_GET['assigned_to'] ?? '';
@@ -56,7 +76,7 @@ function handleGetTasks() {
             return;
         }
         
-        $query = $supabase->from('tasks')->select('*');
+        $query = $supabase->from('tasks')->select('*')->isNull('deleted_at');
 
         if ($projectId) {
             $query->eq('project_id', $projectId);

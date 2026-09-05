@@ -7,10 +7,10 @@ $pageTitle    = 'Dashboard';
 $pageSubtitle = 'Overview of your solar business';
 
 try {
-    $customers   = $supabase->from('customers')->select('*')->execute() ?? [];
-    $projects    = $supabase->from('projects')->select('*')->execute() ?? [];
+    $customers   = $supabase->from('customers')->select('*')->isNull('deleted_at')->execute() ?? [];
+    $projects    = $supabase->from('projects')->select('*')->isNull('deleted_at')->order('created_at', false)->execute() ?? [];
     $inventory   = $supabase->from('inventory')->select('*')->execute() ?? [];
-    $quotations  = $supabase->from('quotations')->select('*')->execute() ?? [];
+    $quotations  = $supabase->from('quotations')->select('*')->isNull('deleted_at')->execute() ?? [];
     $activities  = $supabase->from('activity_logs')
                     ->select('*')
                     ->order('created_at', false)
@@ -27,8 +27,9 @@ $pendingQuotations = count(array_filter($quotations, fn($q) => ($q['status'] ?? 
 $approvedQuotations= count(array_filter($quotations, fn($q) => ($q['status'] ?? '') === 'approved'));
 $totalQuotValue    = array_sum(array_column($quotations, 'total_amount'));
 $conversionRate    = count($quotations) > 0 ? round(($approvedQuotations / count($quotations)) * 100) : 0;
+// $projects is already ordered newest-first by the query above
 $recentProjects    = array_slice($projects, 0, 3);
-$lowStockCount     = count(array_filter($inventory, fn($i) => ($i['quantity'] ?? 0) <= ($i['reorder_point'] ?? 5)));
+$lowStockCount     = count(array_filter($inventory, fn($i) => ($i['quantity'] ?? 0) <= ($i['reorder_level'] ?? 5)));
 
 include_once __DIR__ . '/../includes/header.php';
 ?>

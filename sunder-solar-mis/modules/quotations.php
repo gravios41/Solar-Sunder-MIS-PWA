@@ -137,15 +137,13 @@ include_once __DIR__ . '/../includes/header.php';
                     <label class="form-label" style="margin-bottom:8px">Items & Services</label>
                     <div style="display:flex;gap:8px;padding:0 2px;margin-bottom:4px">
                         <label class="form-label" style="flex:1;margin-bottom:0;font-size:0.75rem">Description</label>
-                        <label class="form-label" style="width:72px;flex-shrink:0;margin-bottom:0;font-size:0.75rem">Qty</label>
-                        <label class="form-label" style="width:110px;flex-shrink:0;margin-bottom:0;font-size:0.75rem">Unit Price</label>
-                        <label class="form-label" style="width:110px;flex-shrink:0;margin-bottom:0;font-size:0.75rem">Amount</label>
-                        <span style="width:28px;flex-shrink:0"></span>
+                        <label class="form-label" style="width:64px;flex-shrink:0;margin-bottom:0;font-size:0.75rem">Qty</label>
+                        <label class="form-label" style="width:100px;flex-shrink:0;margin-bottom:0;font-size:0.75rem">Unit Price</label>
+                        <label class="form-label" style="width:100px;flex-shrink:0;margin-bottom:0;font-size:0.75rem">Amount</label>
+                        <span style="width:24px;flex-shrink:0"></span>
                     </div>
-                    <div id="itemsContainer" class="space-y-2"></div>
-                    <button type="button" onclick="addItemRow()" class="btn btn-secondary btn-sm mt-2">
-                        <i class="fas fa-plus"></i> Add Item
-                    </button>
+                    <div id="itemsContainer"></div>
+                    <p style="font-size:11px;color:#94a3b8;margin:6px 0 0">Each category can hold as many items as needed — use "+ Add" to add another, or leave a category empty to skip it.</p>
                 </div>
 
                 <!-- Section: Totals -->
@@ -309,6 +307,10 @@ function renderQuotations() {
                     <button onclick="viewQuotation(${q.id})" class="btn-icon" title="View">
                         <i class="fas fa-eye" style="color:#3B82F6"></i>
                     </button>
+                    ${(USER_ROLE === 'super_admin' || USER_ROLE === 'owner') && q.status !== 'approved' ? `
+                    <button onclick="approveQuotation(${q.id})" class="btn-icon" title="Approve — deducts inventory and creates the installation and tasks">
+                        <i class="fas fa-check-circle" style="color:#16a34a"></i>
+                    </button>` : ''}
                     ${(USER_ROLE === 'super_admin' || USER_ROLE === 'owner') ? `
                     <button onclick="editQuotation(${q.id})" class="btn-icon" title="Edit">
                         <i class="fas fa-edit" style="color:#F97316"></i>
@@ -341,37 +343,126 @@ function getStatusBadgeHtml(status) {
     return `<span class="badge ${badges[status]}">${labels[status]}</span>`;
 }
 
-let itemCounter = 0;
+// One fixed row per category, in a natural solar system build sequence —
+// Each category gets its own section, grouping the dropdown to just that
+// category's items — but a category like Accessories is naturally a basket
+// of several distinct things (connectors, tape, lugs, breakers...) needed
+// together, not a single choice, so every section can hold multiple rows
+// via its own "+ Add" button, not just one fixed row.
+const QUOTATION_ROW_CATEGORIES = [
+    { key: 'solar_panel', label: 'Solar Panel' },
+    { key: 'inverter', label: 'Inverter' },
+    { key: 'battery', label: 'Battery' },
+    { key: 'mounting', label: 'Mounting' },
+    { key: 'cable', label: 'Cable' },
+    { key: 'accessories', label: 'Accessories' },
+    { key: 'services', label: 'Services' }
+];
 
-function buildItemOptions(selectedDesc) {
-    let html = '<option value="">— Select item —</option>';
-    inventoryItems.forEach(inv => {
+// Only Accessories is naturally a basket of several distinct small items
+// (connectors, tape, lugs, breakers...) needed together — every other
+// category is a single choice per quotation, so only Accessories gets a
+// button to add more rows, and its rows can be removed outright since
+// another can always be added back. A single-row category's row can only
+// be cleared back to "None", never removed, since there'd be no way to
+// bring it back without an "Add" button.
+const MULTI_ITEM_CATEGORIES = ['accessories'];
+
+// Services aren't physical stock, so they don't belong in Inventory — this
+// is a fixed list rather than a category pulled from inventoryItems.
+// Priced at 0 by default: labor/service cost is quoted per job, not a
+// fixed catalog price, so staff fill in the actual amount per quotation.
+const SERVICE_OPTIONS = [
+    'Site Survey & Assessment',
+    'System Design & Engineering',
+    'Installation & Labor',
+    'Permit Processing & Documentation',
+    'Grid Connection & System Testing',
+    'Customer Training & Handover',
+    'Annual Maintenance Service'
+];
+
+function categoryItemSource(categoryKey) {
+    return categoryKey === 'services'
+        ? SERVICE_OPTIONS.map(name => ({ item_name: name, unit_price: 0 }))
+        : inventoryItems.filter(inv => inv.category === categoryKey);
+}
+
+function buildCategoryOptions(categoryKey, selectedDesc) {
+    let html = '<option value="">— None —</option>';
+    categoryItemSource(categoryKey).forEach(inv => {
         const sel = selectedDesc === inv.item_name ? 'selected' : '';
         html += `<option value="${escapeHtml(inv.item_name)}" data-price="${inv.unit_price}" ${sel}>${escapeHtml(inv.item_name)}</option>`;
     });
     return html;
 }
 
-function addItemRow(item = null) {
-    const container = document.getElementById('itemsContainer');
-    const itemId = ++itemCounter;
-    const desc  = item?.description || '';
-    const qty   = item?.quantity   || 1;
-    const price = item?.unit_price || 0;
-    const html = `
-        <div class="item-row" style="display:flex;gap:8px;margin-bottom:6px" data-id="${itemId}">
+// Matches saved quotation line items back to the section for their
+// category, so editing an existing quotation re-populates every row.
+function findExistingItemsForCategory(categoryKey, existingItems) {
+    if (!existingItems || !existingItems.length) return [];
+    if (categoryKey === 'services') {
+        return existingItems.filter(it => SERVICE_OPTIONS.includes(it.description));
+    }
+    return existingItems.filter(it => {
+        const inv = inventoryItems.find(i => i.item_name === it.description);
+        return inv && inv.category === categoryKey;
+    });
+}
+
+function buildItemRowHtml(categoryKey, existingItem) {
+    const desc  = existingItem?.description || '';
+    const qty   = existingItem?.quantity || 1;
+    const price = existingItem?.unit_price || 0;
+    // Unit price always comes from the selected inventory item, so it stays
+    // locked to that value — no manual override that could drift from
+    // actual stock cost. Services have no catalog price (quoted per job),
+    // so that one category keeps its price field editable.
+    const priceIsEditable = categoryKey === 'services';
+    return `
+        <div class="item-row" style="display:flex;gap:8px;margin-bottom:6px;align-items:center">
             <select class="item-desc form-select" style="flex:1;min-width:0" onchange="onItemSelect(this)">
-                ${buildItemOptions(desc)}
+                ${buildCategoryOptions(categoryKey, desc)}
             </select>
-            <input type="number" class="item-qty form-control" style="width:72px;flex-shrink:0" value="${qty}" min="1" onchange="calculateTotal()">
-            <input type="number" class="item-price form-control" style="width:110px;flex-shrink:0" step="0.01" value="${price}" onchange="calculateTotal()">
-            <input type="text" class="item-amount form-control" style="width:110px;flex-shrink:0;background:#F9FAFB" readonly value="${formatCurrency(qty * price)}">
-            <button type="button" onclick="removeItemRow(this)" style="width:28px;flex-shrink:0;background:none;border:none;cursor:pointer;color:#EF4444">
+            <input type="number" class="item-qty form-control" style="width:64px;flex-shrink:0" value="${qty}" min="1" onchange="calculateTotal()">
+            <input type="number" class="item-price form-control" style="width:100px;flex-shrink:0;${priceIsEditable ? '' : 'background:#F1F5F9;cursor:not-allowed'}" step="0.01" value="${price}" ${priceIsEditable ? '' : 'disabled'} onchange="calculateTotal()">
+            <input type="text" class="item-amount form-control" style="width:100px;flex-shrink:0;background:#F1F5F9;cursor:not-allowed" disabled value="${formatCurrency(qty * price)}">
+            ${MULTI_ITEM_CATEGORIES.includes(categoryKey) ? `
+            <button type="button" onclick="removeItemRow(this)" title="Remove this row" style="width:24px;flex-shrink:0;background:none;border:none;cursor:pointer;color:#EF4444">
                 <i class="fas fa-trash"></i>
-            </button>
+            </button>` : `
+            <button type="button" onclick="clearItemRow(this)" title="Clear selection" style="width:24px;flex-shrink:0;background:none;border:none;cursor:pointer;color:#94A3B8">
+                <i class="fas fa-times"></i>
+            </button>`}
         </div>
     `;
-    container.insertAdjacentHTML('beforeend', html);
+}
+
+function renderItemRows(existingItems) {
+    const container = document.getElementById('itemsContainer');
+    container.innerHTML = QUOTATION_ROW_CATEGORIES.map(cat => {
+        const existingForCat = findExistingItemsForCategory(cat.key, existingItems);
+        const rowsHtml = (existingForCat.length ? existingForCat : [null])
+            .map(item => buildItemRowHtml(cat.key, item))
+            .join('');
+        const canAddMore = MULTI_ITEM_CATEGORIES.includes(cat.key);
+        return `
+            <div class="category-section" data-category="${cat.key}" style="margin-bottom:12px">
+                <div style="font-size:0.78rem;font-weight:600;color:#475569;margin-bottom:4px">${escapeHtml(cat.label)}</div>
+                <div class="category-rows">${rowsHtml}</div>
+                ${canAddMore ? `
+                <button type="button" onclick="addCategoryRow('${cat.key}')" class="btn btn-secondary btn-sm" style="margin-top:2px;font-size:0.72rem;padding:3px 10px">
+                    <i class="fas fa-plus"></i> Add ${escapeHtml(cat.label)}
+                </button>` : ''}
+            </div>
+        `;
+    }).join('');
+    calculateTotal();
+}
+
+function addCategoryRow(categoryKey) {
+    const section = document.querySelector(`.category-section[data-category="${categoryKey}"] .category-rows`);
+    if (section) section.insertAdjacentHTML('beforeend', buildItemRowHtml(categoryKey, null));
     calculateTotal();
 }
 
@@ -385,6 +476,14 @@ function onItemSelect(select) {
 
 function removeItemRow(btn) {
     btn.closest('.item-row').remove();
+    calculateTotal();
+}
+
+function clearItemRow(btn) {
+    const row = btn.closest('.item-row');
+    row.querySelector('.item-desc').value = '';
+    row.querySelector('.item-qty').value = 1;
+    row.querySelector('.item-price').value = 0;
     calculateTotal();
 }
 
@@ -406,9 +505,6 @@ function calculateTotal() {
 }
 
 function openQuotationModal(quotation = null) {
-    document.getElementById('itemsContainer').innerHTML = '';
-    itemCounter = 0;
-    
     if (quotation) {
         document.getElementById('modalTitle').textContent = 'Edit Quotation';
         document.getElementById('quotationId').value = quotation.id;
@@ -419,11 +515,7 @@ function openQuotationModal(quotation = null) {
         document.getElementById('validUntil').value = quotation.valid_until;
         document.getElementById('status').value = quotation.status;
         document.getElementById('notes').value = quotation.notes || '';
-        if (quotation.items) {
-            quotation.items.forEach(item => addItemRow(item));
-        } else {
-            for(let i = 0; i < 3; i++) addItemRow();
-        }
+        renderItemRows(quotation.items || []);
     } else {
         document.getElementById('modalTitle').textContent = 'Add New Quotation';
         document.getElementById('quotationForm').reset();
@@ -433,9 +525,9 @@ function openQuotationModal(quotation = null) {
         validUntil.setDate(validUntil.getDate() + 30);
         document.getElementById('validUntil').value = validUntil.toISOString().split('T')[0];
         document.getElementById('status').value = 'draft';
-        for(let i = 0; i < 3; i++) addItemRow();
+        renderItemRows(null);
     }
-    
+
     document.getElementById('quotationModal').classList.add('active');
 }
 
@@ -596,6 +688,33 @@ async function archiveQuotation(id) {
             }
         },
         { title: 'Archive Quotation', confirmText: 'Archive' }
+    );
+}
+
+async function approveQuotation(id) {
+    const quotation = quotations.find(q => q.id === id);
+    const name = quotation?.quotation_number || 'this quotation';
+    showConfirmModal(
+        `Approve "${name}"? This deducts its line items from inventory and creates the installation and task list — it can't be undone from here.`,
+        async () => {
+            try {
+                const response = await fetch('../api/approve-quotation.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ quotation_id: id })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    showToast(result.message, 'success');
+                    loadQuotations();
+                } else {
+                    showToast(result.error, 'error');
+                }
+            } catch (error) {
+                showToast('Error approving quotation', 'error');
+            }
+        },
+        { title: 'Approve Quotation', confirmText: 'Approve' }
     );
 }
 

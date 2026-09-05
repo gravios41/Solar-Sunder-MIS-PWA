@@ -139,14 +139,36 @@ class SupabaseQueryBuilder {
     private $orderAscending = true;
     private $limitValue = null;
     private $offsetValue = null;
-    
+    private $singleResult = false;
+    private $pendingOperation = 'select'; // 'select' | 'update' | 'delete'
+    private $updateData = null;
+
     public function __construct($client, $table) {
         $this->client = $client;
         $this->table = $table;
     }
-    
+
     public function select($fields) {
         $this->selectFields = $fields;
+        return $this;
+    }
+
+    // Return a single row (or null) instead of a list
+    public function single() {
+        $this->singleResult = true;
+        return $this;
+    }
+
+    // Update matching rows — call execute() to send the request
+    public function update($data) {
+        $this->pendingOperation = 'update';
+        $this->updateData = $data;
+        return $this;
+    }
+
+    // Delete matching rows — call execute() to send the request
+    public function delete() {
+        $this->pendingOperation = 'delete';
         return $this;
     }
     
@@ -189,7 +211,15 @@ class SupabaseQueryBuilder {
         $this->filters[$column] = 'ilike.' . $value;
         return $this;
     }
-    
+
+    // For "column IS NULL" — not the same as eq(column, null), which
+    // PostgREST would treat as matching the literal string "null"
+    public function isNull($column) {
+        $this->filters[$column] = 'is.null';
+        return $this;
+    }
+
+
     public function order($column, $ascending = true) {
         if (is_array($ascending)) {
             $ascending = $ascending['ascending'] ?? true;
@@ -211,31 +241,42 @@ class SupabaseQueryBuilder {
     }
     
     public function execute() {
-        $params = ['select' => $this->selectFields];
-        
+        $params = [];
+
         foreach ($this->filters as $key => $value) {
             $params[$key] = $value;
         }
-        
-        if ($this->orderField) {
-            $params['order'] = $this->orderField . '.' . ($this->orderAscending ? 'asc' : 'desc');
+
+        if ($this->pendingOperation === 'update') {
+            $result = $this->client->request('PATCH', $this->table, $params, $this->updateData);
+        } elseif ($this->pendingOperation === 'delete') {
+            $result = $this->client->request('DELETE', $this->table, $params);
+        } else {
+            $params['select'] = $this->selectFields;
+
+            if ($this->orderField) {
+                $params['order'] = $this->orderField . '.' . ($this->orderAscending ? 'asc' : 'desc');
+            }
+
+            if ($this->limitValue) {
+                $params['limit'] = $this->limitValue;
+            }
+
+            if ($this->offsetValue) {
+                $params['offset'] = $this->offsetValue;
+            }
+
+            $result = $this->client->request('GET', $this->table, $params);
         }
-        
-        if ($this->limitValue) {
-            $params['limit'] = $this->limitValue;
-        }
-        
-        if ($this->offsetValue) {
-            $params['offset'] = $this->offsetValue;
-        }
-        
-        $result = $this->client->request('GET', $this->table, $params);
-        
-        // Return empty array if no results
+
         if ($result === null) {
-            return [];
+            $result = [];
         }
-        
+
+        if ($this->singleResult) {
+            return (is_array($result) && isset($result[0])) ? $result[0] : ($result ?: null);
+        }
+
         return $result;
     }
 }

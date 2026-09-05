@@ -110,11 +110,6 @@ include_once __DIR__ . '/../includes/header.php';
                         <label class="form-label">Assigned To</label>
                         <select id="assignedTo" class="form-select">
                             <option value="">Select User</option>
-                            <option value="John Doe">John Doe</option>
-                            <option value="Jane Smith">Jane Smith</option>
-                            <option value="Mike Johnson">Mike Johnson</option>
-                            <option value="Sarah Williams">Sarah Williams</option>
-                            <option value="David Brown">David Brown</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -159,6 +154,38 @@ async function loadProjects() {
     } catch (error) {
         console.error('Error loading projects:', error);
     }
+}
+
+let assignableUsers = [];
+
+async function loadAssignableUsers() {
+    try {
+        const response = await fetch('../api/tasks-api.php?assignable_users=1');
+        const result = await response.json();
+        if (result.success) {
+            assignableUsers = result.data;
+            const select = document.getElementById('assignedTo');
+            if (select) {
+                select.innerHTML = '<option value="">Select User</option>' +
+                    assignableUsers.map(u => `<option value="${escapeHtml(u.full_name)}">${escapeHtml(u.full_name)} (${escapeHtml(u.role.replace(/_/g, ' '))})</option>`).join('');
+            }
+        }
+    } catch (error) {
+        console.error('Error loading assignable users:', error);
+    }
+}
+
+// Mirrors the backend's canEditTaskChecklist(): an employee can edit a
+// checklist unless the task is assigned (by name) to a different real user
+// account. Tasks assigned to a name that matches no account (legacy/demo
+// data) stay editable by any employee rather than locking everyone out.
+function canEditChecklistFor(task) {
+    if (USER_ROLE !== 'employee') return false;
+    const assignedName = (task.assigned_to || '').trim();
+    if (!assignedName) return true;
+    const matchesRealUser = assignableUsers.some(u => u.full_name.toLowerCase() === assignedName.toLowerCase());
+    if (!matchesRealUser) return true;
+    return assignedName.toLowerCase() === (USER_FULL_NAME || '').trim().toLowerCase();
 }
 
 async function loadTasks() {
@@ -241,6 +268,13 @@ function renderTasks() {
                         <span><i class="fas fa-user mr-1"></i>${escapeHtml(t.assigned_to || 'Unassigned')}</span>
                         <span><i class="fas fa-calendar mr-1"></i>Due: ${formatDate(t.due_date)}</span>
                     </div>
+                    ${(t.checklist_count || 0) > 0 ? `
+                    <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:11px;color:#64748b">
+                        <div style="flex:1;height:5px;background:#e2e8f0;border-radius:3px;overflow:hidden">
+                            <div style="height:100%;width:${t.progress_percent || 0}%;background:${(t.progress_percent || 0) >= 100 ? '#16a34a' : '#3B82F6'};border-radius:3px"></div>
+                        </div>
+                        <span>${t.checklist_completed || 0}/${t.checklist_count} · ${t.progress_percent || 0}%</span>
+                    </div>` : ''}
                     ${statusBtn}
                     <div style="display:flex;align-items:center;gap:6px;margin-top:8px">
                         <button onclick="viewTask(${t.id})" class="btn-icon" title="View"><i class="fas fa-eye" style="color:#3B82F6"></i></button>
@@ -299,15 +333,9 @@ async function updateTaskStatus(id, newStatus) {
 function viewTask(id) {
     const t = tasks.find(t => t.id === id);
     if (!t) return;
-    const project = projects.find(p => p.id === t.project_id);
-    showDetailModal(t.task_title, [
-        { label: 'Project',     value: project?.project_name || 'No Project' },
-        { label: 'Assigned To', value: t.assigned_to || 'Unassigned' },
-        { label: 'Priority',    value: t.priority?.charAt(0).toUpperCase() + t.priority?.slice(1) },
-        { label: 'Status',      value: t.status?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) },
-        { label: 'Due Date',    value: formatDate(t.due_date) },
-        { label: 'Description', value: t.description },
-    ]);
+    
+    // Open task detail with checklist modal
+    openTaskDetailModal(t);
 }
 
 function openTaskModal(task = null) {
@@ -410,9 +438,200 @@ async function archiveTask(id) {
 document.getElementById('searchInput')?.addEventListener('input', renderTasks);
 document.getElementById('priorityFilter')?.addEventListener('change', renderTasks);
 
+// Task Detail Modal with Checklist
+let currentTaskId = null;
+let canEditChecklist = false;
+let checklistPollInterval = null;
+
+async function openTaskDetailModal(task) {
+    currentTaskId = task.id;
+    canEditChecklist = canEditChecklistFor(task);
+    const project = projects.find(p => p.id === task.project_id);
+    
+    // Create modal HTML
+    const modal = document.createElement('div');
+    modal.id = 'taskDetailModal';
+    modal.style.cssText = `
+        display: block; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.5); z-index: 1000; overflow-y: auto; padding: 20px;
+    `;
+    
+    modal.innerHTML = `
+        <div style="background: white; border-radius: 8px; max-width: 700px; margin: 40px auto; padding: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 20px;">
+                <div>
+                    <h3 style="margin: 0; font-size: 20px; font-weight: 600;">${escapeHtml(task.task_title)}</h3>
+                    <p style="margin: 8px 0 0; color: #64748b; font-size: 14px;">${escapeHtml(project?.project_name || 'No Project')}</p>
+                </div>
+                <button onclick="closeTaskDetailModal()" style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
+            </div>
+            
+            <div style="background: #f8fafc; padding: 12px; border-radius: 6px; margin-bottom: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 13px;">
+                <div><strong>Status:</strong> ${escapeHtml(task.status?.replace(/_/g, ' '))}</div>
+                <div><strong>Assigned:</strong> ${escapeHtml(task.assigned_to || 'Unassigned')}</div>
+                <div><strong>Priority:</strong> ${escapeHtml(task.priority)}</div>
+                <div><strong>Due:</strong> ${formatDate(task.due_date)}</div>
+            </div>
+            
+            ${task.description ? `<div style="margin-bottom: 20px; padding: 12px; background: #f1f5f9; border-left: 3px solid #F97316;"><strong>Description:</strong><p style="margin: 8px 0 0;">${escapeHtml(task.description)}</p></div>` : ''}
+            
+            <div style="border-top: 1px solid #e2e8f0; padding-top: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h4 style="margin: 0; font-size: 16px; font-weight: 600;">Task Checklist</h4>
+                    <div id="progressBar" style="display: flex; align-items: center; gap: 8px; font-size: 12px;">
+                        <div style="width: 100px; height: 6px; background: #e2e8f0; border-radius: 3px;"><div id="progressFill" style="height: 100%; background: #16a34a; border-radius: 3px; width: 0%;"></div></div>
+                        <span id="progressText">0%</span>
+                    </div>
+                </div>
+                
+                <div id="checklistContainer" style="max-height: 300px; overflow-y: auto; margin-bottom: 15px;">
+                    <p style="text-align: center; color: #94a3b8;">Loading checklist...</p>
+                </div>
+                
+                ${canEditChecklist ? `
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="newChecklistInput" placeholder="Add a checklist item..." class="form-control" style="flex: 1; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                    <button onclick="addChecklistItem()" class="btn btn-primary" style="padding: 8px 16px;"><i class="fas fa-plus"></i></button>
+                </div>
+                ` : `
+                <p style="font-size: 12px; color: #94a3b8; margin: 0;"><i class="fas fa-eye"></i> View only — checklist items are managed by the assigned employee.</p>
+                `}
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    loadChecklist();
+
+    // Poll while this task's checklist is open, so progress made by
+    // whoever is assigned shows up here without closing and reopening.
+    if (checklistPollInterval) clearInterval(checklistPollInterval);
+    checklistPollInterval = setInterval(loadChecklist, 8000);
+}
+
+function closeTaskDetailModal() {
+    const modal = document.getElementById('taskDetailModal');
+    if (modal) modal.remove();
+    currentTaskId = null;
+    if (checklistPollInterval) {
+        clearInterval(checklistPollInterval);
+        checklistPollInterval = null;
+    }
+}
+
+async function loadChecklist() {
+    if (!currentTaskId) return;
+    
+    try {
+        const response = await fetch(`../api/task-checklist-api.php?task_id=${currentTaskId}`);
+        const result = await response.json();
+        
+        if (result.success) {
+            const checklists = result.data || [];
+            const summary = result.summary || {};
+            
+            // Update progress bar
+            document.getElementById('progressFill').style.width = (summary.progress_percent || 0) + '%';
+            document.getElementById('progressText').textContent = (summary.progress_percent || 0) + '%';
+            
+            // Render checklists
+            const container = document.getElementById('checklistContainer');
+            if (checklists.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #94a3b8;">No checklist items yet</p>';
+            } else {
+                container.innerHTML = checklists.map(c => `
+                    <div style="display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 8px; background: ${c.is_completed ? '#f0fdf4' : '#fff'};">
+                        <input type="checkbox" ${c.is_completed ? 'checked' : ''} ${canEditChecklist ? `onchange="toggleChecklist('${c.id}', this.checked)"` : 'disabled'} style="width: 18px; height: 18px; cursor: ${canEditChecklist ? 'pointer' : 'not-allowed'};">
+                        <span style="flex: 1; ${c.is_completed ? 'text-decoration: line-through; color: #94a3b8;' : ''}">${escapeHtml(c.checklist_item)}</span>
+                        ${canEditChecklist ? `<button onclick="deleteChecklistItem('${c.id}')" class="btn-icon" style="color: #dc2626;"><i class="fas fa-trash"></i></button>` : ''}
+                    </div>
+                `).join('');
+            }
+        }
+    } catch (error) {
+        console.error('Error loading checklist:', error);
+        document.getElementById('checklistContainer').innerHTML = '<p style="color: #dc2626;">Error loading checklist</p>';
+    }
+}
+
+async function addChecklistItem() {
+    const input = document.getElementById('newChecklistInput');
+    const item = input.value.trim();
+    
+    if (!item || !currentTaskId) return;
+    
+    try {
+        const response = await fetch('../api/task-checklist-api.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                task_id: currentTaskId,
+                checklist_item: item
+            })
+        });
+        const result = await response.json();
+        
+        if (result.success) {
+            input.value = '';
+            loadChecklist();
+            showToast('Checklist item added', 'success');
+        } else {
+            showToast(result.error, 'error');
+        }
+    } catch (error) {
+        showToast('Error adding checklist item', 'error');
+    }
+}
+
+async function toggleChecklist(checklistId, isCompleted) {
+    try {
+        const response = await fetch('../api/task-checklist-api.php', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                id: checklistId,
+                is_completed: isCompleted
+            })
+        });
+        const result = await response.json();
+        
+        if (result.success) {
+            loadChecklist();
+        } else {
+            showToast(result.error, 'error');
+        }
+    } catch (error) {
+        showToast('Error updating checklist', 'error');
+    }
+}
+
+async function deleteChecklistItem(checklistId) {
+    if (!confirm('Delete this checklist item?')) return;
+    
+    try {
+        const response = await fetch(`../api/task-checklist-api.php?id=${checklistId}`, {
+            method: 'DELETE'
+        });
+        const result = await response.json();
+        
+        if (result.success) {
+            loadChecklist();
+            showToast('Checklist item deleted', 'success');
+        } else {
+            showToast(result.error, 'error');
+        }
+    } catch (error) {
+        showToast('Error deleting checklist item', 'error');
+    }
+}
+
 // Initialize
 loadProjects();
 loadTasks();
+loadAssignableUsers();
+
+// Keep the board's progress bars current without a manual refresh
+setInterval(loadTasks, 15000);
 </script>
 
 <?php include_once __DIR__ . '/../includes/footer.php'; ?>

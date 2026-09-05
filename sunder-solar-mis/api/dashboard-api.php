@@ -33,10 +33,10 @@ switch ($action) {
 
 function getStats($supabase) {
     try {
-        $customers = $supabase->getAll('customers');
-        $projects = $supabase->getAll('projects');
+        $customers = $supabase->getAll('customers', ['deleted_at' => 'is.null']);
+        $projects = $supabase->getAll('projects', ['deleted_at' => 'is.null']);
         $inventory = $supabase->getAll('inventory');
-        $quotations = $supabase->getAll('quotations');
+        $quotations = $supabase->getAll('quotations', ['deleted_at' => 'is.null']);
         
         $stats = [
             'total_customers' => count($customers),
@@ -69,6 +69,7 @@ function getRecentProjects($supabase) {
         
         $projects = $supabase->from('projects')
             ->select('*')
+            ->isNull('deleted_at')
             ->order('created_at', false)
             ->limit($limit)
             ->execute();
@@ -103,7 +104,7 @@ function getChartData($supabase) {
         $period = $_GET['period'] ?? 'month';
         
         // Get quotations by month
-        $quotations = $supabase->getAll('quotations');
+        $quotations = $supabase->getAll('quotations', ['deleted_at' => 'is.null']);
         
         $monthlyData = [];
         for ($i = 5; $i >= 0; $i--) {

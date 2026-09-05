@@ -15,7 +15,7 @@ $action = isset($_GET['action']) ? $_GET['action'] : 'view';
 
 // Allowed modules
 $allowedModules = [
-    'dashboard', 'customers', 'quotations', 'projects', 'installations',
+    'dashboard', 'customers', 'quotations', 'energy-assessments', 'projects', 'installations',
     'inventory', 'inventory-orders', 'tasks', 'reports', 'archives', 'settings', 'user-management'
 ];
 

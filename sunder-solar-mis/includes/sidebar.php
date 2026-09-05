@@ -70,6 +70,15 @@ function isActive($page) {
                     <span>Quotations</span>
                 </a>
             </div>
+
+            <div class="nav-item">
+                <a href="<?php echo htmlspecialchars($appBasePath); ?>modules/energy-assessments.php"
+                   class="nav-link <?= isActive('energy-assessments.php') ?>"
+                   data-tooltip="Energy Assessments">
+                    <i class="fas fa-bolt nav-icon"></i>
+                    <span>Energy Assessments</span>
+                </a>
+            </div>
         </div>
 
         <div class="sidebar-divider"></div>

@@ -63,6 +63,7 @@ include_once __DIR__ . '/../includes/header.php';
                     <option value="battery">Batteries</option>
                     <option value="mounting">Mounting</option>
                     <option value="cable">Cables</option>
+                    <option value="accessories">Accessories</option>
                 </select>
             </div>
             <div class="filter-group">
@@ -86,7 +87,6 @@ include_once __DIR__ . '/../includes/header.php';
                     <tr>
                         <th>Item Code</th>
                         <th>Item Name</th>
-                        <th>Category</th>
                         <th>Quantity</th>
                         <th>Unit</th>
                         <th>Unit Price</th>
@@ -95,7 +95,7 @@ include_once __DIR__ . '/../includes/header.php';
                     </tr>
                 </thead>
                 <tbody id="inventoryTableBody">
-                    <tr><td colspan="8" class="text-center">Loading...</td></tr>
+                    <tr><td colspan="7" class="text-center">Loading...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -247,6 +247,7 @@ include_once __DIR__ . '/../includes/header.php';
                             <option value="battery">Battery</option>
                             <option value="mounting">Mounting</option>
                             <option value="cable">Cable</option>
+                            <option value="accessories">Accessories</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -336,32 +337,51 @@ function updateStats() {
     document.getElementById('criticalStock').textContent = critical;
 }
 
+// Same taxonomy and order used in the Inventory item form and the
+// Quotation item dropdown — a natural solar system build sequence.
+const INVENTORY_CATEGORY_ORDER = ['solar_panel', 'inverter', 'battery', 'mounting', 'cable', 'accessories'];
+
 function renderInventory() {
     const search = document.getElementById('searchInput')?.value.toLowerCase() || '';
     const category = document.getElementById('categoryFilter')?.value || 'all';
     const status = document.getElementById('statusFilter')?.value || 'all';
-    
+
     let filtered = inventory.filter(item => {
-        if (search && !item.item_name.toLowerCase().includes(search) && 
+        if (search && !item.item_name.toLowerCase().includes(search) &&
             !item.item_code.toLowerCase().includes(search)) return false;
         if (category !== 'all' && item.category !== category) return false;
         if (status !== 'all' && item.status_text !== status) return false;
         return true;
     });
-    
+
     const tbody = document.getElementById('inventoryTableBody');
     if (!tbody) return;
-    
+
     if (filtered.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center">No items found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center">No items found</td></tr>';
         return;
     }
-    
-    tbody.innerHTML = filtered.map(item => `
+
+    const byCategory = {};
+    filtered.forEach(item => {
+        const cat = item.category || 'other';
+        (byCategory[cat] = byCategory[cat] || []).push(item);
+    });
+    const categoriesInOrder = [
+        ...INVENTORY_CATEGORY_ORDER.filter(cat => byCategory[cat]),
+        ...Object.keys(byCategory).filter(cat => !INVENTORY_CATEGORY_ORDER.includes(cat))
+    ];
+
+    tbody.innerHTML = categoriesInOrder.map(cat => `
+        <tr style="background:#F8FAFC">
+            <td colspan="7" style="font-weight:700;color:#475569;font-size:0.82rem;padding:8px 12px">
+                ${formatCategory(cat)} <span style="font-weight:700;color:#94A3B8">(${byCategory[cat].length})</span>
+            </td>
+        </tr>
+        ${byCategory[cat].map(item => `
         <tr>
             <td>${escapeHtml(item.item_code)}</td>
             <td class="font-medium">${escapeHtml(item.item_name)}</td>
-            <td>${formatCategory(item.category)}</td>
             <td class="font-medium">${item.quantity}</td>
             <td>${item.unit}</td>
             <td>${formatCurrency(item.unit_price)}</td>
@@ -386,6 +406,7 @@ function renderInventory() {
                 </div>
             </td>
         </tr>
+        `).join('')}
     `).join('');
 }
 
@@ -395,7 +416,8 @@ function formatCategory(category) {
         inverter: 'Inverter',
         battery: 'Battery',
         mounting: 'Mounting',
-        cable: 'Cable'
+        cable: 'Cable',
+        accessories: 'Accessories'
     };
     return categories[category] || category;
 }

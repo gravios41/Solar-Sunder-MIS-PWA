@@ -45,7 +45,7 @@ function handleGet($supabase) {
     $offset = ($page - 1) * $limit;
     
     try {
-        $query = $supabase->from('customers')->select('*');
+        $query = $supabase->from('customers')->select('*')->isNull('deleted_at');
 
         if ($id) {
             $result = $supabase->getById('customers', $id);
@@ -72,7 +72,7 @@ function handleGet($supabase) {
         $result = $query->execute();
         
         // Get total count
-        $countQuery = $supabase->from('customers')->select('*', ['count' => 'exact']);
+        $countQuery = $supabase->from('customers')->select('*', ['count' => 'exact'])->isNull('deleted_at');
         if ($search) $countQuery->ilike('name', "%$search%");
         if ($status && $status !== 'all') $countQuery->eq('status', $status);
         if ($type && $type !== 'all') $countQuery->eq('type', $type);

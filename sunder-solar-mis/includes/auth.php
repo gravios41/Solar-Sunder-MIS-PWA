@@ -34,56 +34,13 @@ function checkPermission($module, $action = 'view') {
     return isset($permissions[$role][$module][$action]) && $permissions[$role][$module][$action] === true;
 }
 
+// The role/module/action matrix lives in one place — config.php's
+// getRolePermissions() — since config.php is required before this file
+// everywhere it's loaded. This just gives modules that use the
+// checkPermission()/getPermissions() naming a way to read the same data,
+// without keeping a second copy that has to be hand-edited in step with
+// the first every time a permission changes.
 function getPermissions() {
-    return [
-        'super_admin' => [
-            'dashboard' => ['view' => true, 'edit' => true, 'delete' => true, 'create' => true],
-            'customers' => ['view' => true, 'edit' => true, 'delete' => true, 'create' => true],
-            'projects' => ['view' => true, 'edit' => true, 'delete' => true, 'create' => true],
-            'inventory' => ['view' => true, 'edit' => true, 'delete' => true, 'create' => true],
-            'quotations' => ['view' => true, 'edit' => true, 'delete' => true, 'create' => true],
-            'installations' => ['view' => true, 'edit' => true, 'delete' => true, 'create' => true],
-            'tasks' => ['view' => true, 'edit' => true, 'delete' => true, 'create' => true],
-            'reports' => ['view' => true, 'edit' => true, 'delete' => true, 'create' => true],
-            'settings' => ['view' => true, 'edit' => true, 'delete' => true, 'create' => true],
-            'users' => ['view' => true, 'edit' => true, 'delete' => true, 'create' => true]
-        ],
-        'admin' => [
-            'dashboard' => ['view' => true, 'edit' => false, 'delete' => false, 'create' => false],
-            'customers' => ['view' => true, 'edit' => true, 'delete' => false, 'create' => false],
-            'projects' => ['view' => true, 'edit' => true, 'delete' => false, 'create' => false],
-            'inventory' => ['view' => true, 'edit' => true, 'delete' => false, 'create' => false],
-            'quotations' => ['view' => true, 'edit' => true, 'delete' => false, 'create' => false],
-            'installations' => ['view' => true, 'edit' => true, 'delete' => false, 'create' => false],
-            'tasks' => ['view' => true, 'edit' => true, 'delete' => false, 'create' => false],
-            'reports' => ['view' => true, 'edit' => false, 'delete' => false, 'create' => false],
-            'settings' => ['view' => true, 'edit' => true, 'delete' => false, 'create' => false],
-            'users' => ['view' => false, 'edit' => false, 'delete' => false, 'create' => false]
-        ],
-        'owner' => [
-            'dashboard' => ['view' => true, 'edit' => true, 'delete' => true, 'create' => true],
-            'customers' => ['view' => true, 'edit' => true, 'delete' => true, 'create' => true],
-            'projects' => ['view' => true, 'edit' => true, 'delete' => true, 'create' => true],
-            'inventory' => ['view' => true, 'edit' => true, 'delete' => true, 'create' => true],
-            'quotations' => ['view' => true, 'edit' => true, 'delete' => true, 'create' => true],
-            'installations' => ['view' => true, 'edit' => true, 'delete' => true, 'create' => true],
-            'tasks' => ['view' => true, 'edit' => true, 'delete' => true, 'create' => true],
-            'reports' => ['view' => true, 'edit' => true, 'delete' => true, 'create' => true],
-            'settings' => ['view' => true, 'edit' => true, 'delete' => false, 'create' => false],
-            'users' => ['view' => true, 'edit' => true, 'delete' => true, 'create' => true]
-        ],
-        'employee' => [
-            'dashboard'     => ['view' => true,  'edit' => false, 'delete' => false, 'create' => false],
-            'quotations'    => ['view' => true,  'edit' => false, 'delete' => false, 'create' => false],
-            'projects'      => ['view' => true,  'edit' => false, 'delete' => false, 'create' => false],
-            'installations' => ['view' => true,  'edit' => false, 'delete' => false, 'create' => false],
-            'tasks'         => ['view' => true,  'edit' => true,  'delete' => false, 'create' => true],
-            'reports'       => ['view' => true,  'edit' => false, 'delete' => false, 'create' => false],
-            'settings'      => ['view' => true,  'edit' => true,  'delete' => false, 'create' => false],
-            'customers'     => ['view' => false, 'edit' => false, 'delete' => false, 'create' => false],
-            'inventory'     => ['view' => false, 'edit' => false, 'delete' => false, 'create' => false],
-            'users'         => ['view' => false, 'edit' => false, 'delete' => false, 'create' => false],
-        ]
-    ];
+    return getRolePermissions();
 }
 ?>

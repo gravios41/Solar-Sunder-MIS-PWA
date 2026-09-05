@@ -56,7 +56,7 @@ function handleGetInstallations() {
             return;
         }
         
-        $query = $supabase->from('installations')->select('*');
+        $query = $supabase->from('installations')->select('*')->isNull('deleted_at');
 
         if ($status && $status !== 'all') {
             $query->eq('status', $status);
@@ -104,7 +104,7 @@ function handlePostInstallation() {
     
     try {
         // Generate installation code
-        $installations = $supabase->getAll('installations');
+        $installations = $supabase->getAll('installations', ['deleted_at' => 'is.null']);
         $maxId = count($installations) + 1;
         $data['installation_code'] = 'INS-' . str_pad($maxId, 3, '0', STR_PAD_LEFT);
         $data['created_at'] = date('Y-m-d H:i:s');

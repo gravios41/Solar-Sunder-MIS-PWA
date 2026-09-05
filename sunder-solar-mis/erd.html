@@ -34,6 +34,13 @@ body{background:var(--bg);color:var(--text-hi);font-family:system-ui,-apple-syst
 .scroller{flex:1;overflow:auto;background-image:linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);background-size:28px 28px;background-color:var(--bg)}
 .canvas{position:relative}
 #csvg{position:absolute;top:0;left:0;pointer-events:none;z-index:1;overflow:visible}
+@media (max-width: 700px){
+  .hdr{padding:12px 16px}
+  .hdr-sub{display:block;margin:4px 0 0}
+  .legend{gap:8px}
+  .leg:last-child{display:none}
+  .ert{width:222px}
+}
 
 .ert{position:absolute;width:222px;background:var(--surface);border:1px solid var(--border);border-radius:5px;overflow:hidden;z-index:10;transition:border-color .1s,box-shadow .1s;cursor:default;user-select:none}
 .ert.dim{border-color:#0D1824;opacity:.35}
@@ -52,7 +59,7 @@ body{background:var(--bg);color:var(--text-hi);font-family:system-ui,-apple-syst
 .efname{flex:1;font-size:11px;color:var(--text-hi);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .efname.pk{color:var(--pk)}
 .efname.fk{color:var(--fk)}
-.edtype{font-size:9px;color:var(--text-dim);font-style:italic;flex-shrink:0;white-space:nowrap}
+.edtype{display:none}
 </style>
 </head>
 <body>
@@ -60,7 +67,7 @@ body{background:var(--bg);color:var(--text-hi);font-family:system-ui,-apple-syst
 <div class="hdr">
   <div>
     <span class="hdr-title">Sunder Solar MIS</span>
-    <span class="hdr-sub">Entity Relationship Diagram · 12 tables</span>
+    <span class="hdr-sub">Entity Relationship Diagram · 14 tables</span>
   </div>
   <div class="legend">
     <div class="leg"><span class="leg-badge lbk">PK</span> Primary Key</div>
@@ -139,6 +146,16 @@ const TABLES = [
       {n:'reorder_level',k:'col',d:'int'},
       {n:'supplier',     k:'col',d:'text'},
     ]},
+  { id:'energy_assessments', label:'energy_assessments', icon:'⚡', col:2, row:2,
+    fields:[
+      {n:'id',                      k:'pk', d:'uuid'},
+      {n:'customer_id',             k:'fk', d:'uuid', ref:'customers'},
+      {n:'project_id',              k:'fk', d:'uuid', ref:'projects'},
+      {n:'average_monthly_kwh',    k:'col',d:'numeric'},
+      {n:'recommended_system_kw',   k:'col',d:'numeric'},
+      {n:'recommended_panel_count', k:'col',d:'int'},
+      {n:'status',                  k:'col',d:'text'},
+    ]},
   { id:'quotations',       label:'quotations',       icon:'📄', col:3, row:0,
     fields:[
       {n:'id',               k:'pk', d:'uuid'},
@@ -172,6 +189,15 @@ const TABLES = [
       {n:'assigned_to',    k:'col',d:'text'},
       {n:'due_date',       k:'col',d:'date'},
       {n:'completed_date', k:'col',d:'date'},
+    ]},
+  { id:'energy_bill_readings', label:'energy_bill_readings', icon:'🧾', col:3, row:3,
+    fields:[
+      {n:'id',               k:'pk', d:'uuid'},
+      {n:'assessment_id',    k:'fk', d:'uuid', ref:'energy_assessments'},
+      {n:'billing_period',  k:'col',d:'date'},
+      {n:'consumption_kwh', k:'col',d:'numeric'},
+      {n:'amount',          k:'col',d:'numeric'},
+      {n:'is_verified',     k:'col',d:'boolean'},
     ]},
   { id:'quotation_items',  label:'quotation_items',  icon:'📦', col:4, row:0,
     fields:[
@@ -363,6 +389,54 @@ TABLES.forEach(t=>{
     });
   });
 });
+
+function applyAdaptiveLayout(){
+  const availableWidth=document.getElementById('scroller').clientWidth;
+  const columns=Math.max(1, Math.min(5, Math.floor((availableWidth-PAD*2+GAP)/(TW+GAP))));
+  const columnHeights=Array(columns).fill(PAD);
+  const layoutWidth=Math.max(availableWidth, columns*(TW+GAP)+PAD);
+
+  TABLES.forEach((table,index)=>{
+    const column=index%columns;
+    pos[table.id]={x:PAD+column*(TW+GAP),y:columnHeights[column]};
+    columnHeights[column]+=th(table)+GAP;
+  });
+
+  const layoutHeight=Math.max(...columnHeights)+PAD-GAP;
+  canvas.style.width=layoutWidth+'px';
+  canvas.style.height=layoutHeight+'px';
+  svg.setAttribute('width',layoutWidth);
+  svg.setAttribute('height',layoutHeight);
+
+  TABLES.forEach(table=>{
+    const point=pos[table.id];
+    elMap[table.id].style.left=point.x+'px';
+    elMap[table.id].style.top=point.y+'px';
+  });
+
+  paths.forEach(({path,rel})=>{
+    const parent=pos[rel.from], child=pos[rel.to];
+    const parentY=parent.y+TH+FH/2;
+    const childY=child.y+TH+rel.fkIdx*FH+FH/2;
+    let x1=parent.x+TW, y1=parentY, x2=child.x, y2=childY;
+    let controlX1, controlY1, controlX2, controlY2;
+
+    if(child.x>=parent.x){
+      const bend=Math.max((x2-x1)*0.45,60);
+      controlX1=x1+bend; controlY1=y1;
+      controlX2=x2-bend; controlY2=y2;
+    } else {
+      x2=child.x+TW;
+      const top=Math.min(parent.y,child.y)-55;
+      controlX1=x1+70; controlY1=top;
+      controlX2=x2+70; controlY2=top;
+    }
+    path.setAttribute('d',`M${x1},${y1} C${controlX1},${controlY1},${controlX2},${controlY2},${x2},${y2}`);
+  });
+}
+
+applyAdaptiveLayout();
+window.addEventListener('resize',applyAdaptiveLayout);
 </script>
 </body>
 </html>

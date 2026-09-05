@@ -54,7 +54,7 @@ function handleGetProjects($supabase) {
             return;
         }
         
-        $query = $supabase->from('projects')->select('*');
+        $query = $supabase->from('projects')->select('*')->isNull('deleted_at');
 
         if ($customerId) {
             $query->eq('customer_id', $customerId);
@@ -99,7 +99,7 @@ function handlePostProject($supabase) {
     
     try {
         // Generate project code
-        $projects = $supabase->getAll('projects');
+        $projects = $supabase->getAll('projects', ['deleted_at' => 'is.null']);
         $maxId = count($projects) + 1;
         $data['project_code'] = 'PRJ-' . str_pad($maxId, 3, '0', STR_PAD_LEFT);
         $data['created_at'] = date('Y-m-d H:i:s');

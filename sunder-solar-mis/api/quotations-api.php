@@ -70,7 +70,7 @@ function handleGetQuotations() {
         }
         
         // Get all quotations
-        $query = $supabase->from('quotations')->select('*');
+        $query = $supabase->from('quotations')->select('*')->isNull('deleted_at');
 
         if ($status && $status !== 'all') {
             $query->eq('status', $status);
@@ -126,7 +126,7 @@ function handlePostQuotation() {
         
         // Generate quotation number
         $year = date('Y');
-        $quotations = $supabase->getAll('quotations');
+        $quotations = $supabase->getAll('quotations', ['deleted_at' => 'is.null']);
         $maxNum = 0;
         foreach ($quotations as $q) {
             if (preg_match("/Q-$year-(\d+)/", $q['quotation_number'], $matches)) {

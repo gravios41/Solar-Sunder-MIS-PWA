@@ -1,0 +1,216 @@
+<?php
+/**
+ * Approve Quotation Workflow
+ *
+ * This is the point where a quotation becomes a real commitment: inventory
+ * is deducted for whatever line items are ACTUALLY on the quotation right
+ * now (not the original assessment guess — staff may have edited them via
+ * the Quotations module first), a Project is created if the quotation
+ * doesn't already have one, and an Installation + standard task list are
+ * created so an employee can start work.
+ */
+
+header('Content-Type: application/json');
+require_once __DIR__ . '/../config/config.php';
+requireAuth();
+
+if (!hasPermission('quotations', 'edit')) {
+    echo json_encode(['success' => false, 'error' => 'Permission denied']);
+    exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+    exit;
+}
+
+global $supabase;
+$data = json_decode(file_get_contents('php://input'), true) ?: [];
+$quotationId = $data['quotation_id'] ?? '';
+
+if (!$quotationId) {
+    echo json_encode(['success' => false, 'error' => 'Quotation ID required']);
+    exit;
+}
+
+try {
+    $quotation = $supabase->getById('quotations', $quotationId);
+    if (!$quotation) {
+        throw new Exception('Quotation not found');
+    }
+    if ($quotation['status'] === 'approved') {
+        throw new Exception('This quotation is already approved');
+    }
+
+    $customerId = $quotation['customer_id'];
+    $customer = $supabase->getById('customers', $customerId);
+    $quotationItems = $supabase->getAll('quotation_items', ['quotation_id' => 'eq.' . $quotationId]) ?: [];
+
+    if (empty($quotationItems)) {
+        throw new Exception('This quotation has no line items to approve');
+    }
+
+    // Use the quotation's existing project if it has one; otherwise this
+    // quotation was created standalone, so create a project for it now.
+    $projectId = $quotation['project_id'] ?? null;
+    $projectCode = null;
+
+    if (!$projectId) {
+        $existingProjects = $supabase->getAll('projects', ['deleted_at' => 'is.null']) ?: [];
+        $projectCode = 'PRJ-' . str_pad(count($existingProjects) + 1, 3, '0', STR_PAD_LEFT);
+        $projectData = [
+            'customer_id' => $customerId,
+            'project_code' => $projectCode,
+            'project_name' => sprintf('%s - %s', $customer['name'] ?? 'Customer', $quotation['quotation_number']),
+            'status' => 'planning',
+            'progress' => 0,
+            'estimated_cost' => $quotation['total_amount'] ?? 0,
+            'start_date' => date('Y-m-d', strtotime('+7 days')),
+            'expected_end_date' => date('Y-m-d', strtotime('+21 days')),
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s')
+        ];
+        $projectResponse = $supabase->insert('projects', $projectData);
+        $project = $projectResponse[0] ?? $projectResponse;
+        $projectId = $project['id'] ?? null;
+
+        if (!$projectId) {
+            throw new Exception('Failed to create project for this quotation');
+        }
+
+        $supabase->update('quotations', $quotationId, ['project_id' => $projectId]);
+    }
+
+    // Deduct inventory for whatever's actually on the quotation now.
+    // Line items are always chosen from a fixed dropdown (real inventory
+    // items or the fixed Services list — see modules/quotations.php), so
+    // an exact item_name match reliably tells inventory apart from
+    // services; a service line simply won't match anything and is skipped.
+    $inventoryDeductions = [];
+    foreach ($quotationItems as $item) {
+        $itemName = $item['description'] ?? '';
+        $quantity = (float)($item['quantity'] ?? 0);
+        if (!$itemName || $quantity <= 0) {
+            continue;
+        }
+
+        $matches = $supabase->getAll('inventory', ['item_name' => 'eq.' . $itemName, 'select' => 'id,quantity']) ?: [];
+        if (empty($matches)) {
+            continue; // a service line item, or no longer in inventory
+        }
+
+        $inventoryId = $matches[0]['id'];
+        $currentQty = $matches[0]['quantity'] ?? 0;
+        $newQty = max(0, $currentQty - $quantity);
+
+        $supabase->update('inventory', $inventoryId, ['quantity' => $newQty]);
+
+        $supabase->insert('inventory_transactions', [
+            'inventory_id' => $inventoryId,
+            'transaction_type' => 'deduction',
+            'quantity_change' => -$quantity,
+            'reference_type' => 'quotation',
+            'reference_id' => (string)$quotationId,
+            'reason' => sprintf('Deducted for approved quotation %s', $quotation['quotation_number']),
+            'created_by' => $_SESSION['user_id']
+        ]);
+
+        $inventoryDeductions[] = [
+            'inventory_id' => $inventoryId,
+            'item_name' => $itemName,
+            'quantity_deducted' => $quantity,
+            'new_available' => $newQty
+        ];
+    }
+
+    // Create installation
+    $existingInstallations = $supabase->getAll('installations', ['deleted_at' => 'is.null']) ?: [];
+    $installationData = [
+        'customer_id' => $customerId,
+        'project_id' => $projectId,
+        'installation_code' => 'INS-' . str_pad(count($existingInstallations) + 1, 3, '0', STR_PAD_LEFT),
+        'location' => $customer['address'] ?? '',
+        'installation_date' => date('Y-m-d', strtotime('+14 days')),
+        'status' => 'scheduled',
+        'progress' => 0,
+        'technician' => '',
+        'created_at' => date('Y-m-d H:i:s'),
+        'updated_at' => date('Y-m-d H:i:s')
+    ];
+    $installationResponse = $supabase->insert('installations', $installationData);
+    $installation = $installationResponse[0] ?? $installationResponse;
+    $installationId = $installation['id'] ?? null;
+
+    if (!$installationId) {
+        throw new Exception('Failed to create installation');
+    }
+
+    // Create installation tasks, spaced across the project timeline
+    $projectRow = $supabase->getById('projects', $projectId);
+    $startDate = $projectRow['start_date'] ?? date('Y-m-d');
+    $standardTasks = [
+        ['title' => 'Site Survey & Roof Assessment', 'description' => 'Inspect roof structure and identify optimal panel placement (est. 2 hrs)', 'days_offset' => 0],
+        ['title' => 'Obtain Permits & Approvals', 'description' => 'File necessary permits with local authorities (est. 8 hrs)', 'days_offset' => 2],
+        ['title' => 'Equipment Procurement', 'description' => 'Order and receive all system components', 'days_offset' => 5],
+        ['title' => 'Electrical Wiring & Panel Installation', 'description' => 'Install mounting system and solar panels (est. 8 hrs)', 'days_offset' => 9],
+        ['title' => 'Inverter & Battery Installation', 'description' => 'Install inverter and connect to system (est. 4 hrs)', 'days_offset' => 11],
+        ['title' => 'Grid Connection & Testing', 'description' => 'Connect to grid and perform comprehensive testing (est. 2 hrs)', 'days_offset' => 12],
+        ['title' => 'Customer Training & Handover', 'description' => 'Train customer on system operation and monitoring (est. 1 hr)', 'days_offset' => 13],
+    ];
+
+    $createdTasks = [];
+    foreach ($standardTasks as $taskTemplate) {
+        $taskData = [
+            'project_id' => $projectId,
+            'task_title' => $taskTemplate['title'],
+            'description' => $taskTemplate['description'],
+            'status' => 'pending',
+            'assigned_to' => '',
+            'priority' => 'medium',
+            'due_date' => date('Y-m-d', strtotime("+{$taskTemplate['days_offset']} days", strtotime($startDate))),
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s')
+        ];
+        $taskResponse = $supabase->insert('tasks', $taskData);
+        $createdTasks[] = $taskResponse[0] ?? $taskResponse;
+    }
+
+    // Mark the quotation approved
+    $supabase->update('quotations', $quotationId, [
+        'status' => 'approved',
+        'updated_at' => date('Y-m-d H:i:s')
+    ]);
+
+    // If this quotation traces back to an energy assessment (same
+    // project), close that out too. status stays 'quoted' — that check
+    // constraint's allowed values don't include 'approved' — but
+    // approval_status is the field the UI actually reads for this.
+    $linkedAssessments = $supabase->getAll('energy_assessments', ['project_id' => 'eq.' . $projectId]) ?: [];
+    if (!empty($linkedAssessments)) {
+        $supabase->update('energy_assessments', $linkedAssessments[0]['id'], [
+            'approval_status' => 'approved'
+        ]);
+    }
+
+    logActivity($_SESSION['user_id'], 'update', 'quotations', "Approved quotation {$quotation['quotation_number']} — created installation and tasks");
+
+    echo json_encode([
+        'success' => true,
+        'message' => 'Quotation approved — inventory deducted, installation scheduled, and tasks created.',
+        'created' => [
+            'project_id' => $projectId,
+            'project_code' => $projectCode,
+            'installation_id' => $installationId,
+            'installation_code' => $installationData['installation_code'],
+            'task_count' => count($createdTasks),
+            'inventory_deductions' => $inventoryDeductions
+        ]
+    ]);
+
+} catch (Exception $e) {
+    http_response_code(400);
+    echo json_encode([
+        'success' => false,
+        'error' => $e->getMessage()
+    ]);
+}

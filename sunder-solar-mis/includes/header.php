@@ -38,6 +38,7 @@ $appBasePath = defined('APP_BASE_PATH') ? APP_BASE_PATH : '/';
 
     <script>
         const USER_ROLE = <?php echo json_encode($_SESSION['user_role'] ?? ''); ?>;
+        const USER_FULL_NAME = <?php echo json_encode($_SESSION['full_name'] ?? ''); ?>;
         window.APP_BASE_PATH = <?php echo json_encode($appBasePath); ?>;
     </script>
 </head>
