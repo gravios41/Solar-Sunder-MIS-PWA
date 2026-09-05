@@ -34,24 +34,27 @@ $lowStockCount     = count(array_filter($inventory, fn($i) => ($i['quantity'] ??
 include_once __DIR__ . '/../includes/header.php';
 ?>
 
-<!-- PWA Install Banner -->
+<!-- PWA Install Banner — steps are shown accurately, per-device, in the
+     popup that installPWA() opens (see assets/js/pwa.js), not hard-coded
+     here, since the right steps differ between iOS/Android/desktop and a
+     wrong static guess (e.g. telling a phone to "enable Desktop site")
+     just confuses people. Hidden automatically once already installed. -->
 <div id="pwaInstallBanner" style="margin-bottom:20px;padding:12px 16px;background:#FFF3E0;border:1px solid #FFB74D;border-radius:8px;display:flex;align-items:center;justify-content:space-between;gap:16px">
     <div style="display:flex;align-items:center;gap:12px;flex:1">
         <div>
             <div style="font-weight:600;color:#333">Install Sunder Solar MIS</div>
-            <div style="font-size:0.875rem;color:#666">Get quick access to the app on your device</div>
-
-            <div style="font-weight:600;color:#333;margin-top:8px">Phone Instructions</div>
-            <div style="font-size:0.875rem;color:#666">1. 📱 Open Menu - Tap 3-dot menu icon (⋮)</div>
-            <div style="font-size:0.875rem;color:#666">2. 🖥️ Select Desktop Mode - Enable "Desktop site"</div>
-            <div style="font-size:0.875rem;color:#666">3. ⬇️ Install App - "Install app"</div>
-            <div style="font-size:0.875rem;color:#666">4. ✅ Confirm - Tap "Install" to add to home screen</div>
+            <div style="font-size:0.875rem;color:#666">Get quick access to the app on your device — tap Install for setup steps.</div>
         </div>
     </div>
     <button type="button" id="pwaInstallBtnBanner" class="btn btn-primary" style="white-space:nowrap;flex-shrink:0;cursor:pointer" onclick="installPWA()">
         <i class="fas fa-download"></i> Install
     </button>
 </div>
+<script>
+    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+        document.getElementById('pwaInstallBanner')?.remove();
+    }
+</script>
 
 <!-- ── KPI Stats Row ─────────────────────── -->
 <div class="stats-grid" style="margin-bottom:20px">

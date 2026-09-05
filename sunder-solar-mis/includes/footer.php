@@ -58,6 +58,20 @@
     </div>
 </div>
 
+<!-- PWA Install Instructions Modal -->
+<div id="gmPwaInstall" class="gmModal">
+    <div class="gmModal-box">
+        <div class="gmModal-icon" style="background:rgba(249,115,22,.12);color:var(--solar-orange)">
+            <i class="fas fa-mobile-alt"></i>
+        </div>
+        <div class="gmModal-title" id="gmPwaInstallTitle">Install Sunder Solar MIS</div>
+        <div id="gmPwaInstallSteps" style="text-align:left;margin:16px 0;display:flex;flex-direction:column;gap:12px"></div>
+        <div class="gmModal-actions">
+            <button class="btn btn-primary" id="gmPwaInstallClose">Got it</button>
+        </div>
+    </div>
+</div>
+
 <!-- Core JS -->
 <?php $footerBasePath = $appBasePath ?? (defined('APP_BASE_PATH') ? APP_BASE_PATH : '/'); ?>
 <script src="<?php echo htmlspecialchars($footerBasePath); ?>assets/js/sidebar.js"></script>
