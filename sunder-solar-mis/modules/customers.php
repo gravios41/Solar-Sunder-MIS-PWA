@@ -20,6 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
         case 'get':
             $customers = $supabase->from('customers')
                 ->select('*')
+                ->isNull('deleted_at')
                 ->order('created_at', false)
                 ->execute();
             echo json_encode(['success' => true, 'data' => $customers ?? []]);

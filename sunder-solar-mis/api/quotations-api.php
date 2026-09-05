@@ -124,16 +124,9 @@ function handlePostQuotation() {
         $items = $data['items'] ?? [];
         unset($data['items']);
         
-        // Generate quotation number
+        // Generate quotation number (numbering resets each year)
         $year = date('Y');
-        $quotations = $supabase->getAll('quotations', ['deleted_at' => 'is.null']);
-        $maxNum = 0;
-        foreach ($quotations as $q) {
-            if (preg_match("/Q-$year-(\d+)/", $q['quotation_number'], $matches)) {
-                $maxNum = max($maxNum, intval($matches[1]));
-            }
-        }
-        $data['quotation_number'] = 'Q-' . $year . '-' . str_pad($maxNum + 1, 3, '0', STR_PAD_LEFT);
+        $data['quotation_number'] = generateSequentialCode($supabase, 'quotations', 'quotation_number', "Q-$year");
         $data['created_at'] = date('Y-m-d H:i:s');
         $data['updated_at'] = date('Y-m-d H:i:s');
         
@@ -200,7 +193,18 @@ function handlePutQuotation() {
         echo json_encode(['success' => false, 'error' => 'Permission denied']);
         return;
     }
-    
+
+    // Once approved, inventory has already been deducted against these
+    // exact line items — editing them afterward would silently desync
+    // what's recorded here from what's actually missing from stock, with
+    // no re-deduction/re-credit to keep the two in sync. Blocked outright
+    // rather than trying to reconcile it.
+    $existing = $supabase->getById('quotations', $id);
+    if ($existing && ($existing['status'] ?? '') === 'approved') {
+        echo json_encode(['success' => false, 'error' => 'This quotation is already approved — its items are locked since inventory has already been deducted against them']);
+        return;
+    }
+
     try {
         // Check if items are being updated
         if (isset($data['items'])) {

@@ -34,11 +34,23 @@ include_once __DIR__ . '/../includes/header.php';
             <!-- OCR Bill Upload Section -->
             <div style="border-top:1px solid #e2e8f0;margin-top:20px;padding-top:20px">
                 <h4 style="margin:0 0 15px">Upload Bill Images for OCR</h4>
+
+                <div class="form-group" style="max-width:360px;margin-bottom:18px">
+                    <label class="form-label">Solar System Type</label>
+                    <select id="systemType" class="form-control">
+                        <option value="hybrid">Hybrid Systems</option>
+                        <option value="grid_tied">Grid-Tied Systems</option>
+                        <option value="off_grid">Off-Grid Systems</option>
+                    </select>
+                    <small style="color:#64748b;display:block;margin-top:4px">Changes battery sizing in the recommendation — Grid-Tied needs none, Off-Grid needs much more.</small>
+                </div>
+
+                <div id="billUploadHint" style="margin:-8px 0 15px;font-size:12.5px;color:#F97316"><i class="fas fa-circle-info"></i> Select a customer above before uploading a bill.</div>
                 <div id="billUploadSection">
                     <div class="grid-cols-3" style="gap:15px">
                         <?php for ($i = 1; $i <= 3; $i++): ?>
                         <div class="form-group" style="border:2px dashed #cbd5e1;padding:15px;border-radius:8px;text-align:center">
-                            <input type="file" id="billFile<?php echo $i; ?>" class="form-control bill-file-upload" accept="image/jpeg,image/png,image/webp,application/pdf" style="display:none">
+                            <input type="file" id="billFile<?php echo $i; ?>" class="form-control bill-file-upload" accept="image/jpeg,image/png,image/webp,application/pdf" style="display:none" disabled>
                             <label for="billFile<?php echo $i; ?>" style="cursor:pointer;display:block">
                                 <div class="form-label" style="margin-bottom:8px">Bill <?php echo $i; ?></div>
                                 <i class="fas fa-cloud-upload-alt" style="font-size:24px;color:#94a3b8;margin-bottom:8px;display:block"></i>
@@ -57,10 +69,10 @@ include_once __DIR__ . '/../includes/header.php';
             </div>
 
             <h4 style="margin:20px 0 10px">Or Enter Manually</h4>
-            <div class="table-container"><table class="table"><thead><tr><th>Billing month</th><th>Consumption (kWh) *</th><th>Amount</th></tr></thead><tbody>
+            <div class="table-container"><table class="table manual-bills-table"><thead><tr><th>Billing month</th><th>Consumption (kWh) *</th><th>Amount</th></tr></thead><tbody>
                 <?php for ($i = 0; $i < 3; $i++): ?><tr><td><input class="form-control bill-period" type="month" required></td><td><input class="form-control bill-kwh" type="number" min="0.01" step="0.01" required></td><td><input class="form-control bill-amount" type="number" min="0" step="0.01"></td></tr><?php endfor; ?>
             </tbody></table></div>
-            <div class="card" style="margin-top:20px;background:#f8fafc"><div class="card-body"><strong>Recommendation preview</strong><div id="recommendation" style="margin-top:8px;color:#475569">Enter the three monthly kWh readings.</div></div></div>
+            <div class="card" style="margin-top:20px;background:#f8fafc"><div class="card-body"><strong>Recommendation preview</strong><div id="recommendation" style="margin-top:8px;color:#475569">Enter the three monthly kWh readings.</div><div id="recommendationItems"></div></div></div>
             <div style="margin-top:20px"><button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Assessment</button></div>
         </form>
     </div>
@@ -88,36 +100,221 @@ include_once __DIR__ . '/../includes/header.php';
 let ocrBillsData = {};
 let currentAssessmentId = null;
 
+// Which tier the user has clicked on, per context — the live preview
+// (informational only, nothing to persist yet since the assessment isn't
+// even saved) and the Review Recommendation modal, whose choice actually
+// gets sent to create-approved-project.php on approval. Cached alongside
+// the last-fetched tier data so clicking a card just re-renders instead
+// of re-fetching from the server.
+let previewSelectedTier = 'standard';
+let lastPreviewTiers = null, lastPreviewSunHours = null, lastPreviewEfficiency = null;
+let reviewSelectedTier = 'standard';
+let lastReviewTiers = null, lastReviewSunHours = null, lastReviewEfficiency = null;
+
+function selectPreviewTier(key) {
+    previewSelectedTier = key;
+    if (lastPreviewTiers) {
+        document.getElementById('recommendationItems').innerHTML =
+            renderTierContainers(lastPreviewTiers, lastPreviewSunHours, lastPreviewEfficiency, previewSelectedTier, 'selectPreviewTier');
+    }
+}
+
+function selectReviewTier(key) {
+    reviewSelectedTier = key;
+    if (lastReviewTiers) {
+        document.getElementById('modalMaterials').innerHTML =
+            renderTierContainers(lastReviewTiers, lastReviewSunHours, lastReviewEfficiency, reviewSelectedTier, 'selectReviewTier');
+    }
+}
+
 const billInputs = [...document.querySelectorAll('.bill-kwh')];
 const recommendation = document.getElementById('recommendation');
 
+// The actual sizing/matching math lives server-side in
+// buildRecommendationMaterials() (config/functions.php) — the same
+// function create-approved-project.php calls on real approval — so this
+// preview can never show something different from what approval actually
+// creates. Debounced since it hits the database (inventory spec matching)
+// on every keystroke otherwise.
+let recommendationPreviewTimer = null;
+
 function calculateRecommendation() {
     const values = billInputs.map(input => Number(input.value)).filter(value => value > 0);
-    if (values.length !== 3) { recommendation.textContent = 'Enter the three monthly kWh readings.'; return null; }
+    const itemsEl = document.getElementById('recommendationItems');
+    if (values.length !== 3) {
+        recommendation.textContent = 'Enter the three monthly kWh readings.';
+        if (itemsEl) itemsEl.innerHTML = '';
+        clearTimeout(recommendationPreviewTimer);
+        return null;
+    }
+
     const averageMonthly = values.reduce((sum, value) => sum + value, 0) / 3;
-    const daily = averageMonthly / 30;
     const sunHours = Number(document.getElementById('peakSunHours').value) || 5;
-    const efficiency = (Number(document.getElementById('efficiency').value) || 80) / 100;
+    const efficiency = Number(document.getElementById('efficiency').value) || 80;
     const panelWattage = Number(document.getElementById('panelWattage').value) || 550;
-    const systemKw = daily / sunHours / efficiency;
-    const panels = Math.ceil(systemKw * 1000 / panelWattage);
-    recommendation.textContent = `Average ${averageMonthly.toFixed(2)} kWh/month · ${daily.toFixed(2)} kWh/day · approximately ${systemKw.toFixed(2)} kW · ${panels} panels at ${panelWattage} W`;
-    return { averageMonthly, systemKw, panels };
+    const systemType = document.getElementById('systemType')?.value || 'hybrid';
+
+    recommendation.textContent = 'Calculating…';
+    clearTimeout(recommendationPreviewTimer);
+    recommendationPreviewTimer = setTimeout(
+        () => fetchRecommendationPreview(averageMonthly, sunHours, efficiency, panelWattage, systemType),
+        400
+    );
+
+    // Only used as a "did the user finish entering three valid readings?"
+    // gate by the submit handler — the real numbers come from the server
+    // both here (debounced, for preview) and on save (energy-assessments-api.php).
+    return { averageMonthly };
+}
+
+async function fetchRecommendationPreview(averageMonthly, sunHours, efficiency, panelWattage, systemType) {
+    try {
+        const params = new URLSearchParams({
+            average_monthly_kwh: averageMonthly,
+            peak_sun_hours: sunHours,
+            efficiency: efficiency,
+            panel_wattage: panelWattage,
+            system_type: systemType || 'hybrid',
+        });
+        const response = await fetch(`../api/recommendation-preview.php?${params}`);
+        const result = await response.json();
+        if (!result.success) {
+            recommendation.textContent = result.error || 'Could not calculate a recommendation.';
+            return;
+        }
+
+        const std = result.tiers.standard;
+        recommendation.textContent = `Average ${result.average_monthly_kwh.toFixed(2)} kWh/month · ${result.average_daily_kwh.toFixed(2)} kWh/day · approximately ${result.system_kw.toFixed(2)} kW · ${std.panel_count} panels at ${std.panel_wattage_selected}W`;
+
+        lastPreviewTiers = result.tiers;
+        lastPreviewSunHours = sunHours;
+        lastPreviewEfficiency = efficiency;
+
+        const itemsEl = document.getElementById('recommendationItems');
+        if (itemsEl) {
+            itemsEl.innerHTML = renderTierContainers(result.tiers, sunHours, efficiency, previewSelectedTier, 'selectPreviewTier');
+        }
+    } catch (e) {
+        console.error('Error loading recommendation preview:', e);
+        recommendation.textContent = 'Could not calculate a recommendation.';
+    }
+}
+
+// Renders the three recommendation tiers (Budget-friendly / Actual
+// Recommendation / Luxury) as side-by-side containers — shared by the
+// live pre-save preview above and the Review Recommendation modal for an
+// already-saved assessment, so the two never drift apart visually.
+const TIER_DISPLAY = {
+    budget:   { label: 'Budget-Friendly',      accent: '#0EA5E9', bg: '#F0F9FF' },
+    standard: { label: 'Actual Recommendation', accent: '#F97316', bg: '#FFF7ED' },
+    luxury:   { label: 'Luxury',                accent: '#8B5CF6', bg: '#F5F3FF' },
+};
+
+const SYSTEM_TYPE_NOTE = {
+    grid_tied: 'Grid-Tied: no battery shown — excess power exports to the grid via net metering instead of being stored.',
+    off_grid:  'Off-Grid: battery sized for 3&times; the normal backup autonomy, since there\'s no grid to fall back on.',
+    hybrid:    null,
+};
+
+function renderTierContainers(tiers, peakSunHours, efficiencyPercent, selectedTier, onSelectFn) {
+    const cards = ['budget', 'standard', 'luxury'].map(key => {
+        const tier = tiers[key];
+        const display = TIER_DISPLAY[key];
+        const total = tier.items.reduce((sum, item) => sum + (item.unit_price * item.quantity), 0);
+        const rows = tier.items.map(item => `
+            <li style="display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px solid rgba(0,0,0,0.06);font-size:12.5px">
+                <span style="color:#475569">${escapeHtml(item.item_name)} &times; ${item.quantity}</span>
+                <span style="color:#334155;white-space:nowrap;font-variant-numeric:tabular-nums">${money(item.unit_price * item.quantity)}</span>
+            </li>`).join('');
+
+        // Each tier picks its own panel count/wattage, so its actual
+        // expected generation differs too — computed the same way system
+        // sizing works in reverse: kW of panels x sun hours x efficiency.
+        let harvestHtml = '';
+        if (peakSunHours && efficiencyPercent) {
+            const panelKw = (tier.panel_count * tier.panel_wattage_selected) / 1000;
+            const dailyKwh = panelKw * peakSunHours * (efficiencyPercent / 100);
+            harvestHtml = `<div style="font-size:12px;color:#475569;margin-bottom:10px"><i class="fas fa-sun" style="color:${display.accent};margin-right:4px"></i>~${dailyKwh.toFixed(2)} kWh/day harvest</div>`;
+        }
+
+        const isSelected = onSelectFn && key === selectedTier;
+        // A single merged style attribute — a duplicate `style="..."` on
+        // the same element is invalid HTML, and the browser silently
+        // keeps only the first one and drops the rest, which is exactly
+        // what was quietly discarding every card's background/border/
+        // position:relative (and, with that gone, the "Selected" badge's
+        // position:absolute fell back to the nearest positioned ancestor
+        // instead of this card, so it floated up to the outer panel).
+        const onClickAttr = onSelectFn ? `onclick="${onSelectFn}('${key}')"` : '';
+        const cardStyle = [
+            'position:relative',
+            'flex:1',
+            'min-width:230px',
+            `background:${display.bg}`,
+            `border:${isSelected ? '2px' : '1px'} solid ${isSelected ? display.accent : display.accent + '33'}`,
+            `border-top:3px solid ${display.accent}`,
+            'border-radius:10px',
+            'padding:14px 16px',
+            isSelected ? `box-shadow:0 2px 10px ${display.accent}40` : '',
+            onSelectFn ? 'cursor:pointer' : '',
+        ].filter(Boolean).join(';');
+
+        const selectedBadge = isSelected
+            ? `<div style="position:absolute;top:8px;right:8px;background:${display.accent};color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;white-space:nowrap"><i class="fas fa-check"></i> Selected</div>`
+            : '';
+
+        return `
+            <div class="tier-card" ${onClickAttr} style="${cardStyle}">
+                ${selectedBadge}
+                <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:${display.accent};padding-right:${isSelected ? '70px' : '0'}">${display.label}</div>
+                <div style="font-size:19px;font-weight:700;color:#1e293b;margin:4px 0 6px;font-variant-numeric:tabular-nums">${money(total)}</div>
+                ${harvestHtml}
+                <ul style="list-style:none;margin:0;padding:0">${rows}</ul>
+                ${onSelectFn && !isSelected ? `<div style="margin-top:10px;text-align:center;font-size:11.5px;color:${display.accent};font-weight:600">Click to choose this option</div>` : ''}
+            </div>`;
+    }).join('');
+
+    const note = SYSTEM_TYPE_NOTE[tiers.standard?.system_type] || null;
+    const noteHtml = note ? `<div style="margin-top:8px;font-size:12px;color:#64748b"><i class="fas fa-circle-info"></i> ${note}</div>` : '';
+
+    return `
+        <div style="margin-top:12px;font-size:12px;font-weight:600;color:#334155">Recommended materials (from inventory) — three options:</div>
+        <div class="tier-container" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px">${cards}</div>
+        ${noteHtml}`;
 }
 
 document.querySelectorAll('#assessmentForm input').forEach(input => input.addEventListener('input', calculateRecommendation));
+document.getElementById('systemType')?.addEventListener('change', calculateRecommendation);
 
-// OCR Upload Handler
+// The OCR upload needs a customer picked first (it bootstraps a
+// placeholder assessment tied to that customer) — disable the bill
+// dropzones until one is selected instead of letting people hit a
+// confusing failure after already choosing a file.
+function updateBillUploadAvailability() {
+    const hasCustomer = !!document.getElementById('customerId').value;
+    document.querySelectorAll('.bill-file-upload').forEach(input => { input.disabled = !hasCustomer; });
+    const hint = document.getElementById('billUploadHint');
+    if (hint) hint.style.display = hasCustomer ? 'none' : 'block';
+}
+document.getElementById('customerId').addEventListener('change', updateBillUploadAvailability);
+updateBillUploadAvailability();
+
+// OCR Upload Handler — scans immediately on file selection instead of
+// waiting for a separate "Upload" click, which was easy to miss (the
+// filename turning green already looked like a completed action, so
+// people moved on to the manual fields without ever triggering OCR).
+// The button stays as a manual retry if the automatic scan fails.
 document.querySelectorAll('.bill-file-upload').forEach((input, index) => {
     input.addEventListener('change', function() {
         const billNum = index + 1;
         const fileName = this.files[0]?.name || '';
         const statusEl = document.getElementById(`billUploadStatus${billNum}`);
         const uploadBtn = document.getElementById(`billUploadBtn${billNum}`);
-        
+
         if (this.files.length > 0) {
-            statusEl.innerHTML = `<span style="color:#16a34a">${fileName}</span>`;
+            statusEl.innerHTML = `<span style="color:#64748b">${fileName} — scanning…</span>`;
             uploadBtn.style.display = 'inline-block';
+            uploadBill(billNum);
         } else {
             statusEl.innerHTML = '';
             uploadBtn.style.display = 'none';
@@ -127,7 +324,14 @@ document.querySelectorAll('.bill-file-upload').forEach((input, index) => {
 
 async function uploadBill(billNum) {
     const customerId = document.getElementById('customerId').value;
-    
+    const statusEl = document.getElementById(`billUploadStatus${billNum}`);
+
+    if (!customerId) {
+        statusEl.innerHTML = '<span style="color:#dc2626">Select a customer above first</span>';
+        showToast('Select a customer before uploading a bill', 'error');
+        return;
+    }
+
     // First save a temporary assessment if not yet created
     if (!currentAssessmentId) {
         const tempBills = [{billing_period: '2025-01-01', consumption_kwh: 0}, {billing_period: '2025-01-01', consumption_kwh: 0}, {billing_period: '2025-01-01', consumption_kwh: 0}];
@@ -147,7 +351,12 @@ async function uploadBill(billNum) {
         if (result.success) {
             currentAssessmentId = result.assessment_id;
         } else {
-            showToast('Failed to create assessment', 'error');
+            // Show the server's actual reason (e.g. "Select a customer")
+            // instead of a generic message that hides what to fix — this
+            // was previously leaving the status stuck on "scanning…"
+            // forever with no indication of why.
+            statusEl.innerHTML = `<span style="color:#dc2626">${escapeHtml(result.error || 'Failed to create assessment')}</span>`;
+            showToast(result.error || 'Failed to create assessment', 'error');
             return;
         }
     }
@@ -164,7 +373,6 @@ async function uploadBill(billNum) {
     formData.append('assessment_id', currentAssessmentId);
     formData.append('bill_image', file);
 
-    const statusEl = document.getElementById(`billUploadStatus${billNum}`);
     statusEl.innerHTML = '<span style="color:#3b82f6">Processing...</span>';
 
     try {
@@ -176,10 +384,13 @@ async function uploadBill(billNum) {
 
         if (result.success) {
             ocrBillsData[billNum] = result.extracted;
-            statusEl.innerHTML = `<span style="color:#16a34a">✓ ${result.extracted.consumption_kwh} kWh</span>`;
+            const lowConfidence = result.extracted.confidence === 'low';
+            const color = lowConfidence ? '#d97706' : '#16a34a';
+            const icon = lowConfidence ? '⚠' : '✓';
+            statusEl.innerHTML = `<span style="color:${color}">${icon} ${result.extracted.consumption_kwh} kWh${lowConfidence ? ' — please verify against the bill' : ''}</span>`;
             updateOCRResults();
             fillManualRowFromOcr(billNum, result.extracted);
-            showToast('Bill uploaded and OCR completed');
+            showToast(lowConfidence ? 'Scanned, but not fully confident — please double-check the amount' : 'Bill uploaded and OCR completed', lowConfidence ? 'warning' : 'success');
         } else {
             statusEl.innerHTML = `<span style="color:#dc2626">Error: ${result.error}</span>`;
             showToast(result.error || 'OCR failed', 'error');
@@ -216,7 +427,7 @@ function updateOCRResults() {
     }
 }
 
-async function loadCustomers() { 
+async function loadCustomers() {
     const response = await fetch('../api/customers-api.php'); 
     const result = await response.json(); 
     if (result.success) document.getElementById('customerId').innerHTML += (result.data || []).map(customer => `<option value="${customer.id}">${escapeHtml(customer.name)}</option>`).join(''); 
@@ -249,31 +460,63 @@ async function loadAssessments() {
 
 function showRecommendationModal(assessmentId) {
     currentAssessmentId = assessmentId;
+    reviewSelectedTier = 'standard'; // reset each time — a prior assessment's choice shouldn't carry over
+    lastReviewTiers = null;
     const modal = document.getElementById('recommendationModal');
     const content = document.getElementById('modalContent');
     content.innerHTML = `<div style="text-align:center">Loading recommendation details...</div>`;
     modal.style.display = 'block';
 
-    // Fetch assessment details
+    // Fetch assessment details, then the same accurate materials matching
+    // used everywhere else (buildRecommendationMaterials via
+    // recommendation-preview.php) so this modal shows exactly what
+    // approving it will actually create — full detail, grouped by category.
     fetch(`../api/energy-assessments-api.php?id=${assessmentId}`)
         .then(r => r.json())
-        .then(result => {
-            if (result.success && result.data.length > 0) {
-                const assessment = result.data[0];
-                content.innerHTML = `
-                    <h4>${assessment.customer_name}</h4>
-                    <div style="background:#f8fafc;padding:12px;border-radius:6px;margin-bottom:15px">
-                        <p><strong>Average consumption:</strong> ${Number(assessment.average_monthly_kwh).toFixed(2)} kWh/month</p>
-                        <p><strong>Daily average:</strong> ${Number(assessment.average_daily_kwh).toFixed(2)} kWh/day</p>
-                        <p><strong>Recommended system size:</strong> ${Number(assessment.recommended_system_kw).toFixed(2)} kW</p>
-                        <p><strong>Panel count (${assessment.panel_wattage}W):</strong> ${assessment.recommended_panel_count} panels</p>
-                        <p><strong>Peak sun hours:</strong> ${assessment.peak_sun_hours}</p>
-                        <p><strong>System efficiency:</strong> ${(assessment.system_efficiency * 100).toFixed(0)}%</p>
-                    </div>
-                    <p style="color:#64748b;font-size:13px">Approving this recommendation creates a project and a draft quotation for review. Inventory is only deducted, and the installation and task list only created, once that quotation is approved in the Quotations module.</p>
-                `;
+        .then(async result => {
+            if (!result.success || !result.data.length) return;
+            const assessment = result.data[0];
+
+            content.innerHTML = `
+                <h4>${assessment.customer_name}</h4>
+                <div style="background:#f8fafc;padding:12px;border-radius:6px;margin-bottom:15px">
+                    <p><strong>Average consumption:</strong> ${Number(assessment.average_monthly_kwh).toFixed(2)} kWh/month</p>
+                    <p><strong>Daily average:</strong> ${Number(assessment.average_daily_kwh).toFixed(2)} kWh/day</p>
+                    <p><strong>Recommended system size:</strong> ${Number(assessment.recommended_system_kw).toFixed(2)} kW</p>
+                    <p><strong>Panel count (${assessment.panel_wattage}W):</strong> ${assessment.recommended_panel_count} panels</p>
+                    <p><strong>Peak sun hours:</strong> ${assessment.peak_sun_hours}</p>
+                    <p><strong>System efficiency:</strong> ${(assessment.system_efficiency * 100).toFixed(0)}%</p>
+                </div>
+                <div id="modalMaterials"><div style="text-align:center;color:#94a3b8;font-size:13px">Loading recommended materials…</div></div>
+                <p style="color:#64748b;font-size:13px;margin-top:12px">Click a tier below to choose it, then approve — the project and draft quotation will be built from whichever one is selected (<strong>Actual Recommendation</strong> by default). Inventory is only deducted, and the installation and task list only created, once that quotation is approved in the Quotations module.</p>
+            `;
+
+            const params = new URLSearchParams({
+                average_monthly_kwh: assessment.average_monthly_kwh,
+                peak_sun_hours: assessment.peak_sun_hours,
+                efficiency: assessment.system_efficiency * 100,
+                panel_wattage: assessment.panel_wattage,
+            });
+            const materialsEl = document.getElementById('modalMaterials');
+            try {
+                const res = await fetch(`../api/recommendation-preview.php?${params}`);
+                const preview = await res.json();
+                if (!preview.success) {
+                    materialsEl.innerHTML = `<p style="color:#dc2626;font-size:13px">${escapeHtml(preview.error || 'Could not load materials.')}</p>`;
+                    return;
+                }
+                lastReviewTiers = preview.tiers;
+                lastReviewSunHours = assessment.peak_sun_hours;
+                lastReviewEfficiency = assessment.system_efficiency * 100;
+                materialsEl.innerHTML = renderTierContainers(preview.tiers, lastReviewSunHours, lastReviewEfficiency, reviewSelectedTier, 'selectReviewTier');
+            } catch (e) {
+                materialsEl.innerHTML = `<p style="color:#dc2626;font-size:13px">Could not load materials.</p>`;
             }
         });
+}
+
+function money(value) {
+    return '₱' + Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function closeRecommendationModal() {
@@ -287,7 +530,7 @@ async function approveRecommendation() {
     const response = await fetch('../api/create-approved-project.php', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({assessment_id: currentAssessmentId})
+        body: JSON.stringify({assessment_id: currentAssessmentId, tier: reviewSelectedTier})
     });
     const result = await response.json();
     

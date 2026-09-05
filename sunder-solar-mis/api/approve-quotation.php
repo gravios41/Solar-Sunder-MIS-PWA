@@ -56,12 +56,12 @@ try {
     $projectCode = null;
 
     if (!$projectId) {
-        $existingProjects = $supabase->getAll('projects', ['deleted_at' => 'is.null']) ?: [];
-        $projectCode = 'PRJ-' . str_pad(count($existingProjects) + 1, 3, '0', STR_PAD_LEFT);
+        $projectCode = generateSequentialCode($supabase, 'projects', 'project_code', 'PRJ');
         $projectData = [
             'customer_id' => $customerId,
             'project_code' => $projectCode,
             'project_name' => sprintf('%s - %s', $customer['name'] ?? 'Customer', $quotation['quotation_number']),
+            'manager' => getOwnerFullName($supabase),
             'status' => 'planning',
             'progress' => 0,
             'estimated_cost' => $quotation['total_amount'] ?? 0,
@@ -124,11 +124,10 @@ try {
     }
 
     // Create installation
-    $existingInstallations = $supabase->getAll('installations', ['deleted_at' => 'is.null']) ?: [];
     $installationData = [
         'customer_id' => $customerId,
         'project_id' => $projectId,
-        'installation_code' => 'INS-' . str_pad(count($existingInstallations) + 1, 3, '0', STR_PAD_LEFT),
+        'installation_code' => generateSequentialCode($supabase, 'installations', 'installation_code', 'INS'),
         'location' => $customer['address'] ?? '',
         'installation_date' => date('Y-m-d', strtotime('+14 days')),
         'status' => 'scheduled',

@@ -104,9 +104,7 @@ function handlePostInstallation() {
     
     try {
         // Generate installation code
-        $installations = $supabase->getAll('installations', ['deleted_at' => 'is.null']);
-        $maxId = count($installations) + 1;
-        $data['installation_code'] = 'INS-' . str_pad($maxId, 3, '0', STR_PAD_LEFT);
+        $data['installation_code'] = generateSequentialCode($supabase, 'installations', 'installation_code', 'INS');
         $data['created_at'] = date('Y-m-d H:i:s');
         $data['updated_at'] = date('Y-m-d H:i:s');
         

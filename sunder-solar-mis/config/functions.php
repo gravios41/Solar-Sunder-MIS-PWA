@@ -208,6 +208,327 @@ function archiveRecord($entityType, $id) {
     return true;
 }
 
+// This company's project manager is always its owner — a project never
+// gets assigned to anyone else, so the field is auto-filled from the one
+// 'owner' account instead of asking anyone to type a name in. Returns ''
+// (rather than throwing) if no owner account exists yet, so project
+// creation still succeeds with an empty manager field.
+function getOwnerFullName($supabase) {
+    $owners = $supabase->getAll('users', ['role' => 'eq.owner', 'select' => 'full_name', 'limit' => 1]) ?: [];
+    return $owners[0]['full_name'] ?? '';
+}
+
+// Extracts the leading number in front of a unit from an inventory item's
+// `specification` text (e.g. "550W monocrystalline..." -> 550.0,
+// "12kW three-phase hybrid" -> 12.0, "5.12kWh, 51.2V..." -> 5.12).
+function parseSpecNumber($specification, $pattern) {
+    if ($specification && preg_match($pattern, $specification, $matches)) {
+        return (float)$matches[1];
+    }
+    return null;
+}
+
+// Picks one item from an inventory category by tier: budget = cheapest
+// available, luxury = most premium (priciest) available, standard =
+// lowest id (a stable, arbitrary "default" pick — used for categories
+// where there's no meaningful spec to optimize against, like mounting
+// hardware or accessories).
+function pickInventoryByTier($supabase, $category, $tier) {
+    $items = $supabase->from('inventory')->select('*')->eq('category', $category)->execute() ?: [];
+    if (!$items) {
+        return null;
+    }
+    if ($tier === 'budget') {
+        usort($items, fn($a, $b) => ($a['unit_price'] ?? 0) <=> ($b['unit_price'] ?? 0));
+    } elseif ($tier === 'luxury') {
+        usort($items, fn($a, $b) => ($b['unit_price'] ?? 0) <=> ($a['unit_price'] ?? 0));
+    } else {
+        usort($items, fn($a, $b) => $a['id'] <=> $b['id']);
+    }
+    return $items[0];
+}
+
+// Builds the real bill of materials for a recommended solar system by
+// matching actual inventory specs — not just grabbing whichever item in a
+// category happens to have the lowest id regardless of whether it's the
+// right size. This is the SINGLE source of truth used by both the live
+// Recommendation preview (api/recommendation-preview.php, called from
+// energy-assessments.php) and the real creation on approval
+// (create-approved-project.php) — they must never diverge, since the
+// preview is a promise about what approval will actually create.
+//
+// $tier selects which of the three recommendations to build:
+//   'budget'   — cheapest components that still meet the technical minimum
+//   'standard' — the actual recommendation: closest wattage match, smallest
+//                inverter that meets headroom, cheapest way to cover ~1 day
+//                of storage (this is what approval actually uses)
+//   'luxury'   — most premium components available, extra headroom, more
+//                battery autonomy
+//
+// $systemType changes battery/backup sizing to match how the system
+// actually connects to the grid:
+//   'hybrid'    (default) — grid-connected with battery backup; the tier's
+//                normal autonomy target applies as-is
+//   'grid_tied' — no battery at all; excess power exports to the grid via
+//                net metering instead of being stored
+//   'off_grid'  — no grid connection to fall back on, so battery autonomy
+//                is tripled and inverter headroom is higher
+function buildRecommendationMaterials($supabase, $requestedPanelWattage, $systemKw, $averageDailyKwh, $tier = 'standard', $systemType = 'hybrid') {
+    $items = [];
+
+    // --- Panels: standard matches the requested wattage as closely as
+    // possible; budget/luxury pick the cheapest/priciest panel available
+    // instead. Either way, the count is recomputed against the SELECTED
+    // panel's real wattage so the system still reaches the target kW. ---
+    $panels = $supabase->from('inventory')->select('*')->eq('category', 'solar_panel')->order('id', true)->execute() ?: [];
+    $panelCandidates = [];
+    foreach ($panels as $p) {
+        $watts = parseSpecNumber($p['specification'] ?? '', '/(\d+(?:\.\d+)?)\s*W\b/i');
+        if ($watts !== null) {
+            $panelCandidates[] = ['item' => $p, 'watts' => $watts];
+        }
+    }
+    $bestPanel = null; $bestPanelWattage = $requestedPanelWattage;
+    if ($tier === 'budget') {
+        usort($panelCandidates, fn($a, $b) => ($a['item']['unit_price'] ?? 0) <=> ($b['item']['unit_price'] ?? 0));
+        if ($panelCandidates) { $bestPanel = $panelCandidates[0]['item']; $bestPanelWattage = $panelCandidates[0]['watts']; }
+    } elseif ($tier === 'luxury') {
+        usort($panelCandidates, fn($a, $b) => ($b['item']['unit_price'] ?? 0) <=> ($a['item']['unit_price'] ?? 0));
+        if ($panelCandidates) { $bestPanel = $panelCandidates[0]['item']; $bestPanelWattage = $panelCandidates[0]['watts']; }
+    } else {
+        $bestDiff = null;
+        foreach ($panelCandidates as $c) {
+            $diff = abs($c['watts'] - $requestedPanelWattage);
+            if ($bestDiff === null || $diff < $bestDiff) {
+                $bestDiff = $diff;
+                $bestPanel = $c['item'];
+                $bestPanelWattage = $c['watts'];
+            }
+        }
+    }
+    $panelCount = max(1, (int)ceil($systemKw * 1000 / $bestPanelWattage));
+    $panelUnitPrice = $bestPanel['unit_price'] ?? 300;
+    $items[] = [
+        'inventory_id' => $bestPanel['id'] ?? null,
+        'item_name' => $bestPanel['item_name'] ?? ('Solar Panels ' . $requestedPanelWattage . 'W'),
+        'category' => 'panel',
+        'quantity' => $panelCount,
+        'unit_price' => $panelUnitPrice,
+        'total_price' => $panelUnitPrice * $panelCount,
+    ];
+
+    // --- Inverter: needs at least 20% headroom over the system's kW
+    // rating (luxury adds more for future expansion room; off-grid adds
+    // more still since there's no grid to lean on if it's undersized).
+    // Among the inverters that qualify, standard picks the smallest
+    // (just enough), budget the cheapest, luxury the priciest. ---
+    $headroomMultiplier = $tier === 'luxury' ? 1.5 : 1.2;
+    if ($systemType === 'off_grid') {
+        $headroomMultiplier += 0.3;
+    }
+    $neededInverterKw = $systemKw * $headroomMultiplier;
+    $inverters = $supabase->from('inventory')->select('*')->eq('category', 'inverter')->order('id', true)->execute() ?: [];
+    $qualifying = [];
+    foreach ($inverters as $inv) {
+        $kw = parseSpecNumber($inv['specification'] ?? '', '/(\d+(?:\.\d+)?)\s*kW\b/i');
+        if ($kw !== null && $kw >= $neededInverterKw) {
+            $qualifying[] = ['item' => $inv, 'kw' => $kw];
+        }
+    }
+    if (!$qualifying) {
+        // Nothing in stock is big enough — fall back to the largest
+        // available rather than silently recommending an undersized unit.
+        foreach ($inverters as $inv) {
+            $kw = parseSpecNumber($inv['specification'] ?? '', '/(\d+(?:\.\d+)?)\s*kW\b/i');
+            if ($kw !== null) {
+                $qualifying[] = ['item' => $inv, 'kw' => $kw];
+            }
+        }
+        usort($qualifying, fn($a, $b) => $b['kw'] <=> $a['kw']);
+    } elseif ($tier === 'budget') {
+        usort($qualifying, fn($a, $b) => ($a['item']['unit_price'] ?? 0) <=> ($b['item']['unit_price'] ?? 0));
+    } elseif ($tier === 'luxury') {
+        usort($qualifying, fn($a, $b) => ($b['item']['unit_price'] ?? 0) <=> ($a['item']['unit_price'] ?? 0));
+    } else {
+        usort($qualifying, fn($a, $b) => $a['kw'] <=> $b['kw']);
+    }
+    $bestInverter = $qualifying[0]['item'] ?? null;
+    $bestInverterKw = $qualifying[0]['kw'] ?? null;
+    $inverterUnitPrice = $bestInverter['unit_price'] ?? 2000;
+    $items[] = [
+        'inventory_id' => $bestInverter['id'] ?? null,
+        'item_name' => $bestInverter['item_name'] ?? ('Inverter ' . ceil($neededInverterKw) . 'kW'),
+        'category' => 'inverter',
+        'quantity' => 1,
+        'unit_price' => $inverterUnitPrice,
+        'total_price' => $inverterUnitPrice,
+    ];
+
+    // --- Battery: a Grid-Tied system has nothing to store excess power in
+    // (it exports to the grid via net metering instead), so it gets NO
+    // battery line item at all — not even a zero-quantity placeholder,
+    // since the whole point is to only show what this system type
+    // actually needs. Otherwise, size storage to a tier-appropriate
+    // backup autonomy — half a day for budget, one day for the standard
+    // recommendation, two days for luxury — tripled for Off-Grid, since
+    // there's no grid to fall back on if it runs out. Budget/standard
+    // minimize total cost across every available battery option; luxury
+    // picks the most premium single battery brand instead. ---
+    if ($systemType !== 'grid_tied') {
+        $autonomyDays = match ($tier) { 'budget' => 0.5, 'luxury' => 2.0, default => 1.0 };
+        if ($systemType === 'off_grid') {
+            $autonomyDays *= 3;
+        }
+        $requiredKwh = $averageDailyKwh * $autonomyDays;
+        $batteries = $supabase->from('inventory')->select('*')->eq('category', 'battery')->order('id', true)->execute() ?: [];
+        $batteryCandidates = [];
+        foreach ($batteries as $b) {
+            $kwh = parseSpecNumber($b['specification'] ?? '', '/(\d+(?:\.\d+)?)\s*kWh\b/i');
+            if ($kwh === null || $kwh <= 0) continue;
+            $quantity = max(1, (int)ceil($requiredKwh / $kwh));
+            $batteryCandidates[] = [
+                'item' => $b,
+                'quantity' => $quantity,
+                'cost' => $quantity * ($b['unit_price'] ?? PHP_FLOAT_MAX),
+            ];
+        }
+        if ($tier === 'luxury') {
+            usort($batteryCandidates, fn($a, $b) => ($b['item']['unit_price'] ?? 0) <=> ($a['item']['unit_price'] ?? 0));
+        } else {
+            usort($batteryCandidates, fn($a, $b) => $a['cost'] <=> $b['cost']);
+        }
+        $bestBattery = $batteryCandidates[0]['item'] ?? null;
+        $batteryQuantity = $batteryCandidates[0]['quantity'] ?? max(1, (int)ceil($requiredKwh / 5));
+        $batteryUnitPrice = $bestBattery['unit_price'] ?? 1200;
+        $items[] = [
+            'inventory_id' => $bestBattery['id'] ?? null,
+            'item_name' => $bestBattery['item_name'] ?? 'Battery Storage',
+            'category' => 'battery',
+            'quantity' => $batteryQuantity,
+            'unit_price' => $batteryUnitPrice,
+            'total_price' => $batteryUnitPrice * $batteryQuantity,
+        ];
+    }
+
+    // --- Mounting, cable & accessories: budget/luxury pick the cheapest/
+    // priciest hardware available in each category; standard keeps the
+    // stable default (lowest id). Quantities still scale with panel count
+    // where that makes physical sense — no better data (roof layout,
+    // inverter-room distance) is available to size these more precisely. ---
+    $mounting = pickInventoryByTier($supabase, 'mounting', $tier);
+    $mountingUnitPrice = $mounting['unit_price'] ?? 75;
+    $items[] = [
+        'inventory_id' => $mounting['id'] ?? null,
+        'item_name' => $mounting['item_name'] ?? 'Mounting System & Hardware',
+        'category' => 'mounting',
+        'quantity' => $panelCount,
+        'unit_price' => $mountingUnitPrice,
+        'total_price' => $mountingUnitPrice * $panelCount,
+    ];
+
+    $cableQuantity = $panelCount * 5;
+    $cable = pickInventoryByTier($supabase, 'cable', $tier);
+    $cableUnitPrice = $cable['unit_price'] ?? 2.5;
+    $items[] = [
+        'inventory_id' => $cable['id'] ?? null,
+        'item_name' => $cable['item_name'] ?? 'DC Cable 4mm',
+        'category' => 'cable',
+        'quantity' => $cableQuantity,
+        'unit_price' => $cableUnitPrice,
+        'total_price' => $cableUnitPrice * $cableQuantity,
+    ];
+
+    $accessories = pickInventoryByTier($supabase, 'accessories', $tier);
+    $accessoriesUnitPrice = $accessories['unit_price'] ?? 950;
+    $items[] = [
+        'inventory_id' => $accessories['id'] ?? null,
+        'item_name' => $accessories['item_name'] ?? 'Breaker & Accessories',
+        'category' => 'accessories',
+        'quantity' => 1,
+        'unit_price' => $accessoriesUnitPrice,
+        'total_price' => $accessoriesUnitPrice,
+    ];
+
+    return [
+        'tier' => $tier,
+        'system_type' => $systemType,
+        'items' => $items,
+        'panel_count' => $panelCount,
+        'panel_wattage_selected' => $bestPanelWattage,
+        'inverter_kw_needed' => round($neededInverterKw, 2),
+        'inverter_kw_selected' => $bestInverterKw,
+    ];
+}
+
+// Convenience wrapper: builds all three recommendation tiers at once, so
+// callers that need to show/compare Budget, Standard, and Luxury side by
+// side don't have to call buildRecommendationMaterials() three times themselves.
+function buildAllRecommendationTiers($supabase, $requestedPanelWattage, $systemKw, $averageDailyKwh, $systemType = 'hybrid') {
+    $tiers = [];
+    foreach (['budget', 'standard', 'luxury'] as $tier) {
+        $tiers[$tier] = buildRecommendationMaterials($supabase, $requestedPanelWattage, $systemKw, $averageDailyKwh, $tier, $systemType);
+    }
+    return $tiers;
+}
+
+// Generates the next sequential code (e.g. "PRJ-004", "Q-2026-011") for a
+// table+column that has a unique constraint. Scans EVERY row, including
+// soft-deleted ones — filtering to only active rows was the actual bug:
+// deleted_at soft-deletes are permanent (see the projects table's DB-level
+// delete trigger), so a soft-deleted row's code is still occupied as far
+// as the unique constraint is concerned. Counting only active rows could
+// regenerate a code that already exists on an archived row and fail with
+// "duplicate key value violates unique constraint".
+function generateSequentialCode($supabase, $table, $column, $prefix, $padLength = 3) {
+    $rows = $supabase->getAll($table, ['select' => $column]) ?: [];
+    $max = 0;
+    $escapedPrefix = preg_quote($prefix, '/');
+    foreach ($rows as $row) {
+        $value = $row[$column] ?? '';
+        if (preg_match('/' . $escapedPrefix . '-?0*(\d+)$/', $value, $matches)) {
+            $max = max($max, (int)$matches[1]);
+        }
+    }
+    return $prefix . '-' . str_pad($max + 1, $padLength, '0', STR_PAD_LEFT);
+}
+
+// Recomputes a project's overall progress as the average of its (non-
+// deleted) tasks' own progress_percent — which is itself accurate, since
+// it's driven by real checklist completion (see updateTaskChecklistProgress()
+// in task-checklist-api.php). Called whenever a task's progress or
+// completion status could have changed, so the Projects module always
+// shows real, current progress instead of a number someone typed in once
+// and never updated. Skips a project already marked 'completed' — that
+// terminal state is set by completeProjectPipelineIfDone() and shouldn't
+// be second-guessed by a rollup average.
+function updateProjectProgressFromTasks($supabase, $projectId) {
+    if (!$projectId) return;
+
+    try {
+        $project = $supabase->getById('projects', $projectId);
+        if (!$project || ($project['status'] ?? '') === 'completed') {
+            return;
+        }
+
+        $tasks = $supabase->getAll('tasks', ['project_id' => 'eq.' . $projectId, 'deleted_at' => 'is.null', 'select' => 'progress_percent']) ?: [];
+        if (empty($tasks)) {
+            return;
+        }
+
+        $total = array_sum(array_map(fn($t) => (int)($t['progress_percent'] ?? 0), $tasks));
+        $average = (int)round($total / count($tasks));
+
+        if ($average !== (int)($project['progress'] ?? -1)) {
+            $supabase->update('projects', $projectId, [
+                'progress' => $average,
+                'updated_at' => date('Y-m-d H:i:s'),
+            ]);
+        }
+    } catch (Exception $e) {
+        error_log('updateProjectProgressFromTasks failed: ' . $e->getMessage());
+    }
+}
+
 // Called whenever a task's status becomes 'completed'. If every task on that
 // task's project is now completed too, the whole pipeline is closed out:
 // the project and its installation(s) are marked completed, and a

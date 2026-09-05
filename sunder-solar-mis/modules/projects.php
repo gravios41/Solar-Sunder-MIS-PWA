@@ -10,6 +10,10 @@ checkAuthentication();
 $pageTitle = 'Projects';
 $pageSubtitle = 'Track and manage all projects';
 
+// The owner is always the project manager at this company — the field is
+// pre-filled and readonly rather than asking anyone to type it in.
+$ownerFullName = getOwnerFullName($supabase);
+
 include_once __DIR__ . '/../includes/header.php';
 ?>
 
@@ -119,11 +123,11 @@ include_once __DIR__ . '/../includes/header.php';
                 <div class="grid-cols-2">
                     <div class="form-group">
                         <label class="form-label">Progress (%)</label>
-                        <input type="number" id="progress" class="form-control" min="0" max="100" value="0">
+                        <input type="number" id="progress" class="form-control" min="0" max="100" value="0" readonly title="Auto-calculated from this project's task progress">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Project Manager</label>
-                        <input type="text" id="manager" class="form-control">
+                        <input type="text" id="manager" class="form-control" value="<?php echo escape($ownerFullName); ?>" readonly title="Always the owner at this company">
                     </div>
                 </div>
                 <div class="grid-cols-2">
@@ -253,7 +257,7 @@ function renderProjects() {
                             <i class="fas fa-eye"></i> View
                         </button>
                         ${(USER_ROLE === 'super_admin' || USER_ROLE === 'owner') ? `<button onclick="editProject(${p.id})" class="btn btn-primary btn-sm flex-1"><i class="fas fa-edit"></i> Edit</button>` : ''}
-                        ${(USER_ROLE === 'super_admin' || USER_ROLE === 'owner') ? `<button onclick="archiveProject(${p.id})" class="btn btn-secondary btn-sm flex-1"><i class="fas fa-archive"></i> Archive</button>` : ''}
+                        ${(p.status === 'completed' && (USER_ROLE === 'super_admin' || USER_ROLE === 'owner')) ? `<button onclick="archiveProject(${p.id})" class="btn btn-secondary btn-sm flex-1"><i class="fas fa-archive"></i> Archive</button>` : ''}
                     </div>
                 </div>
             </div>
@@ -301,7 +305,8 @@ function openProjectModal(project = null) {
         document.getElementById('budget').value = project.estimated_cost;
         document.getElementById('status').value = project.status;
         document.getElementById('progress').value = project.progress;
-        document.getElementById('manager').value = project.manager || '';
+        // manager field is always the owner (readonly, pre-filled server-side) —
+        // never overwritten from a project's possibly-stale stored value.
         document.getElementById('startDate').value = project.start_date;
         document.getElementById('expectedEndDate').value = project.expected_end_date;
     } else {
@@ -423,6 +428,12 @@ document.getElementById('statusFilter')?.addEventListener('change', renderProjec
 // Initialize
 loadCustomers();
 loadProjects();
+
+// Progress is driven by task completion elsewhere in the app (see
+// updateProjectProgressFromTasks() server-side) — poll so a project's
+// progress bar here stays current even if it was updated from the Tasks
+// module in another tab, instead of only refreshing on a manual reload.
+setInterval(loadProjects, 15000);
 </script>
 
 <?php include_once __DIR__ . '/../includes/footer.php'; ?>

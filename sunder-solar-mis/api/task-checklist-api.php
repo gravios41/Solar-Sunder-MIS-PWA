@@ -293,6 +293,8 @@ function updateTaskChecklistProgress($supabase, $taskId) {
 
         $supabase->update('tasks', $taskId, $taskUpdate);
 
+        updateProjectProgressFromTasks($supabase, $task['project_id'] ?? null);
+
         if ($allDone) {
             completeProjectPipelineIfDone($supabase, $task['project_id'] ?? null);
         }

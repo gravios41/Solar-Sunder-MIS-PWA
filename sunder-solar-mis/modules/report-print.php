@@ -31,7 +31,7 @@ function fetchSection($supabase, $type, $dateFrom, $dateTo) {
 
         case 'Sales':
         case 'Financial':
-            $q = $supabase->from('quotations')->select('*')->order('quotation_date', false);
+            $q = $supabase->from('quotations')->select('*')->isNull('deleted_at')->order('quotation_date', false);
             applyDateFilter($q, 'quotation_date', $dateFrom, $dateTo);
             $rows = $q->execute() ?? [];
             $enriched = [];
@@ -57,7 +57,7 @@ function fetchSection($supabase, $type, $dateFrom, $dateTo) {
             return $rows;
 
         case 'Projects':
-            $q = $supabase->from('projects')->select('*')->order('created_at', false);
+            $q = $supabase->from('projects')->select('*')->isNull('deleted_at')->order('created_at', false);
             applyDateFilter($q, 'created_at', $dateFrom, $dateTo);
             $rows = $q->execute() ?? [];
             foreach ($rows as &$p) {
@@ -67,12 +67,12 @@ function fetchSection($supabase, $type, $dateFrom, $dateTo) {
             return $rows;
 
         case 'Customers':
-            $q = $supabase->from('customers')->select('*')->order('name', true);
+            $q = $supabase->from('customers')->select('*')->isNull('deleted_at')->order('name', true);
             applyDateFilter($q, 'created_at', $dateFrom, $dateTo);
             return $q->execute() ?? [];
 
         case 'Installations':
-            $q = $supabase->from('installations')->select('*')->order('installation_date', false);
+            $q = $supabase->from('installations')->select('*')->isNull('deleted_at')->order('installation_date', false);
             applyDateFilter($q, 'installation_date', $dateFrom, $dateTo);
             $rows = $q->execute() ?? [];
             foreach ($rows as &$i) {
@@ -88,7 +88,7 @@ function fetchSection($supabase, $type, $dateFrom, $dateTo) {
             return $rows;
 
         case 'Tasks':
-            $q = $supabase->from('tasks')->select('*')->order('due_date', true);
+            $q = $supabase->from('tasks')->select('*')->isNull('deleted_at')->order('due_date', true);
             applyDateFilter($q, 'created_at', $dateFrom, $dateTo);
             $rows = $q->execute() ?? [];
             foreach ($rows as &$t) {
@@ -430,8 +430,8 @@ foreach ($sections as $type => $rows):
 <?php
     $active   = count(array_filter($rows, fn($r) => ($r['status']??'')==='active'));
     $inactive = count(array_filter($rows, fn($r) => ($r['status']??'')==='inactive'));
-    $residential = count(array_filter($rows, fn($r) => ($r['customer_type']??'')==='residential'));
-    $commercial  = count(array_filter($rows, fn($r) => ($r['customer_type']??'')==='commercial'));
+    $residential = count(array_filter($rows, fn($r) => ($r['type']??'')==='residential'));
+    $commercial  = count(array_filter($rows, fn($r) => ($r['type']??'')==='commercial'));
 ?>
 <div class="stat-chips">
     <div class="stat-chip"><strong><?php echo $active; ?></strong>Active</div>
@@ -455,7 +455,7 @@ foreach ($sections as $type => $rows):
             <td><?php echo fmt($r['name']); ?></td>
             <td><?php echo fmt($r['email']); ?></td>
             <td><?php echo fmt($r['phone']); ?></td>
-            <td><?php echo fmt(ucfirst($r['customer_type']??'')); ?></td>
+            <td><?php echo fmt(ucfirst($r['type']??'')); ?></td>
             <td><?php echo fmt($r['address']); ?></td>
             <td><?php
                 $active = ($r['status']??'')==='active';
@@ -500,8 +500,8 @@ foreach ($sections as $type => $rows):
             <td style="font-weight:700"><?php echo fmt($r['installation_code']); ?></td>
             <td><?php echo fmt($r['customer_name']); ?></td>
             <td><?php echo fmt($r['project_name']); ?></td>
-            <td><?php echo shortDate($r['installation_date'] ?? $r['scheduled_date']); ?></td>
-            <td><?php echo shortDate($r['completion_date']); ?></td>
+            <td><?php echo shortDate($r['installation_date']); ?></td>
+            <td><?php echo ($r['status'] ?? '') === 'completed' ? shortDate($r['updated_at']) : '—'; ?></td>
             <td><?php
                 $sc=['completed'=>'b-green','in_progress'=>'b-blue','scheduled'=>'b-yellow','cancelled'=>'b-red'];
                 echo '<span class="badge '.($sc[$r['status']]??'b-gray').'">'.status($r['status']).'</span>';
@@ -538,11 +538,11 @@ foreach ($sections as $type => $rows):
 <table class="dt">
     <thead><tr>
         <th>#</th><th>Task Title</th><th>Project</th><th>Priority</th>
-        <th>Status</th><th>Assigned To</th><th>Due Date</th><th>Completed Date</th><th>Description</th>
+        <th>Status</th><th>Progress</th><th>Checklist</th><th>Assigned To</th><th>Due Date</th><th>Completed Date</th><th>Description</th>
     </tr></thead>
     <tbody>
     <?php if (!$rows): ?>
-        <tr class="empty"><td colspan="9">No tasks found for this period.</td></tr>
+        <tr class="empty"><td colspan="11">No tasks found for this period.</td></tr>
     <?php else: foreach ($rows as $i => $r): ?>
         <tr>
             <td style="color:#9CA3AF"><?php echo $i+1; ?></td>
@@ -556,6 +556,8 @@ foreach ($sections as $type => $rows):
                 $sc=['completed'=>'b-green','in_progress'=>'b-blue','pending'=>'b-yellow','cancelled'=>'b-gray'];
                 echo '<span class="badge '.($sc[$r['status']]??'b-gray').'">'.status($r['status']).'</span>';
             ?></td>
+            <td class="num"><?php echo pct($r['progress_percent'] ?? 0); ?></td>
+            <td class="num"><?php echo ($r['checklist_completed'] ?? 0) . '/' . ($r['checklist_count'] ?? 0); ?></td>
             <td><?php echo fmt($r['assigned_to']); ?></td>
             <td><?php
                 $due = $r['due_date'] ?? null;

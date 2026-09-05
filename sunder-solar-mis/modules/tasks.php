@@ -81,6 +81,21 @@ include_once __DIR__ . '/../includes/header.php';
     </div>
 </div>
 
+<!-- Project Tasks Modal — clicking a project name on any task card pops
+     up every task belonging to that project, in one go -->
+<div id="projectTasksModal" class="modal">
+    <div class="modal-content modal-lg">
+        <div class="modal-header">
+            <h3 id="projectTasksModalTitle" class="modal-title">Project Tasks</h3>
+            <button class="modal-close" onclick="closeProjectTasksModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div id="projectTasksModalSummary" style="margin-bottom:16px"></div>
+            <div id="projectTasksModalGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px"></div>
+        </div>
+    </div>
+</div>
+
 <!-- Task Modal -->
 <div id="taskModal" class="modal">
     <div class="modal-content">
@@ -147,7 +162,7 @@ async function loadProjects() {
             projects = result.data;
             const select = document.getElementById('taskProjectId');
             if (select) {
-                select.innerHTML = '<option value="">Select Project (Optional)</option>' + 
+                select.innerHTML = '<option value="">Select Project (Optional)</option>' +
                     projects.map(p => `<option value="${p.id}">${escapeHtml(p.project_name)}</option>`).join('');
             }
         }
@@ -212,26 +227,11 @@ function updateStats() {
     document.getElementById('completedCount').textContent = completed;
 }
 
-function renderTasks() {
-    const search = document.getElementById('searchInput')?.value.toLowerCase() || '';
-    const priority = document.getElementById('priorityFilter')?.value || 'all';
-    
-    let filtered = tasks.filter(t => {
-        if (search && !t.task_title.toLowerCase().includes(search) && 
-            !(t.assigned_to || '').toLowerCase().includes(search)) return false;
-        if (priority !== 'all' && t.priority !== priority) return false;
-        return true;
-    });
-    
-    const todo = filtered.filter(t => t.status === 'pending');
-    const inProgress = filtered.filter(t => t.status === 'in_progress');
-    const completed = filtered.filter(t => t.status === 'completed');
-    
-    function renderTaskList(taskList) {
-        if (taskList.length === 0) {
-            return '<p class="text-center text-gray-500 py-4">No tasks</p>';
-        }
-        return taskList.map(t => {
+function renderTaskList(taskList) {
+    if (taskList.length === 0) {
+        return '<p class="text-center text-gray-500 py-4">No tasks</p>';
+    }
+    return taskList.map(t => {
             const project = projects.find(p => p.id === t.project_id);
             // Quick Start/Complete bypasses the checklist entirely, so it's
             // limited to the same roles that can edit a task outright — for
@@ -258,7 +258,12 @@ function renderTasks() {
             const editBtn = (USER_ROLE === 'super_admin' || USER_ROLE === 'owner')
                 ? `<button onclick="editTask(${t.id})" class="btn-icon" title="Edit"><i class="fas fa-edit" style="color:#F97316"></i></button>`
                 : '';
-            const archiveBtn = (USER_ROLE === 'super_admin' || USER_ROLE === 'owner')
+            // Only offer archiving once a task is actually done — keeps
+            // anyone from accidentally archiving still-active work, and is
+            // the whole point of archiving: clearing out completed items
+            // so the active board (and the underlying table) don't just
+            // keep growing forever.
+            const archiveBtn = (t.status === 'completed' && (USER_ROLE === 'super_admin' || USER_ROLE === 'owner'))
                 ? `<button onclick="archiveTask(${t.id})" class="btn-icon" title="Archive"><i class="fas fa-archive" style="color:#6B7280"></i></button>`
                 : '';
             return `
@@ -268,7 +273,9 @@ function renderTasks() {
                         ${getPriorityBadgeHtml(t.priority)}
                     </div>
                     <h5 class="font-medium mb-1">${escapeHtml(t.task_title)}</h5>
-                    <p class="text-xs text-gray-600 mb-2">${escapeHtml(project?.project_name || 'No Project')}</p>
+                    <p class="text-xs mb-2">${project
+                        ? `<span onclick="event.stopPropagation();openProjectTasksModal(${project.id})" style="color:#F97316;cursor:pointer;font-weight:600" title="View all tasks for this project">${escapeHtml(project.project_name)}</span>`
+                        : `<span class="text-gray-600">No Project</span>`}</p>
                     <p class="text-xs text-gray-500 mb-2">${escapeHtml(t.description || '')}</p>
                     <div class="flex justify-between items-center text-xs mb-3">
                         <span><i class="fas fa-user mr-1"></i>${escapeHtml(t.assigned_to || 'Unassigned')}</span>
@@ -290,11 +297,145 @@ function renderTasks() {
                 </div>
             `;
         }).join('');
+}
+
+// A project's standard installation tasks (7 of them) would otherwise
+// repeat a near-identical card once per task in whichever column they
+// share — same project name, same "click to see everything" link. Groups
+// same-project tasks within one column into a single summary card that
+// opens the project popup; a task that's the only one of its project in
+// this column keeps its normal full card (with all its usual actions),
+// since there's nothing to collapse.
+function renderTaskColumn(taskList) {
+    if (taskList.length === 0) {
+        return '<p class="text-center text-gray-500 py-4">No tasks</p>';
     }
 
-    document.getElementById('todoTasks').innerHTML = renderTaskList(todo);
-    document.getElementById('progressTasks').innerHTML = renderTaskList(inProgress);
-    document.getElementById('completedTasks').innerHTML = renderTaskList(completed);
+    const byProjectId = new Map();
+    taskList.forEach(t => {
+        const key = t.project_id || 'none';
+        if (!byProjectId.has(key)) byProjectId.set(key, []);
+        byProjectId.get(key).push(t);
+    });
+
+    return [...byProjectId.values()].map(group => {
+        if (group.length === 1) {
+            return renderTaskList(group);
+        }
+        const project = projects.find(p => p.id === group[0].project_id);
+        const title = project ? escapeHtml(project.project_name) : 'No Project';
+        const progress = project?.progress ?? 0;
+        return `
+            <div class="task-card" onclick="openProjectTasksModal(${group[0].project_id})" style="cursor:pointer">
+                <h5 class="font-medium mb-1" style="color:#F97316">${title}</h5>
+                <p class="text-xs text-gray-500 mb-2">${group.length} tasks in this stage</p>
+                <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:11px;color:#64748b">
+                    <div style="flex:1;height:5px;background:#e2e8f0;border-radius:3px;overflow:hidden">
+                        <div style="height:100%;width:${progress}%;background:${progress >= 100 ? '#16a34a' : '#3B82F6'};border-radius:3px"></div>
+                    </div>
+                    <span>${progress}% overall</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;color:#3B82F6;font-size:12px">
+                    <i class="fas fa-eye"></i> View all ${group.length}
+                </div>
+            </div>`;
+    }).join('');
+}
+
+function renderTasks() {
+    const search = document.getElementById('searchInput')?.value.toLowerCase() || '';
+    const priority = document.getElementById('priorityFilter')?.value || 'all';
+
+    let filtered = tasks.filter(t => {
+        if (search && !t.task_title.toLowerCase().includes(search) &&
+            !(t.assigned_to || '').toLowerCase().includes(search)) return false;
+        if (priority !== 'all' && t.priority !== priority) return false;
+        return true;
+    });
+
+    // Grouped by project_id within each column — same-project tasks sit
+    // next to each other (a stable sort keeps their existing due-date
+    // order within that group). No layout/markup change: still the same
+    // three columns, just this ordering within each one.
+    const byProject = (a, b) => (a.project_id || 0) - (b.project_id || 0);
+
+    const todo = filtered.filter(t => t.status === 'pending').sort(byProject);
+    const inProgress = filtered.filter(t => t.status === 'in_progress').sort(byProject);
+    const completed = filtered.filter(t => t.status === 'completed').sort(byProject);
+
+    document.getElementById('todoTasks').innerHTML = renderTaskColumn(todo);
+    document.getElementById('progressTasks').innerHTML = renderTaskColumn(inProgress);
+    document.getElementById('completedTasks').innerHTML = renderTaskColumn(completed);
+}
+
+// Clicking a project name on any task card pops up every task belonging
+// to that project (across all three columns) in one go, sorted into the
+// actual installation sequence (due date) with an overall-progress summary
+// up top — so an employee can immediately see where the project stands
+// and what comes next, instead of hunting for the rest of the steps
+// scattered across the three status columns.
+function openProjectTasksModal(projectId) {
+    const project = projects.find(p => p.id === projectId);
+    const projectTasks = tasks
+        .filter(t => t.project_id === projectId)
+        .sort((a, b) => new Date(a.due_date || 0) - new Date(b.due_date || 0));
+
+    const completedCount = projectTasks.filter(t => t.status === 'completed').length;
+    const totalCount = projectTasks.length;
+    const overallProgress = project?.progress ?? (totalCount ? Math.round((completedCount / totalCount) * 100) : 0);
+
+    document.getElementById('projectTasksModalTitle').textContent = project ? project.project_name : 'Project Tasks';
+    document.getElementById('projectTasksModalSummary').innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#334155;margin-bottom:6px">
+            <span>${completedCount} of ${totalCount} steps completed</span>
+            <span style="font-weight:700;color:${overallProgress >= 100 ? '#16a34a' : '#F97316'}">${overallProgress}%</span>
+        </div>
+        <div style="height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden">
+            <div style="height:100%;width:${overallProgress}%;background:${overallProgress >= 100 ? '#16a34a' : '#F97316'};border-radius:4px"></div>
+        </div>`;
+    document.getElementById('projectTasksModalGrid').innerHTML = renderSimpleTaskList(projectTasks);
+    document.getElementById('projectTasksModal').classList.add('active');
+}
+
+function closeProjectTasksModal() {
+    document.getElementById('projectTasksModal').classList.remove('active');
+}
+
+// A stripped-down task card for the project popup — since every card here
+// already belongs to the same project, repeating the full board card
+// (project name, status quick-buttons, View/Edit/Archive all at once)
+// is redundant clutter. Just name, description, assigned team, due date,
+// progress, and a single button into the real task detail modal (the
+// same one "View" on the board opens) for anything further.
+function renderSimpleTaskList(taskList) {
+    if (taskList.length === 0) {
+        return '<p class="text-center text-gray-500 py-4">No tasks</p>';
+    }
+    return taskList.map(t => `
+        <div class="task-card">
+            <h5 class="font-medium mb-1">${escapeHtml(t.task_title)}</h5>
+            <p class="text-xs text-gray-500 mb-2">${escapeHtml(t.description || '')}</p>
+            <div class="flex justify-between items-center text-xs mb-3">
+                <span><i class="fas fa-user mr-1"></i>${escapeHtml(t.assigned_to || 'Unassigned')}</span>
+                <span><i class="fas fa-calendar mr-1"></i>Due: ${formatDate(t.due_date)}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:11px;color:#64748b">
+                <div style="flex:1;height:5px;background:#e2e8f0;border-radius:3px;overflow:hidden">
+                    <div style="height:100%;width:${t.progress_percent || 0}%;background:${(t.progress_percent || 0) >= 100 ? '#16a34a' : '#3B82F6'};border-radius:3px"></div>
+                </div>
+                <span>${t.progress_percent || 0}%</span>
+            </div>
+            <div style="display:flex;gap:6px">
+                <button onclick="viewTask(${t.id})" class="btn btn-secondary btn-sm" style="flex:1">
+                    <i class="fas fa-eye"></i> View
+                </button>
+                ${(t.status === 'completed' && (USER_ROLE === 'super_admin' || USER_ROLE === 'owner')) ? `
+                <button onclick="archiveTask(${t.id})" class="btn-icon" title="Archive">
+                    <i class="fas fa-archive" style="color:#6B7280"></i>
+                </button>` : ''}
+            </div>
+        </div>
+    `).join('');
 }
 
 function getPriorityBadgeHtml(priority) {
@@ -440,7 +581,13 @@ async function archiveTask(id) {
                 const result = await response.json();
                 if (result.success) {
                     showToast(result.message, 'success');
-                    loadTasks();
+                    await loadTasks();
+                    // If this was archived from inside the project popup,
+                    // refresh it too — loadTasks()/renderTasks() only
+                    // touch the three board columns, not this modal.
+                    if (task?.project_id && document.getElementById('projectTasksModal')?.classList.contains('active')) {
+                        openProjectTasksModal(task.project_id);
+                    }
                 } else {
                     showToast(result.error, 'error');
                 }
@@ -471,7 +618,7 @@ async function openTaskDetailModal(task) {
     modal.id = 'taskDetailModal';
     modal.style.cssText = `
         display: block; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(0,0,0,0.5); z-index: 1000; overflow-y: auto; padding: 20px;
+        background: rgba(0,0,0,0.5); z-index: 2100; overflow-y: auto; padding: 20px;
     `;
     
     modal.innerHTML = `

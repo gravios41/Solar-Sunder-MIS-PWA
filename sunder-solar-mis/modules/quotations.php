@@ -311,7 +311,7 @@ function renderQuotations() {
                     <button onclick="approveQuotation(${q.id})" class="btn-icon" title="Approve — deducts inventory and creates the installation and tasks">
                         <i class="fas fa-check-circle" style="color:#16a34a"></i>
                     </button>` : ''}
-                    ${(USER_ROLE === 'super_admin' || USER_ROLE === 'owner') ? `
+                    ${(USER_ROLE === 'super_admin' || USER_ROLE === 'owner') && q.status !== 'approved' ? `
                     <button onclick="editQuotation(${q.id})" class="btn-icon" title="Edit">
                         <i class="fas fa-edit" style="color:#F97316"></i>
                     </button>` : ''}
@@ -359,14 +359,16 @@ const QUOTATION_ROW_CATEGORIES = [
     { key: 'services', label: 'Services' }
 ];
 
-// Only Accessories is naturally a basket of several distinct small items
-// (connectors, tape, lugs, breakers...) needed together — every other
-// category is a single choice per quotation, so only Accessories gets a
-// button to add more rows, and its rows can be removed outright since
-// another can always be added back. A single-row category's row can only
-// be cleared back to "None", never removed, since there'd be no way to
-// bring it back without an "Add" button.
-const MULTI_ITEM_CATEGORIES = ['accessories'];
+// Accessories is naturally a basket of several distinct small items
+// (connectors, tape, lugs, breakers...) needed together, and a quotation
+// can just as easily need several DIFFERENT services at once (e.g.
+// Installation & Labor plus a System Upgrade) — every other category is
+// a single physical choice per quotation, so only these two get a button
+// to add more rows, and their rows can be removed outright since another
+// can always be added back. A single-row category's row can only be
+// cleared back to "None", never removed, since there'd be no way to bring
+// it back without an "Add" button.
+const MULTI_ITEM_CATEGORIES = ['accessories', 'services'];
 
 // Services aren't physical stock, so they don't belong in Inventory — this
 // is a fixed list rather than a category pulled from inventoryItems.
@@ -379,6 +381,8 @@ const SERVICE_OPTIONS = [
     'Permit Processing & Documentation',
     'Grid Connection & System Testing',
     'Customer Training & Handover',
+    'System Upgrade',
+    'Maintenance Service',
     'Annual Maintenance Service'
 ];
 
@@ -691,30 +695,59 @@ async function archiveQuotation(id) {
     );
 }
 
+// Two separate confirmations, since this is an irreversible action that
+// deducts real stock and creates an installation + task list: the first
+// is the general warning; the second names exactly which real inventory
+// items will be deducted (fetched fresh, matched against inventoryItems
+// the same way approve-quotation.php itself matches them — a service
+// line simply won't match anything and is correctly left out), so the
+// second click is an informed one, not just re-confirming blind.
 async function approveQuotation(id) {
     const quotation = quotations.find(q => q.id === id);
     const name = quotation?.quotation_number || 'this quotation';
+
     showConfirmModal(
         `Approve "${name}"? This deducts its line items from inventory and creates the installation and task list — it can't be undone from here.`,
         async () => {
+            let deductionSummary = 'No matching inventory items were found to deduct — only services on this quotation.';
             try {
-                const response = await fetch('../api/approve-quotation.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ quotation_id: id })
-                });
-                const result = await response.json();
-                if (result.success) {
-                    showToast(result.message, 'success');
-                    loadQuotations();
-                } else {
-                    showToast(result.error, 'error');
+                const res = await fetch(`../api/quotations-api.php?id=${id}`);
+                const result = await res.json();
+                const items = (result.success && result.data?.items) || [];
+                const deductions = items
+                    .map(item => ({ ...item, inv: inventoryItems.find(inv => inv.item_name === item.description) }))
+                    .filter(item => item.inv);
+                if (deductions.length > 0) {
+                    deductionSummary = 'This will deduct: ' + deductions.map(d => `${d.description} ×${d.quantity}`).join(', ');
                 }
-            } catch (error) {
-                showToast('Error approving quotation', 'error');
+            } catch (e) {
+                deductionSummary = 'Could not verify exact deductions ahead of time — approving will still deduct whatever matches inventory.';
             }
+
+            showConfirmModal(
+                `Final confirmation for "${name}". ${deductionSummary}. This cannot be undone. Approve now?`,
+                async () => {
+                    try {
+                        const response = await fetch('../api/approve-quotation.php', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ quotation_id: id })
+                        });
+                        const result = await response.json();
+                        if (result.success) {
+                            showToast(result.message, 'success');
+                            loadQuotations();
+                        } else {
+                            showToast(result.error, 'error');
+                        }
+                    } catch (error) {
+                        showToast('Error approving quotation', 'error');
+                    }
+                },
+                { title: 'Confirm Approval', confirmText: 'Yes, Approve' }
+            );
         },
-        { title: 'Approve Quotation', confirmText: 'Approve' }
+        { title: 'Approve Quotation', confirmText: 'Continue' }
     );
 }
 

@@ -6,7 +6,9 @@ RUN a2enmod rewrite headers
 # off an uploaded electric bill. Without this the binary simply doesn't
 # exist in the container and every OCR request fails, forcing manual entry.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends tesseract-ocr \
+    && apt-get install -y --no-install-recommends tesseract-ocr libpng-dev libjpeg62-turbo-dev libwebp-dev \
+    && docker-php-ext-configure gd --with-jpeg --with-webp \
+    && docker-php-ext-install gd \
     && rm -rf /var/lib/apt/lists/*
 
 COPY docker/apache-site.conf /etc/apache2/sites-available/000-default.conf

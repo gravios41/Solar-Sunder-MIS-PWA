@@ -36,7 +36,7 @@ foreach ($types as $type) {
 
         case 'Sales':
         case 'Financial':
-            $q = $supabase->from('quotations')->select('*')->order('quotation_date', false);
+            $q = $supabase->from('quotations')->select('*')->isNull('deleted_at')->order('quotation_date', false);
             applyDateFilter($q, 'quotation_date', $dateFrom, $dateTo);
             $data = $q->execute() ?? [];
             $headers = ['#','Quotation No.','Customer','Project','Quotation Date','Valid Until',
@@ -92,7 +92,7 @@ foreach ($types as $type) {
             break;
 
         case 'Projects':
-            $q = $supabase->from('projects')->select('*')->order('created_at', false);
+            $q = $supabase->from('projects')->select('*')->isNull('deleted_at')->order('created_at', false);
             applyDateFilter($q, 'created_at', $dateFrom, $dateTo);
             $data = $q->execute() ?? [];
             $headers = ['#','Project Code','Project Name','Customer','Status','Progress (%)',
@@ -117,7 +117,7 @@ foreach ($types as $type) {
             break;
 
         case 'Customers':
-            $q = $supabase->from('customers')->select('*')->order('name', true);
+            $q = $supabase->from('customers')->select('*')->isNull('deleted_at')->order('name', true);
             applyDateFilter($q, 'created_at', $dateFrom, $dateTo);
             $data = $q->execute() ?? [];
             $headers = ['#','Customer Code','Name','Email','Phone','Address','Type','Status','Created At'];
@@ -130,7 +130,7 @@ foreach ($types as $type) {
                     $c['email'] ?? '',
                     $c['phone'] ?? '',
                     $c['address'] ?? '',
-                    ucfirst($c['customer_type'] ?? ''),
+                    ucfirst($c['type'] ?? ''),
                     ucfirst($c['status'] ?? ''),
                     substr($c['created_at'] ?? '', 0, 10),
                 ];
@@ -138,7 +138,7 @@ foreach ($types as $type) {
             break;
 
         case 'Installations':
-            $q = $supabase->from('installations')->select('*')->order('installation_date', false);
+            $q = $supabase->from('installations')->select('*')->isNull('deleted_at')->order('installation_date', false);
             applyDateFilter($q, 'installation_date', $dateFrom, $dateTo);
             $data = $q->execute() ?? [];
             $headers = ['#','Code','Customer','Project','Install Date','Completion Date',
@@ -147,13 +147,17 @@ foreach ($types as $type) {
             foreach ($data as $i) {
                 $cust = empty($i['customer_name']) ? ($supabase->getById('customers', $i['customer_id'] ?? 0)['name'] ?? 'Unknown') : $i['customer_name'];
                 $proj = empty($i['project_name'])  ? ($supabase->getById('projects',  $i['project_id']  ?? 0)['project_name'] ?? 'Unknown') : $i['project_name'];
+                // There's no dedicated completion_date column — updated_at
+                // is the closest real signal of when a completed
+                // installation was actually marked done.
+                $completionDate = ($i['status'] ?? '') === 'completed' ? substr($i['updated_at'] ?? '', 0, 10) : '';
                 $rows[] = [
                     $n++,
                     $i['installation_code'] ?? '',
                     $cust,
                     $proj,
-                    $i['installation_date'] ?? $i['scheduled_date'] ?? '',
-                    $i['completion_date'] ?? '',
+                    $i['installation_date'] ?? '',
+                    $completionDate,
                     ucwords(str_replace('_',' ',$i['status'] ?? '')),
                     ($i['progress'] ?? 0) . '%',
                     $i['technician'] ?? '',
@@ -164,11 +168,11 @@ foreach ($types as $type) {
             break;
 
         case 'Tasks':
-            $q = $supabase->from('tasks')->select('*')->order('due_date', true);
+            $q = $supabase->from('tasks')->select('*')->isNull('deleted_at')->order('due_date', true);
             applyDateFilter($q, 'created_at', $dateFrom, $dateTo);
             $data = $q->execute() ?? [];
-            $headers = ['#','Task Title','Project','Priority','Status',
-                        'Assigned To','Due Date','Completed Date','Description'];
+            $headers = ['#','Task Title','Project','Priority','Status','Progress (%)',
+                        'Checklist','Assigned To','Due Date','Completed Date','Description'];
             $n = 1;
             foreach ($data as $t) {
                 $projName = '—';
@@ -182,6 +186,8 @@ foreach ($types as $type) {
                     $projName,
                     ucfirst($t['priority'] ?? ''),
                     ucwords(str_replace('_',' ',$t['status'] ?? '')),
+                    ($t['progress_percent'] ?? 0) . '%',
+                    ($t['checklist_completed'] ?? 0) . '/' . ($t['checklist_count'] ?? 0),
                     $t['assigned_to'] ?? '',
                     $t['due_date'] ?? '',
                     $t['completed_date'] ?? '',

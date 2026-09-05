@@ -99,9 +99,14 @@ function handlePostProject($supabase) {
     
     try {
         // Generate project code
-        $projects = $supabase->getAll('projects', ['deleted_at' => 'is.null']);
-        $maxId = count($projects) + 1;
-        $data['project_code'] = 'PRJ-' . str_pad($maxId, 3, '0', STR_PAD_LEFT);
+        $data['project_code'] = generateSequentialCode($supabase, 'projects', 'project_code', 'PRJ');
+        // The owner is always the project manager at this company — override
+        // whatever the form submitted rather than trusting client input.
+        $data['manager'] = getOwnerFullName($supabase);
+        // Progress is auto-calculated from task completion (see
+        // updateProjectProgressFromTasks()) — a brand-new project has no
+        // tasks yet, so it always starts at 0 regardless of form input.
+        $data['progress'] = 0;
         $data['created_at'] = date('Y-m-d H:i:s');
         $data['updated_at'] = date('Y-m-d H:i:s');
         
@@ -141,9 +146,16 @@ function handlePutProject($supabase) {
     }
     
     try {
+        // The owner is always the project manager at this company — never
+        // let an edit set it to anything else.
+        $data['manager'] = getOwnerFullName($supabase);
+        // Progress is auto-calculated from task completion — never let a
+        // stale value from an open edit form overwrite the real rollup
+        // (updateProjectProgressFromTasks() is the only writer of this field).
+        unset($data['progress']);
         $data['updated_at'] = date('Y-m-d H:i:s');
         $result = $supabase->update('projects', $id, $data);
-        
+
         if ($result) {
             logActivity($_SESSION['user_id'], 'update', 'projects', "Updated project ID: $id");
             echo json_encode(['success' => true, 'data' => $result, 'message' => 'Project updated successfully']);
@@ -167,7 +179,20 @@ function handleDeleteProject($supabase) {
         echo json_encode(['success' => false, 'error' => 'Permission denied']);
         return;
     }
-    
+
+    // Only a completed project can be archived — enforced here too (not
+    // just hidden in the UI) so the API can't be called directly to
+    // archive an active project out from under whoever's still working it.
+    $project = $supabase->getById('projects', $id);
+    if (!$project) {
+        echo json_encode(['success' => false, 'error' => 'Project not found']);
+        return;
+    }
+    if (($project['status'] ?? '') !== 'completed') {
+        echo json_encode(['success' => false, 'error' => 'Only completed projects can be archived']);
+        return;
+    }
+
     try {
         $result = archiveRecord('projects', $id);
         if ($result) {

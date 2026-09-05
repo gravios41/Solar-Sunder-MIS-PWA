@@ -139,9 +139,13 @@ function handlePostTask() {
         $data['priority'] = $data['priority'] ?? 'medium';
         
         $result = $supabase->insert('tasks', $data);
-        
+
         if ($result) {
             logActivity($_SESSION['user_id'], 'create', 'tasks', "Created task: {$data['task_title']}");
+            // A new pending task should immediately pull the project's
+            // rollup progress down to reflect the added work, not leave it
+            // showing a now-stale (too high) percentage.
+            updateProjectProgressFromTasks($supabase, $data['project_id'] ?? null);
             echo json_encode(['success' => true, 'data' => $result, 'message' => 'Task created successfully']);
         } else {
             echo json_encode(['success' => false, 'error' => 'Failed to create task']);
@@ -169,18 +173,28 @@ function handlePutTask() {
     
     try {
         $data['updated_at'] = date('Y-m-d H:i:s');
-        
+
         if (isset($data['status']) && $data['status'] === 'completed' && !isset($data['completed_date'])) {
             $data['completed_date'] = date('Y-m-d');
         }
-        
+        // A task marked complete this way (the quick Start/Complete button,
+        // bypassing the checklist) still needs an accurate progress_percent —
+        // otherwise the project's rollup progress (see
+        // updateProjectProgressFromTasks()) would keep averaging in a stale
+        // 0% for a task that's actually done.
+        if (isset($data['status']) && $data['status'] === 'completed' && !isset($data['progress_percent'])) {
+            $data['progress_percent'] = 100;
+        }
+
         $result = $supabase->update('tasks', $id, $data);
 
         if ($result) {
             logActivity($_SESSION['user_id'], 'update', 'tasks', "Updated task ID: $id");
 
+            $task = $supabase->getById('tasks', $id);
+            updateProjectProgressFromTasks($supabase, $task['project_id'] ?? null);
+
             if (($data['status'] ?? '') === 'completed') {
-                $task = $supabase->getById('tasks', $id);
                 completeProjectPipelineIfDone($supabase, $task['project_id'] ?? null);
             }
 
@@ -209,9 +223,26 @@ function handleDeleteTask() {
     }
     
     try {
+        // Captured before archiving hard-deletes the row — a removed task
+        // should no longer be averaged into its project's rollup progress.
+        $task = $supabase->getById('tasks', $id);
+        if (!$task) {
+            echo json_encode(['success' => false, 'error' => 'Task not found']);
+            return;
+        }
+        // Only a completed task can be archived — enforced here too (not
+        // just hidden in the UI) so the API can't be called directly to
+        // archive still-active work.
+        if (($task['status'] ?? '') !== 'completed') {
+            echo json_encode(['success' => false, 'error' => 'Only completed tasks can be archived']);
+            return;
+        }
+        $projectId = $task['project_id'] ?? null;
+
         $result = archiveRecord('tasks', $id);
         if ($result) {
             logActivity($_SESSION['user_id'], 'archive', 'tasks', "Archived record ID: $id");
+            updateProjectProgressFromTasks($supabase, $projectId);
             echo json_encode(['success' => true, 'message' => 'Record archived successfully']);
         } else {
             echo json_encode(['success' => false, 'error' => 'Failed to archive record']);

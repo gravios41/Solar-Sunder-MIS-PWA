@@ -27,6 +27,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 global $supabase;
 $data = json_decode(file_get_contents('php://input'), true) ?: [];
 $assessmentId = $data['assessment_id'] ?? '';
+// Whichever of the three recommendation tiers was selected in the Review
+// modal — defaults to the standard "Actual Recommendation" if the caller
+// didn't specify one (e.g. an older client, or approving without ever
+// having shown the tier picker).
+$tier = in_array($data['tier'] ?? '', ['budget', 'standard', 'luxury'], true) ? $data['tier'] : 'standard';
 
 if (!$assessmentId) {
     echo json_encode(['success' => false, 'error' => 'Assessment ID required']);
@@ -55,73 +60,37 @@ try {
     $customerId = $assessment['customer_id'];
     $customer = $supabase->getById('customers', $customerId);
 
-    // Get inventory items (panels, inverter, etc.)
-    // Inventory categories match the Inventory module's own taxonomy:
-    // solar_panel, inverter, battery, mounting, cable, accessories
-    $panelInventory = $supabase->from('inventory')
-        ->select('*')
-        ->eq('category', 'solar_panel')
-        ->limit(1)
-        ->single()
-        ->execute();
+    // Build the full bill of materials from real inventory, matched against
+    // actual specs (wattage/kW/kWh parsed from each item's `specification`
+    // column) rather than an arbitrary pick — see buildRecommendationMaterials()
+    // for the matching rules. This is still just a starting point for the
+    // DRAFT quotation — nothing is deducted from stock here; staff can
+    // edit/add/remove line items in the Quotations module before approving.
+    $materials = buildRecommendationMaterials(
+        $supabase,
+        (float)($assessment['panel_wattage'] ?? 550),
+        (float)$assessment['recommended_system_kw'],
+        (float)($assessment['average_daily_kwh'] ?? ($assessment['average_monthly_kwh'] / 30)),
+        $tier
+    );
 
-    $inverterInventory = $supabase->from('inventory')
-        ->select('*')
-        ->eq('category', 'inverter')
-        ->limit(1)
-        ->single()
-        ->execute();
-
-    $panelItem = $panelInventory;
-    $inverterItem = $inverterInventory;
-
-    // Build recommendation items — a starting point for the quotation,
-    // not yet a commitment against stock (nothing is deducted here)
     $recommendationItems = [];
-
-    if ($panelItem) {
-        $panelRecItem = [
+    foreach ($materials['items'] as $item) {
+        $recItem = [
             'assessment_id' => $assessmentId,
-            'inventory_id' => $panelItem['id'] ?? null,
+            'inventory_id' => $item['inventory_id'],
             // Use the real inventory item's own name, not a generic
             // description — approve-quotation.php later matches quotation
             // line items back to inventory by exact name to deduct stock.
-            'item_name' => $panelItem['item_name'] ?? ('Solar Panels ' . $assessment['panel_wattage'] . 'W'),
-            'category' => 'panel',
-            'quantity' => $assessment['recommended_panel_count'],
-            'estimated_unit_price' => $panelItem['unit_price'] ?? 300,
-            'estimated_total_price' => ($panelItem['unit_price'] ?? 300) * $assessment['recommended_panel_count']
+            'item_name' => $item['item_name'],
+            'category' => $item['category'],
+            'quantity' => $item['quantity'],
+            'estimated_unit_price' => $item['unit_price'],
+            'estimated_total_price' => $item['total_price'],
         ];
-        $panelResponse = $supabase->insert('recommendation_items', $panelRecItem);
-        $recommendationItems[] = $panelResponse[0] ?? $panelResponse;
+        $response = $supabase->insert('recommendation_items', $recItem);
+        $recommendationItems[] = $response[0] ?? $response;
     }
-
-    $inverterCapacity = ceil($assessment['recommended_system_kw'] * 1.2); // 20% headroom
-    if ($inverterItem) {
-        $inverterRecItem = [
-            'assessment_id' => $assessmentId,
-            'inventory_id' => $inverterItem['id'] ?? null,
-            'item_name' => $inverterItem['item_name'] ?? "Inverter {$inverterCapacity}kW",
-            'category' => 'inverter',
-            'quantity' => 1,
-            'estimated_unit_price' => $inverterItem['unit_price'] ?? 2000,
-            'estimated_total_price' => $inverterItem['unit_price'] ?? 2000
-        ];
-        $inverterResponse = $supabase->insert('recommendation_items', $inverterRecItem);
-        $recommendationItems[] = $inverterResponse[0] ?? $inverterResponse;
-    }
-
-    $mountingRecItem = [
-        'assessment_id' => $assessmentId,
-        'inventory_id' => null,
-        'item_name' => 'Mounting System & Hardware',
-        'category' => 'mounting',
-        'quantity' => 1,
-        'estimated_unit_price' => 2000,
-        'estimated_total_price' => 2000
-    ];
-    $mountingResponse = $supabase->insert('recommendation_items', $mountingRecItem);
-    $recommendationItems[] = $mountingResponse[0] ?? $mountingResponse;
 
     // Calculate total system cost
     $totalSystemCost = array_sum(array_map(static fn($item) => $item['estimated_total_price'] ?? 0, $recommendationItems));
@@ -129,11 +98,13 @@ try {
     $totalQuotationPrice = $totalSystemCost + $laborCost;
 
     // Create project first — quotations reference project_id, not the other way around
-    $existingProjects = $supabase->getAll('projects', ['deleted_at' => 'is.null']) ?: [];
     $projectData = [
         'customer_id' => $customerId,
-        'project_code' => 'PRJ-' . str_pad(count($existingProjects) + 1, 3, '0', STR_PAD_LEFT),
+        'project_code' => generateSequentialCode($supabase, 'projects', 'project_code', 'PRJ'),
         'project_name' => sprintf('%s - Solar Installation %.2f kW', $customer['name'] ?? 'Customer', $assessment['recommended_system_kw']),
+        // The owner is always the project manager at this company — no
+        // manual input needed, ever.
+        'manager' => getOwnerFullName($supabase),
         'status' => 'planning',
         'progress' => 0,
         'estimated_cost' => round($totalQuotationPrice, 2),
@@ -165,29 +136,23 @@ try {
 
     // Create draft quotation
     $year = date('Y');
-    $existingQuotations = $supabase->getAll('quotations', ['deleted_at' => 'is.null']) ?: [];
-    $maxNum = 0;
-    foreach ($existingQuotations as $q) {
-        if (preg_match("/Q-$year-(\d+)/", $q['quotation_number'] ?? '', $matches)) {
-            $maxNum = max($maxNum, intval($matches[1]));
-        }
-    }
 
     $quotationData = [
         'customer_id' => $customerId,
         'project_id' => $projectId,
-        'quotation_number' => 'Q-' . $year . '-' . str_pad($maxNum + 1, 3, '0', STR_PAD_LEFT),
+        'quotation_number' => generateSequentialCode($supabase, 'quotations', 'quotation_number', "Q-$year"),
         'status' => 'draft',
         'total_amount' => round($totalQuotationPrice, 2),
         'items_count' => count($recommendationItems) + 1,
         'quotation_date' => date('Y-m-d'),
         'valid_until' => date('Y-m-d', strtotime('+30 days')),
         'notes' => sprintf(
-            "Solar PV System for %s\nRecommended size: %.2f kW\nPanel count: %d x %dW\nAverage consumption: %.2f kWh/month",
+            "Solar PV System for %s\nRecommendation tier: %s\nRecommended size: %.2f kW\nPanel count: %d x %dW\nAverage consumption: %.2f kWh/month",
             $customer['name'] ?? 'Customer',
+            ['budget' => 'Budget-Friendly', 'luxury' => 'Luxury'][$tier] ?? 'Actual Recommendation',
             $assessment['recommended_system_kw'],
-            $assessment['recommended_panel_count'],
-            $assessment['panel_wattage'],
+            $materials['panel_count'],
+            $materials['panel_wattage_selected'],
             $assessment['average_monthly_kwh']
         ),
         'created_at' => date('Y-m-d H:i:s'),
