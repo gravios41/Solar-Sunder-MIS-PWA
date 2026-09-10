@@ -7,6 +7,11 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// Local-only secrets (git-ignored). No-op in production where env vars are set.
+if (is_file(__DIR__ . '/env.local.php')) {
+    require_once __DIR__ . '/env.local.php';
+}
+
 // Error reporting (disable in production but keep logs)
 $isProduction = getenv('APP_ENV') === 'production' || getenv('RENDER') === 'true';
 error_reporting(E_ALL);

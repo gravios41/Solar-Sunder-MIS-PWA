@@ -39,15 +39,18 @@ if ($step === 'verify') {
             ]);
 
             $recipientName = htmlspecialchars($user['full_name'] ?: $user['username'], ENT_QUOTES, 'UTF-8');
+            $resetLink = SITE_URL . 'auth/login.php?reset_token=' . urlencode($resetCode);
+            $safeLink  = htmlspecialchars($resetLink, ENT_QUOTES, 'UTF-8');
             $html = '<div style="font-family:Arial,sans-serif;line-height:1.6;color:#1f2937">'
                 . '<h2>Password Reset</h2><p>Hello ' . $recipientName . ',</p>'
-                . '<p>Use this code to reset your Sunder Solar MIS password:</p>'
-                . '<p style="font-size:28px;font-weight:bold;letter-spacing:5px;color:#F97316">' . $resetCode . '</p>'
-                . '<p>This code expires in 15 minutes. If you did not request this, you can ignore this email.</p></div>';
-            sendResetEmail($user['email'], 'Your Sunder Solar MIS password reset code', $html);
+                . '<p>Click the button below to set a new password for your Sunder Solar MIS account:</p>'
+                . '<p style="margin:24px 0"><a href="' . $safeLink . '" style="background:#F97316;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:bold;display:inline-block">Reset Password</a></p>'
+                . '<p style="font-size:13px;color:#6b7280">Or paste this link into your browser:<br>' . $safeLink . '</p>'
+                . '<p>This link expires in 15 minutes. If you did not request this, you can ignore this email.</p></div>';
+            sendResetEmail($user['email'], 'Reset your Sunder Solar MIS password', $html);
         }
 
-        echo json_encode(['success' => true, 'message' => 'If the account details match, a reset code has been sent to the registered email.']);
+        echo json_encode(['success' => true, 'message' => 'If the account details match, a password reset link has been sent to the registered email.']);
     } catch (Exception $e) {
         echo json_encode(['success' => false, 'error' => 'System error. Please try again.']);
     }
@@ -103,26 +106,47 @@ if ($step === 'reset') {
 echo json_encode(['success' => false, 'error' => 'Invalid step.']);
 
 function sendResetEmail($recipient, $subject, $html) {
-    $apiKey = getenv('RESEND_API_KEY');
-    $sender = getenv('MAIL_FROM') ?: 'Sunder Solar MIS <onboarding@resend.dev>';
-    if (!$apiKey) {
+    // Bundled PHPMailer (open source, MIT) — see lib/PHPMailer/
+    require_once __DIR__ . '/../lib/PHPMailer/Exception.php';
+    require_once __DIR__ . '/../lib/PHPMailer/PHPMailer.php';
+    require_once __DIR__ . '/../lib/PHPMailer/SMTP.php';
+
+    $host      = getenv('SMTP_HOST') ?: 'smtp.gmail.com';
+    $port      = (int) (getenv('SMTP_PORT') ?: 587);
+    $username  = getenv('SMTP_USER');
+    $password  = getenv('SMTP_PASS');
+    $secure    = strtolower(getenv('SMTP_SECURE') ?: 'tls'); // 'tls' or 'ssl'
+    $fromAddr  = getenv('MAIL_FROM') ?: $username;
+    $fromName  = getenv('MAIL_FROM_NAME') ?: 'Sunder Solar MIS';
+
+    if (!$username || !$password || !$fromAddr) {
         throw new Exception('Email service is not configured.');
     }
 
-    $ch = curl_init('https://api.resend.com/emails');
-    curl_setopt_array($ch, [
-        CURLOPT_POST           => true,
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT        => 20,
-        CURLOPT_HTTPHEADER     => ['Authorization: Bearer ' . $apiKey, 'Content-Type: application/json'],
-        CURLOPT_POSTFIELDS     => json_encode(['from' => $sender, 'to' => [$recipient], 'subject' => $subject, 'html' => $html]),
-    ]);
-    $response = curl_exec($ch);
-    $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $error = curl_error($ch);
-    curl_close($ch);
+    $mail = new PHPMailer\PHPMailer\PHPMailer(true);
+    try {
+        $mail->isSMTP();
+        $mail->Host       = $host;
+        $mail->SMTPAuth   = true;
+        $mail->Username   = $username;
+        $mail->Password   = $password;
+        $mail->Port       = $port;
+        $mail->SMTPSecure = ($secure === 'ssl')
+            ? PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS
+            : PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->CharSet    = 'UTF-8';
+        $mail->Timeout    = 20;
 
-    if ($response === false || $error || $status < 200 || $status >= 300) {
+        $mail->setFrom($fromAddr, $fromName);
+        $mail->addAddress($recipient);
+        $mail->isHTML(true);
+        $mail->Subject = $subject;
+        $mail->Body    = $html;
+        $mail->AltBody = trim(strip_tags(str_replace(['<br>', '<br/>', '<br />', '</p>'], "\n", $html)));
+
+        $mail->send();
+    } catch (Exception $e) {
+        error_log('Password reset email failed: ' . $mail->ErrorInfo);
         throw new Exception('Email delivery failed.');
     }
 }

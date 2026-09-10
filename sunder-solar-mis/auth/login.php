@@ -18,6 +18,12 @@ $msgs  = [
     'system_error'       => 'A system error occurred. Please try again later.',
 ];
 $errorMessage = $msgs[$error] ?? '';
+
+// Password-reset link lands here with ?reset_token=XXXX
+$resetToken = '';
+if (isset($_GET['reset_token']) && preg_match('/^[A-Za-z0-9]{4,64}$/', $_GET['reset_token'])) {
+    $resetToken = $_GET['reset_token'];
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -479,15 +485,15 @@ $errorMessage = $msgs[$error] ?? '';
             </div>
             <button onclick="verifyIdentity()" id="fpVerifyBtn"
                     style="width:100%;padding:12px;background:linear-gradient(135deg,#F97316,#F59E0B);color:#fff;border:none;border-radius:11px;font-size:0.9rem;font-weight:700;cursor:pointer;font-family:inherit">
-                <span id="fpVerifyText"><i class="fas fa-envelope"></i> Send Reset Code</span>
+                <span id="fpVerifyText"><i class="fas fa-envelope"></i> Send Reset Link</span>
             </button>
         </div>
 
         <!-- Step 2: Enter code and new password -->
         <div id="fpStep2" style="display:none">
             <div style="margin-bottom:16px">
-                <label style="display:block;font-size:0.8rem;font-weight:600;color:rgba(255,255,255,0.75);margin-bottom:7px">Email Reset Code</label>
-                <input type="text" id="fpResetCode" placeholder="Enter the 8-character code"
+                <label style="display:block;font-size:0.8rem;font-weight:600;color:rgba(255,255,255,0.75);margin-bottom:7px">Reset Code (from your email link)</label>
+                <input type="text" id="fpResetCode" placeholder="Auto-filled from your email link"
                        autocomplete="one-time-code" maxlength="8" style="width:100%;background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.1);border-radius:11px;padding:11px 14px;color:#fff;font-size:0.875rem;outline:none;font-family:inherit;text-transform:uppercase"
                        onfocus="this.style.borderColor='#F97316'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
             </div>
@@ -577,6 +583,7 @@ $errorMessage = $msgs[$error] ?? '';
                         <input type="checkbox" name="remember">
                         <span>Remember me</span>
                     </label>
+                    <a href="#" class="forgot-link" onclick="openForgotModal(); return false;">Forgot password?</a>
                 </div>
 
                 <button type="submit" class="btn-submit" id="submitBtn">
@@ -680,7 +687,7 @@ async function verifyIdentity() {
             fpShowAlert(result.message, 'success');
             document.getElementById('fpStep1').style.display = 'none';
             document.getElementById('fpStep2').style.display = 'block';
-            document.getElementById('fpSubtitle').textContent = 'Enter the code sent to your email, then set a new password';
+            document.getElementById('fpSubtitle').textContent = 'Check your email for the reset link';
             setTimeout(() => document.getElementById('fpNewPw').focus(), 100);
         } else {
             fpShowAlert(result.error, 'error');
@@ -689,7 +696,7 @@ async function verifyIdentity() {
         fpShowAlert('Connection error. Please try again.', 'error');
     }
 
-    document.getElementById('fpVerifyText').innerHTML = '<i class="fas fa-envelope"></i> Send Reset Code';
+    document.getElementById('fpVerifyText').innerHTML = '<i class="fas fa-envelope"></i> Send Reset Link';
     btn.disabled = false;
 }
 
@@ -749,6 +756,22 @@ function toggleFpPw(inputId, iconId) {
 document.getElementById('forgotModal').addEventListener('click', function(e) {
     if (e.target === this) closeForgotModal();
 });
+
+/* ── Arriving from the email reset link: jump straight to Step 2 ── */
+(function() {
+    const token = <?php echo json_encode($resetToken); ?>;
+    if (!token) return;
+    document.getElementById('forgotModal').classList.add('active');
+    document.getElementById('fpStep1').style.display = 'none';
+    document.getElementById('fpStep2').style.display = 'block';
+    const codeField = document.getElementById('fpResetCode');
+    codeField.value = token;
+    // Hide the code field — it's supplied by the link
+    codeField.closest('div').style.display = 'none';
+    document.getElementById('fpSubtitle').textContent = 'Set a new password for your account';
+    fpShowAlert('', '');
+    setTimeout(() => document.getElementById('fpNewPw').focus(), 150);
+})();
 </script>
 <script src="<?php echo htmlspecialchars($appBasePath); ?>assets/js/pwa.js"></script>
 </body>

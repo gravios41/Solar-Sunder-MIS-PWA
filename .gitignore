@@ -1,0 +1,7 @@
+# Local secrets — never commit
+sunder-solar-mis/config/env.local.php
+
+# OS / editor
+Thumbs.db
+.DS_Store
+*.log
