@@ -38,7 +38,12 @@ foreach ($keys as $k) {
 
 $configured = mailerEnv('SMTP_USER') && mailerEnv('SMTP_PASS') && (mailerEnv('MAIL_FROM') || mailerEnv('SMTP_USER'));
 
-$result = ['configured' => (bool) $configured, 'settings' => $status];
+$runtimeFile = __DIR__ . '/../../env.runtime';
+$result = [
+    'configured'        => (bool) $configured,
+    'runtime_env_file'  => is_file($runtimeFile) ? 'present' : 'absent (using getenv/dashboard only)',
+    'settings'          => $status,
+];
 
 $send = $_GET['send'] ?? '';
 if ($send && filter_var($send, FILTER_VALIDATE_EMAIL)) {

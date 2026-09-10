@@ -16,7 +16,11 @@ function mailerEnv($key, $default = '') {
     $v = getenv($key);
     if ($v === false || $v === '') $v = $_SERVER[$key] ?? '';
     if ($v === '')                 $v = $_ENV[$key] ?? '';
-    return $v !== '' ? $v : $default;
+    if ($v === '' && function_exists('apache_getenv')) {
+        $a = @apache_getenv($key);
+        if ($a !== false && $a !== null && $a !== '') $v = $a;
+    }
+    return $v !== '' && $v !== false ? $v : $default;
 }
 
 /**

@@ -7,9 +7,26 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Local-only secrets (git-ignored). No-op in production where env vars are set.
+// ── Environment loading ───────────────────────────────────────────────────
+// 1) Local dev: config/env.local.php (git-ignored) sets vars via putenv().
 if (is_file(__DIR__ . '/env.local.php')) {
     require_once __DIR__ . '/env.local.php';
+}
+// 2) Docker/Render: the container entrypoint writes /var/www/env.runtime
+//    (a KEY=VALUE file, outside the web root) from the real environment, so
+//    PHP does not depend on getenv() being wired through Apache/mod_php.
+$runtimeEnvFile = __DIR__ . '/../../env.runtime';
+if (is_file($runtimeEnvFile)) {
+    foreach (file($runtimeEnvFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+        if ($line === '' || $line[0] === '#' || strpos($line, '=') === false) continue;
+        list($k, $v) = explode('=', $line, 2);
+        $k = trim($k);
+        if ($k !== '' && (getenv($k) === false || getenv($k) === '')) {
+            putenv("$k=$v");
+            $_ENV[$k] = $v;
+            $_SERVER[$k] = $v;
+        }
+    }
 }
 
 // Error reporting (disable in production but keep logs)
