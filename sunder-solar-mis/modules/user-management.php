@@ -140,8 +140,20 @@ function renderUsers() {
         tbody.innerHTML = '<tr><td colspan="6" class="text-center">No users found</td></tr>';
         return;
     }
-    
-    tbody.innerHTML = displayUsers.map(u => `
+
+    // Group by role, in a fixed hierarchy order
+    const ROLE_ORDER = ['super_admin', 'owner', 'admin', 'employee'];
+    const ROLE_LABELS = { super_admin: 'Super Admin', owner: 'Owner', admin: 'Admin', employee: 'Employee' };
+
+    const groups = {};
+    displayUsers.forEach(u => { (groups[u.role] = groups[u.role] || []).push(u); });
+
+    const orderedRoles = [
+        ...ROLE_ORDER.filter(r => groups[r]),
+        ...Object.keys(groups).filter(r => !ROLE_ORDER.includes(r))
+    ];
+
+    const userRow = u => `
         <tr>
             <td>
                 <div class="flex items-center gap-3">
@@ -173,8 +185,21 @@ function renderUsers() {
                     </button>` : ''}
                 </div>
             </td>
-        </tr>
-    `).join('');
+        </tr>`;
+
+    tbody.innerHTML = orderedRoles.map(role => {
+        const rows = groups[role]
+            .sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''))
+            .map(userRow).join('');
+        const label = ROLE_LABELS[role] || (role || 'Unassigned');
+        return `
+            <tr class="role-group-row">
+                <td colspan="6" style="background:var(--solar-orange-light,#fff4ec);font-weight:700;color:var(--solar-orange,#F97316);text-transform:uppercase;font-size:0.78rem;letter-spacing:0.04em;padding:10px 14px">
+                    ${label} <span style="color:var(--text-muted);font-weight:600">(${groups[role].length})</span>
+                </td>
+            </tr>
+            ${rows}`;
+    }).join('');
 }
 
 function getRoleBadge(role) {
