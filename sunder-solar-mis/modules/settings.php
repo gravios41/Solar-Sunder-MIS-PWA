@@ -113,8 +113,22 @@ $_SESSION['avatar_url'] = $user['avatar_url'] ?? '';
                     <textarea id="reqReason" class="form-control" rows="2" maxlength="500" placeholder="Why do you need this change?"></textarea>
                 </div>
                 <div style="display:flex;gap:10px;flex-wrap:wrap">
-                    <button type="button" onclick="submitChangeRequest()" class="btn btn-primary btn-sm">Send Request</button>
+                    <button type="button" onclick="submitChangeRequest()" class="btn btn-primary btn-sm" id="reqSubmitBtn">Send Request</button>
                     <button type="button" onclick="document.getElementById('changeRequestBox').style.display='none'" class="btn btn-secondary btn-sm">Cancel</button>
+                </div>
+            </div>
+
+            <!-- Shown after a request is sent successfully -->
+            <div id="changeRequestSent" style="display:none;margin-top:18px;padding:18px 20px;border:1px solid #10B981;border-radius:10px;background:rgba(16,185,129,0.08)">
+                <div style="display:flex;align-items:flex-start;gap:12px">
+                    <i class="fas fa-circle-check" style="color:#10B981;font-size:1.4rem;margin-top:2px"></i>
+                    <div>
+                        <p style="font-weight:700;margin:0 0 4px;color:#065F46">Request sent</p>
+                        <p style="margin:0;font-size:0.86rem;color:var(--text-muted)" id="changeRequestSentMsg">
+                            Your email was sent to the administrators. Please wait for them to review and apply the change &mdash;
+                            you'll be notified once it's done. No further action is needed.
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -200,6 +214,7 @@ async function saveProfile() {
 
 function openChangeRequest() {
     const box = document.getElementById('changeRequestBox');
+    document.getElementById('changeRequestSent').style.display = 'none';
     box.style.display = box.style.display === 'none' ? 'block' : 'none';
     if (box.style.display === 'block') document.getElementById('reqEmail').focus();
 }
@@ -214,6 +229,9 @@ async function submitChangeRequest() {
         return;
     }
 
+    const btn = document.getElementById('reqSubmitBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+
     try {
         const res = await fetch('../api/profile-change-request.php', {
             method: 'POST',
@@ -223,16 +241,24 @@ async function submitChangeRequest() {
         const result = await res.json();
 
         if (result.success) {
-            showToast(result.message || 'Request sent to administrators', 'success');
+            showToast('Request sent — waiting for an administrator', 'success');
             document.getElementById('changeRequestBox').style.display = 'none';
             document.getElementById('reqEmail').value = '';
             document.getElementById('reqPhone').value = '';
             document.getElementById('reqReason').value = '';
+            if (result.message) {
+                document.getElementById('changeRequestSentMsg').textContent = result.message +
+                    " Please wait for an administrator to review and apply the change — you'll be notified once it's done.";
+            }
+            document.getElementById('changeRequestSent').style.display = 'block';
+            document.getElementById('changeRequestSent').scrollIntoView({ behavior: 'smooth', block: 'center' });
         } else {
             showToast(result.error, 'error');
         }
     } catch (e) {
         showToast('Could not send the request', 'error');
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Send Request'; }
     }
 }
 

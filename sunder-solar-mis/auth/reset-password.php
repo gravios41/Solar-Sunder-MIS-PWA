@@ -42,12 +42,16 @@ if ($step === 'verify') {
             $recipientName = htmlspecialchars($user['full_name'] ?: $user['username'], ENT_QUOTES, 'UTF-8');
             $resetLink = SITE_URL . 'auth/login.php?reset_token=' . urlencode($resetCode);
             $safeLink  = htmlspecialchars($resetLink, ENT_QUOTES, 'UTF-8');
-            $html = '<div style="font-family:Arial,sans-serif;line-height:1.6;color:#1f2937">'
-                . '<h2>Password Reset</h2><p>Hello ' . $recipientName . ',</p>'
-                . '<p>Click the button below to set a new password for your Sunder Solar MIS account:</p>'
-                . '<p style="margin:24px 0"><a href="' . $safeLink . '" style="background:#F97316;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:bold;display:inline-block">Reset Password</a></p>'
-                . '<p style="font-size:13px;color:#6b7280">Or paste this link into your browser:<br>' . $safeLink . '</p>'
-                . '<p>This link expires in 15 minutes. If you did not request this, you can ignore this email.</p></div>';
+            $body = '<p>Hello ' . $recipientName . ',</p>'
+                . '<p>We received a request to reset the password for your Sunder Solar MIS account. '
+                . 'Click the button below to choose a new password.</p>'
+                . emailButton('Reset Password', $resetLink)
+                . '<p style="font-size:13px;color:#64748b">Or paste this link into your browser:<br>'
+                . '<a href="' . $safeLink . '" style="color:#c2410c;word-break:break-all">' . $safeLink . '</a></p>'
+                . '<p style="font-size:13px;color:#64748b;margin-top:20px;padding-top:16px;border-top:1px solid #e2e8f0">'
+                . 'This link expires in <strong>15 minutes</strong>. If you did not request a password reset, '
+                . 'you can safely ignore this email &mdash; your password will not change.</p>';
+            $html = emailShell('Reset your password', $body, 'Use the button in this email to set a new password.');
             sendAppEmail($user['email'], 'Reset your Sunder Solar MIS password', $html);
         }
 

@@ -79,31 +79,44 @@ try {
     }
 
     $e = fn($s) => htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
+    $td  = 'padding:9px 14px;border:1px solid #e2e8f0;font-size:14px';
+    $tdN = $td . ';color:#94a3b8';
     $rows = '';
     if ($wantsEmail) {
-        $rows .= '<tr><td style="padding:6px 12px;border:1px solid #e5e7eb">Email</td>'
-              . '<td style="padding:6px 12px;border:1px solid #e5e7eb">' . $e($me['email']) . '</td>'
-              . '<td style="padding:6px 12px;border:1px solid #e5e7eb"><strong>' . $e($newEmail) . '</strong></td></tr>';
+        $rows .= '<tr><td style="' . $td . ';font-weight:600">Email</td>'
+              . '<td style="' . $tdN . '">' . $e($me['email']) . '</td>'
+              . '<td style="' . $td . ';color:#c2410c;font-weight:700">' . $e($newEmail) . '</td></tr>';
     }
     if ($wantsPhone) {
-        $rows .= '<tr><td style="padding:6px 12px;border:1px solid #e5e7eb">Phone</td>'
-              . '<td style="padding:6px 12px;border:1px solid #e5e7eb">' . $e($me['phone'] ?? '—') . '</td>'
-              . '<td style="padding:6px 12px;border:1px solid #e5e7eb"><strong>' . $e($newPhone) . '</strong></td></tr>';
+        $rows .= '<tr><td style="' . $td . ';font-weight:600">Phone</td>'
+              . '<td style="' . $tdN . '">' . $e($me['phone'] ?: '—') . '</td>'
+              . '<td style="' . $td . ';color:#c2410c;font-weight:700">' . $e($newPhone) . '</td></tr>';
     }
 
-    $html = '<div style="font-family:Arial,sans-serif;line-height:1.6;color:#1f2937">'
-        . '<h2>Profile change request</h2>'
-        . '<p><strong>' . $e($me['full_name'] ?: $me['username']) . '</strong> '
-        . '(username: ' . $e($me['username']) . ', role: ' . $e($me['role']) . ', ID: ' . $e($me['id']) . ') '
-        . 'has requested the following change(s):</p>'
-        . '<table style="border-collapse:collapse;margin:12px 0">'
-        . '<tr><th style="padding:6px 12px;border:1px solid #e5e7eb;text-align:left">Field</th>'
-        . '<th style="padding:6px 12px;border:1px solid #e5e7eb;text-align:left">Current</th>'
-        . '<th style="padding:6px 12px;border:1px solid #e5e7eb;text-align:left">Requested</th></tr>'
-        . $rows . '</table>'
-        . ($reason !== '' ? '<p><strong>Reason:</strong> ' . $e($reason) . '</p>' : '')
-        . '<p style="color:#6b7280;font-size:13px">Requested ' . date('M j, Y g:i A') . ' from IP ' . $e($_SERVER['REMOTE_ADDR'] ?? '') . '. '
-        . 'Apply the change in User Management if it looks legitimate.</p></div>';
+    $body = '<p>An account holder has asked to update their contact details and cannot change '
+        . 'these fields themselves. Please review and apply the change in <strong>User Management</strong> '
+        . 'if it looks legitimate.</p>'
+        . '<table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin:8px 0 20px;width:100%">'
+        . '<tr>'
+        . '<th style="' . $td . ';background:#f8fafc;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:0.04em;color:#64748b">Field</th>'
+        . '<th style="' . $td . ';background:#f8fafc;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:0.04em;color:#64748b">Current</th>'
+        . '<th style="' . $td . ';background:#f8fafc;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:0.04em;color:#64748b">Requested</th>'
+        . '</tr>' . $rows . '</table>'
+        . '<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;font-size:14px;color:#334155">'
+        . '<tr><td style="padding:3px 0;width:130px;color:#64748b">Requested by</td><td style="padding:3px 0"><strong>' . $e($me['full_name'] ?: $me['username']) . '</strong></td></tr>'
+        . '<tr><td style="padding:3px 0;color:#64748b">Username</td><td style="padding:3px 0">' . $e($me['username']) . '</td></tr>'
+        . '<tr><td style="padding:3px 0;color:#64748b">Role</td><td style="padding:3px 0">' . $e(ucwords(str_replace('_', ' ', $me['role']))) . '</td></tr>'
+        . '<tr><td style="padding:3px 0;color:#64748b">User ID</td><td style="padding:3px 0">' . $e($me['id']) . '</td></tr>'
+        . ($reason !== '' ? '<tr><td style="padding:3px 0;color:#64748b">Reason</td><td style="padding:3px 0">' . $e($reason) . '</td></tr>' : '')
+        . '<tr><td style="padding:3px 0;color:#64748b">When</td><td style="padding:3px 0">' . $e(date('M j, Y g:i A')) . '</td></tr>'
+        . '<tr><td style="padding:3px 0;color:#64748b">IP address</td><td style="padding:3px 0">' . $e($_SERVER['REMOTE_ADDR'] ?? '') . '</td></tr>'
+        . '</table>';
+
+    $ctaUrl = (defined('SITE_URL') ? SITE_URL : '') . 'modules/user-management.php';
+    $body  .= emailButton('Open User Management', $ctaUrl);
+
+    $html = emailShell('Profile change request', $body,
+        ($me['full_name'] ?: $me['username']) . ' requested a contact-detail change.');
 
     $sent = 0;
     $lastError = '';
