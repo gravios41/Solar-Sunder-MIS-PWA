@@ -112,7 +112,8 @@ function getRolePermissions() {
             'settings' => ['view' => false, 'edit' => false, 'delete' => false, 'create' => false],
             'users' => ['view' => false, 'edit' => false, 'delete' => false, 'create' => false]
         ],
-        // Owner: full access everywhere except user management.
+        // Owner: full access everywhere, including user management
+        // (owner and super_admin have the same reach over users).
         'owner' => [
             'dashboard' => ['view' => true, 'edit' => true, 'delete' => true, 'create' => true],
             'customers' => ['view' => true, 'edit' => true, 'delete' => true, 'create' => true],
@@ -125,7 +126,7 @@ function getRolePermissions() {
             'task-checklist' => ['view' => true, 'edit' => false, 'delete' => false, 'create' => false],
             'reports' => ['view' => true, 'edit' => true, 'delete' => true, 'create' => true],
             'settings' => ['view' => true, 'edit' => true, 'delete' => false, 'create' => false],
-            'users' => ['view' => false, 'edit' => false, 'delete' => false, 'create' => false]
+            'users' => ['view' => true, 'edit' => true, 'delete' => true, 'create' => true]
         ],
         // Employee: can view every module except reports and user
         // management; the only thing they actually work in is a task's

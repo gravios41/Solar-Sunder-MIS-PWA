@@ -106,17 +106,22 @@ try {
         . 'Apply the change in User Management if it looks legitimate.</p></div>';
 
     $sent = 0;
+    $lastError = '';
     foreach ($admins as $admin) {
         try {
             sendAppEmail($admin['email'], 'Profile change request from ' . ($me['full_name'] ?: $me['username']), $html);
             $sent++;
         } catch (Exception $ex) {
-            error_log('profile-change-request: failed to notify ' . $admin['email'] . ' — ' . $ex->getMessage());
+            $lastError = $ex->getMessage();
+            error_log('profile-change-request: failed to notify ' . $admin['email'] . ' — ' . $lastError);
         }
     }
 
     if ($sent === 0) {
-        echo json_encode(['success' => false, 'error' => 'Could not send the request. Please try again later.']);
+        $msg = ($lastError === 'Email service is not configured.')
+            ? 'Email is not set up on the server yet. Please contact an administrator.'
+            : 'Could not send the request right now. Please try again later.';
+        echo json_encode(['success' => false, 'error' => $msg]);
         exit();
     }
 

@@ -84,11 +84,11 @@ include_once __DIR__ . '/../includes/header.php';
                     <label class="form-label">Role *</label>
                     <select id="userRole" class="form-select" required>
                         <option value="">Select Role</option>
-                        <?php if ($_SESSION['user_role'] === 'super_admin'): ?>
+                        <?php if (in_array($_SESSION['user_role'], ['super_admin', 'owner'], true)): ?>
                         <option value="super_admin">Super Admin</option>
                         <?php endif; ?>
                         <option value="admin">Admin</option>
-                        <?php if ($_SESSION['user_role'] === 'super_admin'): ?>
+                        <?php if (in_array($_SESSION['user_role'], ['super_admin', 'owner'], true)): ?>
                         <option value="owner">Owner</option>
                         <?php endif; ?>
                         <option value="employee">Employee</option>
@@ -133,13 +133,9 @@ function renderUsers() {
     const currentUserRole = '<?php echo $_SESSION['user_role']; ?>';
     const currentUserId = <?php echo $_SESSION['user_id']; ?>;
     
+    // Owner and Super Admin both see and manage every user.
     let displayUsers = users;
-    
-    // Owner cannot see Super Admin users; employee cannot access this page at all
-    if (currentUserRole === 'owner') {
-        displayUsers = users.filter(u => u.role !== 'super_admin');
-    }
-    
+
     if (displayUsers.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" class="text-center">No users found</td></tr>';
         return;
@@ -202,11 +198,7 @@ function canEditUser(user) {
     const currentUserId = <?php echo $_SESSION['user_id']; ?>;
 
     if (user.id === currentUserId) return false;
-    if (currentUserRole === 'super_admin') return true;
-    if (currentUserRole === 'owner') {
-        return user.role === 'admin' || user.role === 'employee';
-    }
-    return false;
+    return currentUserRole === 'super_admin' || currentUserRole === 'owner';
 }
 
 function canDeleteUser(user) {
@@ -214,11 +206,7 @@ function canDeleteUser(user) {
     const currentUserId = <?php echo $_SESSION['user_id']; ?>;
 
     if (user.id === currentUserId) return false;
-    if (currentUserRole === 'super_admin') return true;
-    if (currentUserRole === 'owner') {
-        return user.role === 'admin' || user.role === 'employee';
-    }
-    return false;
+    return currentUserRole === 'super_admin' || currentUserRole === 'owner';
 }
 
 function viewUser(id) {

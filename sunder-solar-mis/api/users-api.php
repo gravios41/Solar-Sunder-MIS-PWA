@@ -81,12 +81,6 @@ function handlePostUser() {
         return;
     }
     
-    $currentUserRole = $_SESSION['user_role'];
-    if ($currentUserRole === 'owner' && in_array($data['role'], ['super_admin', 'owner'])) {
-        echo json_encode(['success' => false, 'error' => 'Cannot create Super Admin or Owner user']);
-        return;
-    }
-    
     try {
         $existing = $supabase->from('users')->select('*')->eq('username', $data['username'])->execute();
         if (!empty($existing)) {
@@ -169,14 +163,6 @@ function handlePutUser() {
             unset($data['password']);
         }
         
-        if (isset($data['role']) && !$isSelf) {
-            $currentUserRole = $_SESSION['user_role'];
-            if ($currentUserRole === 'owner' && $data['role'] === 'super_admin') {
-                echo json_encode(['success' => false, 'error' => 'Cannot assign Super Admin role']);
-                return;
-            }
-        }
-        
         $result = $supabase->update('users', $id, $data);
         
         if ($result) {
@@ -216,15 +202,7 @@ function handleDeleteUser() {
         echo json_encode(['success' => false, 'error' => 'Cannot delete your own account']);
         return;
     }
-    
-    if ($_SESSION['user_role'] === 'owner') {
-        $user = $supabase->getById('users', $id);
-        if ($user && $user['role'] === 'super_admin') {
-            echo json_encode(['success' => false, 'error' => 'Cannot delete Super Admin user']);
-            return;
-        }
-    }
-    
+
     try {
         $result = archiveRecord('users', $id);
         if ($result) {
