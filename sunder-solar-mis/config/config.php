@@ -24,7 +24,7 @@ date_default_timezone_set('Asia/Manila');
 // Site configuration
 define('SITE_NAME', 'Sunder Solar MIS');
 $scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? ''));
-$appBasePath = preg_replace('#/(auth|modules|api)$#', '', $scriptDir);
+$appBasePath = preg_replace('#/(auth|modules|api|legal)$#', '', $scriptDir);
 $appBasePath = rtrim($appBasePath, '/') . '/';
 $forwardedProto = $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? $_SERVER['HTTPS'] ?? '';
 $forwardedHost = $_SERVER['HTTP_X_FORWARDED_HOST'] ?? $_SERVER['SERVER_NAME'] ?? $_SERVER['HTTP_HOST'] ?? 'localhost';

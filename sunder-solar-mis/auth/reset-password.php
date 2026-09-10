@@ -4,6 +4,7 @@
 
 header('Content-Type: application/json');
 require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/../config/mailer.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['success' => false, 'error' => 'Method not allowed']);
@@ -47,7 +48,7 @@ if ($step === 'verify') {
                 . '<p style="margin:24px 0"><a href="' . $safeLink . '" style="background:#F97316;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:bold;display:inline-block">Reset Password</a></p>'
                 . '<p style="font-size:13px;color:#6b7280">Or paste this link into your browser:<br>' . $safeLink . '</p>'
                 . '<p>This link expires in 15 minutes. If you did not request this, you can ignore this email.</p></div>';
-            sendResetEmail($user['email'], 'Reset your Sunder Solar MIS password', $html);
+            sendAppEmail($user['email'], 'Reset your Sunder Solar MIS password', $html);
         }
 
         echo json_encode(['success' => true, 'message' => 'If the account details match, a password reset link has been sent to the registered email.']);
@@ -104,49 +105,3 @@ if ($step === 'reset') {
 }
 
 echo json_encode(['success' => false, 'error' => 'Invalid step.']);
-
-function sendResetEmail($recipient, $subject, $html) {
-    // Bundled PHPMailer (open source, MIT) — see lib/PHPMailer/
-    require_once __DIR__ . '/../lib/PHPMailer/Exception.php';
-    require_once __DIR__ . '/../lib/PHPMailer/PHPMailer.php';
-    require_once __DIR__ . '/../lib/PHPMailer/SMTP.php';
-
-    $host      = getenv('SMTP_HOST') ?: 'smtp.gmail.com';
-    $port      = (int) (getenv('SMTP_PORT') ?: 587);
-    $username  = getenv('SMTP_USER');
-    $password  = getenv('SMTP_PASS');
-    $secure    = strtolower(getenv('SMTP_SECURE') ?: 'tls'); // 'tls' or 'ssl'
-    $fromAddr  = getenv('MAIL_FROM') ?: $username;
-    $fromName  = getenv('MAIL_FROM_NAME') ?: 'Sunder Solar MIS';
-
-    if (!$username || !$password || !$fromAddr) {
-        throw new Exception('Email service is not configured.');
-    }
-
-    $mail = new PHPMailer\PHPMailer\PHPMailer(true);
-    try {
-        $mail->isSMTP();
-        $mail->Host       = $host;
-        $mail->SMTPAuth   = true;
-        $mail->Username   = $username;
-        $mail->Password   = $password;
-        $mail->Port       = $port;
-        $mail->SMTPSecure = ($secure === 'ssl')
-            ? PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS
-            : PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
-        $mail->CharSet    = 'UTF-8';
-        $mail->Timeout    = 20;
-
-        $mail->setFrom($fromAddr, $fromName);
-        $mail->addAddress($recipient);
-        $mail->isHTML(true);
-        $mail->Subject = $subject;
-        $mail->Body    = $html;
-        $mail->AltBody = trim(strip_tags(str_replace(['<br>', '<br/>', '<br />', '</p>'], "\n", $html)));
-
-        $mail->send();
-    } catch (Exception $e) {
-        error_log('Password reset email failed: ' . $mail->ErrorInfo);
-        throw new Exception('Email delivery failed.');
-    }
-}

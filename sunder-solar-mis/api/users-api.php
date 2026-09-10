@@ -126,20 +126,27 @@ function handlePostUser() {
 function handlePutUser() {
     global $supabase;
     
-    $id = $_GET['id'] ?? null;
     $data = json_decode(file_get_contents('php://input'), true);
-    
+    $id = $_GET['id'] ?? ($data['id'] ?? null);
+    unset($data['id']);
+
     if (!$id || !$data) {
         echo json_encode(['success' => false, 'error' => 'Invalid data']);
         return;
     }
-    
+
     $isSelf = ($id == $_SESSION['user_id']);
     if (!$isSelf && !hasPermission('users', 'edit')) {
         echo json_encode(['success' => false, 'error' => 'Permission denied']);
         return;
     }
-    
+
+    // Users cannot change their own email or phone directly — those go
+    // through an owner/super-admin request (api/profile-change-request.php).
+    if ($isSelf) {
+        unset($data['email'], $data['phone']);
+    }
+
     try {
         $data['updated_at'] = date('Y-m-d H:i:s');
         

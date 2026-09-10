@@ -597,6 +597,14 @@ if (isset($_GET['reset_token']) && preg_match('/^[A-Za-z0-9]{4,64}$/', $_GET['re
         <!-- Footer -->
         <div class="card-footer">
             Powered by Sunder Solar &nbsp;•&nbsp; &copy; <?php echo date('Y'); ?> All rights reserved
+            <div style="margin-top:8px">
+                <a href="<?php echo htmlspecialchars($appBasePath); ?>legal/index.php?doc=privacy" style="color:var(--light);text-decoration:none">Privacy</a> &nbsp;•&nbsp;
+                <a href="<?php echo htmlspecialchars($appBasePath); ?>legal/index.php?doc=terms" style="color:var(--light);text-decoration:none">Terms</a> &nbsp;•&nbsp;
+                <a href="<?php echo htmlspecialchars($appBasePath); ?>legal/index.php?doc=aup" style="color:var(--light);text-decoration:none">Acceptable Use</a>
+            </div>
+            <div style="margin-top:6px;font-size:0.68rem;color:rgba(255,255,255,0.3)">
+                Authorised users only. Unauthorised access is prohibited and punishable under Republic Act No. 10175.
+            </div>
         </div>
     </div>
 </div>

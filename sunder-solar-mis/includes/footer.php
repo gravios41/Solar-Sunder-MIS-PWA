@@ -3,11 +3,17 @@
 ?>
     </div><!-- /.page-body -->
 
+    <?php $footerLegalBase = $appBasePath ?? (defined('APP_BASE_PATH') ? APP_BASE_PATH : '/'); ?>
     <footer class="app-footer">
         <p>
             <strong style="color:var(--solar-orange)">Sunder Solar MIS</strong> &nbsp;•&nbsp;
             Logged in as <?php echo ucwords(str_replace('_', ' ', $_SESSION['user_role'] ?? 'Guest')); ?> &nbsp;•&nbsp;
             &copy; <?php echo date('Y'); ?> All rights reserved
+        </p>
+        <p style="margin-top:6px;font-size:0.78rem">
+            <a href="<?php echo htmlspecialchars($footerLegalBase); ?>legal/index.php?doc=privacy">Privacy Policy</a> &nbsp;•&nbsp;
+            <a href="<?php echo htmlspecialchars($footerLegalBase); ?>legal/index.php?doc=terms">Terms of Use</a> &nbsp;•&nbsp;
+            <a href="<?php echo htmlspecialchars($footerLegalBase); ?>legal/index.php?doc=aup">Acceptable Use &amp; Security</a>
         </p>
     </footer>
 

@@ -73,18 +73,50 @@ $_SESSION['avatar_url'] = $user['avatar_url'] ?? '';
                 </div>
                 <div class="form-group">
                     <label class="form-label">Email</label>
-                    <input type="email" id="email" class="form-control" value="<?php echo escape($user['email'] ?? ''); ?>">
+                    <input type="email" id="email" class="form-control" value="<?php echo escape($user['email'] ?? ''); ?>" readonly disabled>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Phone</label>
-                    <input type="tel" id="phone" class="form-control" value="<?php echo escape($user['phone'] ?? ''); ?>">
+                    <input type="tel" id="phone" class="form-control" value="<?php echo escape($user['phone'] ?? ''); ?>" readonly disabled>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Role</label>
                     <input type="text" class="form-control" value="<?php echo ucwords(str_replace('_', ' ', $user['role'] ?? '')); ?>" readonly disabled>
                 </div>
-                <button type="button" onclick="saveProfile()" class="btn btn-primary">Save Changes</button>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+                    <button type="button" onclick="saveProfile()" class="btn btn-primary">Save Changes</button>
+                    <button type="button" onclick="openChangeRequest()" class="btn btn-secondary">
+                        <i class="fas fa-envelope"></i> Change email or phone number
+                    </button>
+                </div>
+                <small style="display:block;margin-top:8px;color:var(--text-muted);font-size:0.78rem">
+                    Your email and phone can only be changed by an administrator. Use the button above to request a change.
+                </small>
             </form>
+
+            <!-- Change request panel (hidden until the button is clicked) -->
+            <div id="changeRequestBox" style="display:none;margin-top:18px;padding:16px;border:1px solid var(--solar-orange);border-radius:10px;background:var(--solar-orange-light)">
+                <p style="font-weight:600;margin-bottom:6px">Request an email / phone change</p>
+                <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:12px">
+                    Fill in only what you want changed. An administrator (owner / super admin) will be emailed to review and apply it.
+                </p>
+                <div class="form-group">
+                    <label class="form-label">New Email <span style="color:var(--text-muted)">(optional)</span></label>
+                    <input type="email" id="reqEmail" class="form-control" placeholder="new.email@example.com">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">New Phone <span style="color:var(--text-muted)">(optional)</span></label>
+                    <input type="tel" id="reqPhone" class="form-control" placeholder="09xxxxxxxxx">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Reason <span style="color:var(--text-muted)">(optional)</span></label>
+                    <textarea id="reqReason" class="form-control" rows="2" maxlength="500" placeholder="Why do you need this change?"></textarea>
+                </div>
+                <div style="display:flex;gap:10px;flex-wrap:wrap">
+                    <button type="button" onclick="submitChangeRequest()" class="btn btn-primary btn-sm">Send Request</button>
+                    <button type="button" onclick="document.getElementById('changeRequestBox').style.display='none'" class="btn btn-secondary btn-sm">Cancel</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -146,29 +178,61 @@ $_SESSION['avatar_url'] = $user['avatar_url'] ?? '';
 
 <script>
 async function saveProfile() {
-    const data = {
-        full_name: document.getElementById('fullName').value,
-        email: document.getElementById('email').value,
-        phone: document.getElementById('phone').value
-    };
-    
+    // Only the name is user-editable; email/phone go through a request to an admin.
     try {
         const response = await fetch('../api/users-api.php', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: <?php echo $_SESSION['user_id']; ?>, ...data })
+            body: JSON.stringify({ id: <?php echo $_SESSION['user_id']; ?>, full_name: document.getElementById('fullName').value })
         });
         const result = await response.json();
-        
+
         if (result.success) {
             showToast('Profile updated successfully', 'success');
-            // Update session
             location.reload();
         } else {
-            showToast(result.error, 'error');
+            showToast(result.error || 'Error saving profile', 'error');
         }
     } catch (error) {
         showToast('Error saving profile', 'error');
+    }
+}
+
+function openChangeRequest() {
+    const box = document.getElementById('changeRequestBox');
+    box.style.display = box.style.display === 'none' ? 'block' : 'none';
+    if (box.style.display === 'block') document.getElementById('reqEmail').focus();
+}
+
+async function submitChangeRequest() {
+    const newEmail = document.getElementById('reqEmail').value.trim();
+    const newPhone = document.getElementById('reqPhone').value.trim();
+    const reason   = document.getElementById('reqReason').value.trim();
+
+    if (!newEmail && !newPhone) {
+        showToast('Enter a new email address or phone number', 'error');
+        return;
+    }
+
+    try {
+        const res = await fetch('../api/profile-change-request.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ new_email: newEmail, new_phone: newPhone, reason })
+        });
+        const result = await res.json();
+
+        if (result.success) {
+            showToast(result.message || 'Request sent to administrators', 'success');
+            document.getElementById('changeRequestBox').style.display = 'none';
+            document.getElementById('reqEmail').value = '';
+            document.getElementById('reqPhone').value = '';
+            document.getElementById('reqReason').value = '';
+        } else {
+            showToast(result.error, 'error');
+        }
+    } catch (e) {
+        showToast('Could not send the request', 'error');
     }
 }
 
