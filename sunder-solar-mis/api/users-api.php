@@ -80,7 +80,13 @@ function handlePostUser() {
         echo json_encode(['success' => false, 'error' => 'Missing required fields']);
         return;
     }
-    
+
+    // Only a super_admin may create another super_admin.
+    if (($_SESSION['user_role'] ?? '') !== 'super_admin' && $data['role'] === 'super_admin') {
+        echo json_encode(['success' => false, 'error' => 'Only a Super Admin can create a Super Admin account.']);
+        return;
+    }
+
     try {
         $existing = $supabase->from('users')->select('*')->eq('username', $data['username'])->execute();
         if (!empty($existing)) {
@@ -129,16 +135,35 @@ function handlePutUser() {
         return;
     }
 
-    $isSelf = ($id == $_SESSION['user_id']);
+    $isSelf       = ($id == $_SESSION['user_id']);
+    $myRole       = $_SESSION['user_role'] ?? '';
+    $isSuperAdmin = ($myRole === 'super_admin');
+    $isAdmin      = in_array($myRole, ['owner', 'super_admin'], true);
+
     if (!$isSelf && !hasPermission('users', 'edit')) {
         echo json_encode(['success' => false, 'error' => 'Permission denied']);
         return;
     }
 
-    // Users cannot change their own email or phone directly — those go
-    // through an owner/super-admin request (api/profile-change-request.php).
-    if ($isSelf) {
+    // Owner and super_admin can edit their own account fully; other roles
+    // must use the request flow (api/profile-change-request.php) for email/phone.
+    if ($isSelf && !$isAdmin) {
         unset($data['email'], $data['phone']);
+    }
+
+    // Owner may not modify a Super Admin account, nor grant the Super Admin role.
+    if ($myRole === 'owner') {
+        if (!$isSelf) {
+            $target = $supabase->getById('users', $id);
+            if ($target && ($target['role'] ?? '') === 'super_admin') {
+                echo json_encode(['success' => false, 'error' => 'You cannot modify a Super Admin account.']);
+                return;
+            }
+        }
+        if (isset($data['role']) && $data['role'] === 'super_admin') {
+            echo json_encode(['success' => false, 'error' => 'You cannot assign the Super Admin role.']);
+            return;
+        }
     }
 
     try {
@@ -201,6 +226,15 @@ function handleDeleteUser() {
     if ($id == $_SESSION['user_id']) {
         echo json_encode(['success' => false, 'error' => 'Cannot delete your own account']);
         return;
+    }
+
+    // Owner may not archive a Super Admin account.
+    if (($_SESSION['user_role'] ?? '') === 'owner') {
+        $target = $supabase->getById('users', $id);
+        if ($target && ($target['role'] ?? '') === 'super_admin') {
+            echo json_encode(['success' => false, 'error' => 'You cannot archive a Super Admin account.']);
+            return;
+        }
     }
 
     try {

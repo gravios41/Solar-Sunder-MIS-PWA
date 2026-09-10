@@ -84,7 +84,7 @@ include_once __DIR__ . '/../includes/header.php';
                     <label class="form-label">Role *</label>
                     <select id="userRole" class="form-select" required>
                         <option value="">Select Role</option>
-                        <?php if (in_array($_SESSION['user_role'], ['super_admin', 'owner'], true)): ?>
+                        <?php if ($_SESSION['user_role'] === 'super_admin'): ?>
                         <option value="super_admin">Super Admin</option>
                         <?php endif; ?>
                         <option value="admin">Admin</option>
@@ -195,18 +195,21 @@ function getRoleBadge(role) {
 
 function canEditUser(user) {
     const currentUserRole = '<?php echo $_SESSION['user_role']; ?>';
-    const currentUserId = <?php echo $_SESSION['user_id']; ?>;
 
-    if (user.id === currentUserId) return false;
-    return currentUserRole === 'super_admin' || currentUserRole === 'owner';
+    if (currentUserRole === 'super_admin') return true;          // edits everyone, self included
+    if (currentUserRole === 'owner') return user.role !== 'super_admin'; // everyone except Super Admin
+    return false;
 }
 
 function canDeleteUser(user) {
     const currentUserRole = '<?php echo $_SESSION['user_role']; ?>';
     const currentUserId = <?php echo $_SESSION['user_id']; ?>;
 
+    // Can't archive your own account (prevents locking yourself out).
     if (user.id === currentUserId) return false;
-    return currentUserRole === 'super_admin' || currentUserRole === 'owner';
+    if (currentUserRole === 'super_admin') return true;
+    if (currentUserRole === 'owner') return user.role !== 'super_admin';
+    return false;
 }
 
 function viewUser(id) {
