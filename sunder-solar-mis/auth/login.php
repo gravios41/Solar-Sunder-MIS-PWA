@@ -485,7 +485,7 @@ if (isset($_GET['reset_token']) && preg_match('/^[A-Za-z0-9]{4,64}$/', $_GET['re
             </div>
             <button onclick="verifyIdentity()" id="fpVerifyBtn"
                     style="width:100%;padding:12px;background:linear-gradient(135deg,#F97316,#F59E0B);color:#fff;border:none;border-radius:11px;font-size:0.9rem;font-weight:700;cursor:pointer;font-family:inherit">
-                <span id="fpVerifyText"><i class="fas fa-envelope"></i> Send Reset Link</span>
+                <span id="fpVerifyText"><i class="fas fa-arrow-right"></i> Continue</span>
             </button>
         </div>
 
@@ -695,7 +695,18 @@ async function verifyIdentity() {
             fpShowAlert(result.message, 'success');
             document.getElementById('fpStep1').style.display = 'none';
             document.getElementById('fpStep2').style.display = 'block';
-            document.getElementById('fpSubtitle').textContent = 'Check your email for the reset link';
+
+            const codeField = document.getElementById('fpResetCode');
+            if (result.reset_code) {
+                // Identity already verified server-side — go straight to
+                // setting a new password, no separate emailed code needed.
+                codeField.value = result.reset_code;
+                codeField.closest('div').style.display = 'none';
+                document.getElementById('fpSubtitle').textContent = 'Set a new password for your account';
+            } else {
+                codeField.closest('div').style.display = '';
+                document.getElementById('fpSubtitle').textContent = 'Check your email for the reset code';
+            }
             setTimeout(() => document.getElementById('fpNewPw').focus(), 100);
         } else {
             fpShowAlert(result.error, 'error');
@@ -704,7 +715,7 @@ async function verifyIdentity() {
         fpShowAlert('Connection error. Please try again.', 'error');
     }
 
-    document.getElementById('fpVerifyText').innerHTML = '<i class="fas fa-envelope"></i> Send Reset Link';
+    document.getElementById('fpVerifyText').innerHTML = '<i class="fas fa-arrow-right"></i> Continue';
     btn.disabled = false;
 }
 

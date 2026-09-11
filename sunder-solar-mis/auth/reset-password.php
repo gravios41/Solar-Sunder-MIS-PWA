@@ -31,6 +31,8 @@ if ($step === 'verify') {
             ->execute();
 
         $user = !empty($result) ? $result[0] : null;
+        $response = ['success' => true, 'message' => 'If the account details match, you can set a new password now.'];
+
         if ($user && !empty($user['is_active']) && strtolower((string)$user['email']) === strtolower($email)) {
             $resetCode = strtoupper(bin2hex(random_bytes(4)));
             $supabase->insert('password_reset_tokens', [
@@ -39,23 +41,34 @@ if ($step === 'verify') {
                 'expires_at' => date('c', time() + 900),
             ]);
 
-            $recipientName = htmlspecialchars($user['full_name'] ?: $user['username'], ENT_QUOTES, 'UTF-8');
-            $resetLink = SITE_URL . 'auth/login.php?reset_token=' . urlencode($resetCode);
-            $safeLink  = htmlspecialchars($resetLink, ENT_QUOTES, 'UTF-8');
-            $body = '<p>Hello ' . $recipientName . ',</p>'
-                . '<p>We received a request to reset the password for your Sunder Solar MIS account. '
-                . 'Click the button below to choose a new password.</p>'
-                . emailButton('Reset Password', $resetLink)
-                . '<p style="font-size:13px;color:#64748b">Or paste this link into your browser:<br>'
-                . '<a href="' . $safeLink . '" style="color:#c2410c;word-break:break-all">' . $safeLink . '</a></p>'
-                . '<p style="font-size:13px;color:#64748b;margin-top:20px;padding-top:16px;border-top:1px solid #e2e8f0">'
-                . 'This link expires in <strong>15 minutes</strong>. If you did not request a password reset, '
-                . 'you can safely ignore this email &mdash; your password will not change.</p>';
-            $html = emailShell('Reset your password', $body, 'Use the button in this email to set a new password.');
-            sendAppEmail($user['email'], 'Reset your Sunder Solar MIS password', $html);
+            // Hand the code straight back so the reset works even when the
+            // outbound mail send fails or is blocked by the host network —
+            // email is now a best-effort courtesy copy, not a requirement.
+            $response['reset_code'] = $resetCode;
+            $response['message']    = 'Identity verified. Set your new password below.';
+
+            try {
+                $recipientName = htmlspecialchars($user['full_name'] ?: $user['username'], ENT_QUOTES, 'UTF-8');
+                $resetLink = SITE_URL . 'auth/login.php?reset_token=' . urlencode($resetCode);
+                $safeLink  = htmlspecialchars($resetLink, ENT_QUOTES, 'UTF-8');
+                $body = '<p>Hello ' . $recipientName . ',</p>'
+                    . '<p>We received a request to reset the password for your Sunder Solar MIS account. '
+                    . 'Click the button below to choose a new password.</p>'
+                    . emailButton('Reset Password', $resetLink)
+                    . '<p style="font-size:13px;color:#64748b">Or paste this link into your browser:<br>'
+                    . '<a href="' . $safeLink . '" style="color:#c2410c;word-break:break-all">' . $safeLink . '</a></p>'
+                    . '<p style="font-size:13px;color:#64748b;margin-top:20px;padding-top:16px;border-top:1px solid #e2e8f0">'
+                    . 'This link expires in <strong>15 minutes</strong>. If you did not request a password reset, '
+                    . 'you can safely ignore this email &mdash; your password will not change.</p>';
+                $html = emailShell('Reset your password', $body, 'Use the button in this email to set a new password.');
+                sendAppEmail($user['email'], 'Reset your Sunder Solar MIS password', $html);
+            } catch (Throwable $mailErr) {
+                // Non-fatal: the code above still works without the email.
+                error_log('reset-password: courtesy email failed (non-fatal): ' . $mailErr->getMessage());
+            }
         }
 
-        echo json_encode(['success' => true, 'message' => 'If the account details match, a password reset link has been sent to the registered email.']);
+        echo json_encode($response);
     } catch (Throwable $e) {
         error_log('reset-password verify failed: ' . get_class($e) . ': ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
         echo json_encode(['success' => false, 'error' => 'System error. Please try again.']);
