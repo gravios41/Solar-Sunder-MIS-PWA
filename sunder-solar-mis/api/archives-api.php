@@ -49,7 +49,8 @@ function handleGetArchives() {
         $query->order('archived_at', false);
         $archives = $query->execute();
         echo json_encode(['success' => true, 'data' => $archives ?? []]);
-    } catch (Exception $e) {
+    } catch (Throwable $e) {
+        error_log('archives-api: ' . get_class($e) . ': ' . $e->getMessage());
         echo json_encode(['success' => false, 'error' => $e->getMessage()]);
     }
 }
@@ -72,7 +73,15 @@ function handleRestore() {
             echo json_encode(['success' => false, 'error' => 'Archive record not found']);
             return;
         }
-        $recordData = json_decode($archive['record_data'], true);
+        // record_data is a JSONB column — Supabase/PostgREST already returns it
+        // decoded (a PHP array), since SupabaseClient::request() json_decode()s
+        // the whole HTTP response body. Calling json_decode() on it again threw
+        // a TypeError ("Argument #1 ($json) must be of type string, array
+        // given") on every single restore, which the Exception-only catch below
+        // never caught — that's why restoring silently failed for every type.
+        $recordData = is_string($archive['record_data'])
+            ? json_decode($archive['record_data'], true)
+            : $archive['record_data'];
         if (!$recordData) {
             echo json_encode(['success' => false, 'error' => 'Invalid archive data']);
             return;
@@ -98,7 +107,8 @@ function handleRestore() {
         } else {
             echo json_encode(['success' => false, 'error' => 'Failed to restore record']);
         }
-    } catch (Exception $e) {
+    } catch (Throwable $e) {
+        error_log('archives-api: ' . get_class($e) . ': ' . $e->getMessage());
         echo json_encode(['success' => false, 'error' => $e->getMessage()]);
     }
 }

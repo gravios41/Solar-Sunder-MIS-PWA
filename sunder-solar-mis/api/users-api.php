@@ -108,7 +108,8 @@ function handlePostUser() {
         if (!isset($data['password']) || empty($data['password'])) {
             $data['password'] = 'password123';
         }
-        
+        $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
+
         $result = $supabase->insert('users', $data);
         
         if ($result) {
@@ -177,15 +178,28 @@ function handlePutUser() {
                 echo json_encode(['success' => false, 'error' => 'User not found']);
                 return;
             }
-            if ($user['password'] !== $data['current_password']) {
+            // Support both a bcrypt hash (accounts that went through password
+            // reset, or created after this fix) and legacy plaintext rows —
+            // same dual-mode check api/auth-api.php's login uses. A pure
+            // string comparison here always failed for any hashed password.
+            $storedPassword = (string) ($user['password'] ?? '');
+            $currentValid = (password_get_info($storedPassword)['algo'] !== false)
+                ? password_verify($data['current_password'], $storedPassword)
+                : hash_equals($storedPassword, (string) $data['current_password']);
+            if (!$currentValid) {
                 echo json_encode(['success' => false, 'error' => 'Current password is incorrect']);
                 return;
             }
-            $data['password'] = $data['new_password'];
+            // Always store the new password hashed, not plaintext.
+            $data['password'] = password_hash($data['new_password'], PASSWORD_DEFAULT);
             unset($data['current_password']);
             unset($data['new_password']);
+        } elseif (isset($data['password']) && $data['password'] !== '') {
+            // Admin setting a user's password directly (User Management) —
+            // also hash it rather than storing it plaintext.
+            $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
         }
-        
+
         if (isset($data['password']) && empty($data['password'])) {
             unset($data['password']);
         }
