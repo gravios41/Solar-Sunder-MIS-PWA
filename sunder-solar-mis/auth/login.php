@@ -489,6 +489,26 @@ if (isset($_GET['reset_token']) && preg_match('/^[A-Za-z0-9]{4,64}$/', $_GET['re
             </button>
         </div>
 
+        <!-- Confirmation popup: shown after Continue instead of jumping to the password form -->
+        <div id="fpStepSent" style="display:none;text-align:center">
+            <div style="width:64px;height:64px;background:rgba(16,185,129,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 18px">
+                <i class="fas fa-envelope-circle-check" style="color:#10B981;font-size:1.8rem"></i>
+            </div>
+            <h3 style="color:#fff;font-size:1.1rem;font-weight:700;margin:0 0 8px">Check Your Email</h3>
+            <p style="color:#94A3B8;font-size:0.86rem;line-height:1.65;margin:0 0 26px">
+                If your username and email match an account, we've sent a password reset link
+                to the registered email address. Open that email and click the link to set a
+                new password.
+            </p>
+            <button onclick="closeForgotModal()"
+                    style="width:100%;padding:12px;background:linear-gradient(135deg,#F97316,#F59E0B);color:#fff;border:none;border-radius:11px;font-size:0.9rem;font-weight:700;cursor:pointer;font-family:inherit">
+                Got it
+            </button>
+            <button onclick="goBackStep1()" style="width:100%;padding:10px;background:none;border:none;color:#94A3B8;font-size:0.82rem;cursor:pointer;margin-top:8px;font-family:inherit">
+                <i class="fas fa-arrow-left"></i> Use a different account
+            </button>
+        </div>
+
         <!-- Step 2: Enter code and new password -->
         <div id="fpStep2" style="display:none">
             <div style="margin-bottom:16px">
@@ -650,6 +670,7 @@ document.getElementById('loginForm').addEventListener('submit', function() {
 function openForgotModal() {
     document.getElementById('forgotModal').classList.add('active');
     document.getElementById('fpStep1').style.display = 'block';
+    document.getElementById('fpStepSent').style.display = 'none';
     document.getElementById('fpStep2').style.display = 'none';
     document.getElementById('fpUsername').value = '';
     document.getElementById('fpEmail').value = '';
@@ -692,22 +713,15 @@ async function verifyIdentity() {
         const result = await res.json();
 
         if (result.success) {
-            fpShowAlert(result.message, 'success');
+            // Always show the "check your email" confirmation here — never
+            // reveal via the UI whether the account actually matched, and
+            // never jump straight into the password form. The only way into
+            // Step 2 is clicking the real link in the email (see the
+            // ?reset_token= handling below), which pre-fills the code.
+            fpShowAlert('', '');
             document.getElementById('fpStep1').style.display = 'none';
-            document.getElementById('fpStep2').style.display = 'block';
-
-            const codeField = document.getElementById('fpResetCode');
-            if (result.reset_code) {
-                // Identity already verified server-side — go straight to
-                // setting a new password, no separate emailed code needed.
-                codeField.value = result.reset_code;
-                codeField.closest('div').style.display = 'none';
-                document.getElementById('fpSubtitle').textContent = 'Set a new password for your account';
-            } else {
-                codeField.closest('div').style.display = '';
-                document.getElementById('fpSubtitle').textContent = 'Check your email for the reset code';
-            }
-            setTimeout(() => document.getElementById('fpNewPw').focus(), 100);
+            document.getElementById('fpStepSent').style.display = 'block';
+            document.getElementById('fpSubtitle').textContent = 'One more step';
         } else {
             fpShowAlert(result.error, 'error');
         }
@@ -758,8 +772,11 @@ async function resetPassword() {
 
 function goBackStep1() {
     document.getElementById('fpStep2').style.display = 'none';
+    document.getElementById('fpStepSent').style.display = 'none';
     document.getElementById('fpStep1').style.display = 'block';
     document.getElementById('fpResetCode').value = '';
+    document.getElementById('fpUsername').value = '';
+    document.getElementById('fpEmail').value = '';
     document.getElementById('fpSubtitle').textContent = 'Enter your username and registered email';
     fpShowAlert('', '');
 }
@@ -782,6 +799,7 @@ document.getElementById('forgotModal').addEventListener('click', function(e) {
     if (!token) return;
     document.getElementById('forgotModal').classList.add('active');
     document.getElementById('fpStep1').style.display = 'none';
+    document.getElementById('fpStepSent').style.display = 'none';
     document.getElementById('fpStep2').style.display = 'block';
     const codeField = document.getElementById('fpResetCode');
     codeField.value = token;
