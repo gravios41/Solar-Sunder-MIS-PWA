@@ -145,7 +145,7 @@ try {
     }
 
     echo json_encode(['success' => true, 'message' => 'Your request was sent to the administrators. They will update your details.']);
-} catch (Exception $e) {
+} catch (Throwable $e) {
     error_log('profile-change-request error: ' . $e->getMessage());
     echo json_encode(['success' => false, 'error' => 'System error. Please try again.']);
 }

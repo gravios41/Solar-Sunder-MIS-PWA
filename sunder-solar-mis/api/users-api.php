@@ -62,7 +62,7 @@ function handleGetUsers() {
         }
         
         echo json_encode(['success' => true, 'data' => $users]);
-    } catch (Exception $e) {
+    } catch (Throwable $e) {
         echo json_encode(['success' => false, 'error' => $e->getMessage()]);
     }
 }
@@ -120,7 +120,7 @@ function handlePostUser() {
         } else {
             echo json_encode(['success' => false, 'error' => 'Failed to create user']);
         }
-    } catch (Exception $e) {
+    } catch (Throwable $e) {
         echo json_encode(['success' => false, 'error' => $e->getMessage()]);
     }
 }
@@ -203,9 +203,21 @@ function handlePutUser() {
         if (isset($data['password']) && empty($data['password'])) {
             unset($data['password']);
         }
-        
+
+        // Friendly duplicate-email check — without this, a collision only
+        // surfaces as a raw "duplicate key value violates unique constraint"
+        // error from Supabase instead of a message an admin can act on.
+        if (isset($data['email'])) {
+            $emailOwner = $supabase->from('users')->select('id')->ilike('email', $data['email'])->execute();
+            $emailOwner = !empty($emailOwner) ? $emailOwner[0] : null;
+            if ($emailOwner && (int)$emailOwner['id'] !== (int)$id) {
+                echo json_encode(['success' => false, 'error' => 'That email address is already in use by another account.']);
+                return;
+            }
+        }
+
         $result = $supabase->update('users', $id, $data);
-        
+
         if ($result) {
             unset($result['password']);
             
@@ -226,7 +238,7 @@ function handlePutUser() {
         } else {
             echo json_encode(['success' => false, 'error' => 'Failed to update user']);
         }
-    } catch (Exception $e) {
+    } catch (Throwable $e) {
         echo json_encode(['success' => false, 'error' => $e->getMessage()]);
     }
 }
@@ -268,7 +280,7 @@ function handleDeleteUser() {
         } else {
             echo json_encode(['success' => false, 'error' => 'Failed to archive record']);
         }
-    } catch (Exception $e) {
+    } catch (Throwable $e) {
         echo json_encode(['success' => false, 'error' => $e->getMessage()]);
     }
 }
@@ -324,7 +336,7 @@ function notifyContactDetailChange($before, $after, $adminName) {
     foreach ($recipients as $to) {
         try {
             sendAppEmail($to, 'Your Sunder Solar MIS contact details were updated', $html);
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             error_log('notifyContactDetailChange: failed for ' . $to . ' — ' . $e->getMessage());
         }
     }
