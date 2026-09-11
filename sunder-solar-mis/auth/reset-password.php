@@ -56,7 +56,8 @@ if ($step === 'verify') {
         }
 
         echo json_encode(['success' => true, 'message' => 'If the account details match, a password reset link has been sent to the registered email.']);
-    } catch (Exception $e) {
+    } catch (Throwable $e) {
+        error_log('reset-password verify failed: ' . get_class($e) . ': ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
         echo json_encode(['success' => false, 'error' => 'System error. Please try again.']);
     }
     exit();
@@ -102,7 +103,8 @@ if ($step === 'reset') {
         $supabase->update('password_reset_tokens', $token['id'], ['used_at' => date('c')]);
 
         echo json_encode(['success' => true, 'message' => 'Password reset successfully. You can now sign in.']);
-    } catch (Exception $e) {
+    } catch (Throwable $e) {
+        error_log('reset-password reset failed: ' . get_class($e) . ': ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
         echo json_encode(['success' => false, 'error' => 'Failed to reset password. Please try again.']);
     }
     exit();
