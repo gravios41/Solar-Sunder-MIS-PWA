@@ -97,11 +97,16 @@ function emailButton($label, $url) {
 /**
  * Send an HTML email. Throws Exception on failure.
  *
- * Transport is chosen automatically:
- *   - RESEND_API_KEY set  -> HTTPS call to Resend's API (works even when the
- *     host blocks outbound SMTP, e.g. Render's free tier — port 443 only).
- *   - otherwise            -> PHPMailer over SMTP (needs an unblocked SMTP
- *     egress path — fine locally / on hosts that allow it).
+ * Transport is chosen automatically, first match wins:
+ *   1. BREVO_API_KEY set   -> HTTPS call to Brevo's API. No domain needed —
+ *      just a verified sender email. Can send to ANY recipient. This is the
+ *      one that actually works for password-reset emails to arbitrary users.
+ *   2. RESEND_API_KEY set  -> HTTPS call to Resend's API. Without a verified
+ *      domain, Resend only delivers to the account owner's own address —
+ *      fine for admin-notification emails, not for resetting other users'
+ *      passwords. Kept as a second option since it needs no setup at all.
+ *   3. otherwise            -> PHPMailer over SMTP (needs an unblocked SMTP
+ *      egress path — blocked on Render's free tier, fine locally).
  * Every caller keeps using sendAppEmail($to, $subject, $html) unchanged;
  * nothing but this function needs to know which transport is active.
  *
@@ -111,6 +116,11 @@ function emailButton($label, $url) {
  *   fast instead of holding the HTTP response open for the full default.
  */
 function sendAppEmail($recipient, $subject, $html, $timeoutSeconds = 15) {
+    $brevoKey = mailerEnv('BREVO_API_KEY');
+    if ($brevoKey) {
+        sendViaBrevo($recipient, $subject, $html, $brevoKey, $timeoutSeconds);
+        return;
+    }
     $resendKey = mailerEnv('RESEND_API_KEY');
     if ($resendKey) {
         sendViaResend($recipient, $subject, $html, $resendKey, $timeoutSeconds);
@@ -120,10 +130,50 @@ function sendAppEmail($recipient, $subject, $html, $timeoutSeconds = 15) {
 }
 
 /**
+ * Brevo (https://brevo.com, formerly Sendinblue) HTTPS API. Free tier:
+ * 300/day, no card, no domain required — only the FROM address needs to be
+ * a "verified sender" (Brevo emails you a confirm link, one click, done).
+ * Once verified, you can send to any recipient.
+ */
+function sendViaBrevo($recipient, $subject, $html, $apiKey, $timeoutSeconds = 15) {
+    $fromAddr = mailerEnv('BREVO_FROM') ?: mailerEnv('MAIL_FROM');
+    $fromName = mailerEnv('MAIL_FROM_NAME', 'Sunder Solar MIS');
+
+    if (!$fromAddr) {
+        throw new Exception('Email service is not configured.');
+    }
+
+    $ch = curl_init('https://api.brevo.com/v3/smtp/email');
+    curl_setopt_array($ch, [
+        CURLOPT_POST           => true,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT        => $timeoutSeconds,
+        CURLOPT_CONNECTTIMEOUT => min(5, $timeoutSeconds),
+        CURLOPT_HTTPHEADER     => ['api-key: ' . $apiKey, 'Content-Type: application/json', 'Accept: application/json'],
+        CURLOPT_POSTFIELDS     => json_encode([
+            'sender'      => ['name' => $fromName, 'email' => $fromAddr],
+            'to'          => [['email' => $recipient]],
+            'subject'     => $subject,
+            'htmlContent' => $html,
+        ]),
+    ]);
+    $response = curl_exec($ch);
+    $status   = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $error    = curl_error($ch);
+    curl_close($ch);
+
+    if ($response === false || $error || $status < 200 || $status >= 300) {
+        error_log('sendViaBrevo failed: HTTP ' . $status . ' ' . $error . ' body=' . $response);
+        throw new Exception('Email delivery failed.');
+    }
+}
+
+/**
  * Resend (https://resend.com) HTTPS API — one JSON POST, no SMTP port needed.
  * Free tier: 100/day, 3000/month, no card. Sender defaults to Resend's
  * shared testing address (works with zero setup); set RESEND_FROM once a
- * custom domain is verified with Resend.
+ * custom domain is verified with Resend. NOTE: without a verified domain,
+ * Resend can only deliver to the Resend account's own email address.
  */
 function sendViaResend($recipient, $subject, $html, $apiKey, $timeoutSeconds = 15) {
     $fromAddr = mailerEnv('RESEND_FROM', 'onboarding@resend.dev');

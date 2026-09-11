@@ -15,7 +15,7 @@ if (($_SESSION['user_role'] ?? '') !== 'super_admin') {
     exit();
 }
 
-$keys = ['RESEND_API_KEY', 'RESEND_FROM', 'SMTP_HOST', 'SMTP_PORT', 'SMTP_SECURE', 'SMTP_USER', 'SMTP_PASS', 'MAIL_FROM', 'MAIL_FROM_NAME'];
+$keys = ['BREVO_API_KEY', 'BREVO_FROM', 'RESEND_API_KEY', 'RESEND_FROM', 'SMTP_HOST', 'SMTP_PORT', 'SMTP_SECURE', 'SMTP_USER', 'SMTP_PASS', 'MAIL_FROM', 'MAIL_FROM_NAME'];
 $status = [];
 foreach ($keys as $k) {
     $val = mailerEnv($k);
@@ -26,9 +26,9 @@ foreach ($keys as $k) {
 
     if ($val === '') {
         $status[$k] = 'MISSING';
-    } elseif (in_array($k, ['SMTP_PASS', 'RESEND_API_KEY'], true)) {
+    } elseif (in_array($k, ['SMTP_PASS', 'RESEND_API_KEY', 'BREVO_API_KEY'], true)) {
         $status[$k] = 'set (' . strlen($val) . ' chars) via ' . implode('+', $seenIn);
-    } elseif ($k === 'SMTP_USER' || $k === 'MAIL_FROM' || $k === 'RESEND_FROM') {
+    } elseif ($k === 'SMTP_USER' || $k === 'MAIL_FROM' || $k === 'RESEND_FROM' || $k === 'BREVO_FROM') {
         $parts = explode('@', $val);
         $status[$k] = (isset($parts[1]) ? substr($parts[0], 0, 2) . '***@' . $parts[1] : $val) . ' via ' . implode('+', $seenIn);
     } else {
@@ -36,20 +36,24 @@ foreach ($keys as $k) {
     }
 }
 
-$usingResend = (bool) mailerEnv('RESEND_API_KEY');
-$configured  = $usingResend
-    ? true
-    : (mailerEnv('SMTP_USER') && mailerEnv('SMTP_PASS') && (mailerEnv('MAIL_FROM') || mailerEnv('SMTP_USER')));
+$usingBrevo  = (bool) mailerEnv('BREVO_API_KEY');
+$usingResend = !$usingBrevo && (bool) mailerEnv('RESEND_API_KEY');
+$transport   = $usingBrevo ? 'brevo (HTTPS)' : ($usingResend ? 'resend (HTTPS)' : 'smtp');
+$configured  = $usingBrevo
+    ? (bool) (mailerEnv('BREVO_FROM') ?: mailerEnv('MAIL_FROM'))
+    : ($usingResend ? true : (mailerEnv('SMTP_USER') && mailerEnv('SMTP_PASS') && (mailerEnv('MAIL_FROM') || mailerEnv('SMTP_USER'))));
 
 $runtimeFile = __DIR__ . '/../../env.runtime';
 $result = [
-    'transport'         => $usingResend ? 'resend (HTTPS)' : 'smtp',
+    'transport'         => $transport,
     'configured'        => (bool) $configured,
     'runtime_env_file'  => is_file($runtimeFile) ? 'present' : 'absent (using getenv/dashboard only)',
     'settings'          => $status,
 ];
-if (!$usingResend) {
-    $result['note'] = 'Using raw SMTP — this times out on Render (outbound SMTP is blocked). Set RESEND_API_KEY to switch to the HTTPS transport.';
+if ($usingResend) {
+    $result['note'] = 'Using Resend without BREVO_API_KEY set. Resend can only deliver to its own account-owner address unless a domain is verified — fine for admin notices, not for resetting other users\' passwords. Set BREVO_API_KEY to send to anyone.';
+} elseif (!$usingBrevo) {
+    $result['note'] = 'Using raw SMTP — this times out on Render (outbound SMTP is blocked). Set BREVO_API_KEY (or RESEND_API_KEY) to switch to an HTTPS transport.';
 }
 
 $send = $_GET['send'] ?? '';
