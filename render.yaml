@@ -27,3 +27,12 @@ services:
         sync: false
       - key: MAIL_FROM_NAME
         value: Sunder Solar MIS
+      # Optional: set RESEND_API_KEY to send over HTTPS via resend.com instead
+      # of SMTP. Render blocks outbound SMTP (ports 25/465/587) on free web
+      # services, so SMTP_* above will time out there — Resend is the fix.
+      # When RESEND_API_KEY is set it takes priority automatically; no other
+      # change needed. Get a free key at resend.com (no card required).
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_FROM
+        sync: false

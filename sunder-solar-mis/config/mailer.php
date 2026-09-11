@@ -96,8 +96,68 @@ function emailButton($label, $url) {
 
 /**
  * Send an HTML email. Throws Exception on failure.
+ *
+ * Transport is chosen automatically:
+ *   - RESEND_API_KEY set  -> HTTPS call to Resend's API (works even when the
+ *     host blocks outbound SMTP, e.g. Render's free tier — port 443 only).
+ *   - otherwise            -> PHPMailer over SMTP (needs an unblocked SMTP
+ *     egress path — fine locally / on hosts that allow it).
+ * Every caller keeps using sendAppEmail($to, $subject, $html) unchanged;
+ * nothing but this function needs to know which transport is active.
+ *
+ * @param int $timeoutSeconds  Connection/response timeout. Lower this for a
+ *   "best effort, don't make the user wait" send (e.g. a courtesy copy that
+ *   isn't required for the feature to work) — a broken transport then fails
+ *   fast instead of holding the HTTP response open for the full default.
  */
-function sendAppEmail($recipient, $subject, $html) {
+function sendAppEmail($recipient, $subject, $html, $timeoutSeconds = 15) {
+    $resendKey = mailerEnv('RESEND_API_KEY');
+    if ($resendKey) {
+        sendViaResend($recipient, $subject, $html, $resendKey, $timeoutSeconds);
+        return;
+    }
+    sendViaSmtp($recipient, $subject, $html, $timeoutSeconds);
+}
+
+/**
+ * Resend (https://resend.com) HTTPS API — one JSON POST, no SMTP port needed.
+ * Free tier: 100/day, 3000/month, no card. Sender defaults to Resend's
+ * shared testing address (works with zero setup); set RESEND_FROM once a
+ * custom domain is verified with Resend.
+ */
+function sendViaResend($recipient, $subject, $html, $apiKey, $timeoutSeconds = 15) {
+    $fromAddr = mailerEnv('RESEND_FROM', 'onboarding@resend.dev');
+    $fromName = mailerEnv('MAIL_FROM_NAME', 'Sunder Solar MIS');
+
+    $ch = curl_init('https://api.resend.com/emails');
+    curl_setopt_array($ch, [
+        CURLOPT_POST           => true,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT        => $timeoutSeconds,
+        CURLOPT_CONNECTTIMEOUT => min(5, $timeoutSeconds),
+        CURLOPT_HTTPHEADER     => ['Authorization: Bearer ' . $apiKey, 'Content-Type: application/json'],
+        CURLOPT_POSTFIELDS     => json_encode([
+            'from'    => $fromName . ' <' . $fromAddr . '>',
+            'to'      => [$recipient],
+            'subject' => $subject,
+            'html'    => $html,
+        ]),
+    ]);
+    $response = curl_exec($ch);
+    $status   = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $error    = curl_error($ch);
+    curl_close($ch);
+
+    if ($response === false || $error || $status < 200 || $status >= 300) {
+        error_log('sendViaResend failed: HTTP ' . $status . ' ' . $error . ' body=' . $response);
+        throw new Exception('Email delivery failed.');
+    }
+}
+
+/**
+ * PHPMailer over SMTP — the fallback/local-dev transport.
+ */
+function sendViaSmtp($recipient, $subject, $html, $timeoutSeconds = 15) {
     $host     = mailerEnv('SMTP_HOST', 'smtp.gmail.com');
     $port     = (int) mailerEnv('SMTP_PORT', '587');
     $username = mailerEnv('SMTP_USER');
@@ -122,7 +182,7 @@ function sendAppEmail($recipient, $subject, $html) {
             ? PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS
             : PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
         $mail->CharSet    = 'UTF-8';
-        $mail->Timeout    = 20;
+        $mail->Timeout    = $timeoutSeconds;
 
         $mail->setFrom($fromAddr, $fromName);
         $mail->addAddress($recipient);
@@ -133,7 +193,7 @@ function sendAppEmail($recipient, $subject, $html) {
 
         $mail->send();
     } catch (Exception $e) {
-        error_log('sendAppEmail failed: ' . $mail->ErrorInfo);
+        error_log('sendViaSmtp failed: ' . $mail->ErrorInfo);
         throw new Exception('Email delivery failed.');
     }
 }

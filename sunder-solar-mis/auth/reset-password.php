@@ -25,10 +25,22 @@ if ($step === 'verify') {
     }
 
     try {
+        // Exact match first (cheap, indexed); fall back to a case-insensitive
+        // scan so "JDoe" still matches a stored "jdoe" — same rule login uses
+        // in api/auth-api.php, so forgot-password recognizes the same accounts.
         $result = $supabase->from('users')
             ->select('id,username,email,full_name,is_active')
             ->eq('username', $username)
             ->execute();
+
+        if (empty($result)) {
+            $allUsers = $supabase->from('users')->select('id,username,email,full_name,is_active')->execute();
+            if (is_array($allUsers)) {
+                $result = array_values(array_filter($allUsers, function ($u) use ($username) {
+                    return isset($u['username']) && strtolower((string)$u['username']) === strtolower($username);
+                }));
+            }
+        }
 
         $user = !empty($result) ? $result[0] : null;
         $response = ['success' => true, 'message' => 'If the account details match, you can set a new password now.'];
@@ -61,7 +73,11 @@ if ($step === 'verify') {
                     . 'This link expires in <strong>15 minutes</strong>. If you did not request a password reset, '
                     . 'you can safely ignore this email &mdash; your password will not change.</p>';
                 $html = emailShell('Reset your password', $body, 'Use the button in this email to set a new password.');
-                sendAppEmail($user['email'], 'Reset your Sunder Solar MIS password', $html);
+                // Short timeout: this is a courtesy copy, not a requirement
+                // (the code was already returned above), so a broken/blocked
+                // mail transport must fail fast instead of stalling the
+                // response the user is actively waiting on.
+                sendAppEmail($user['email'], 'Reset your Sunder Solar MIS password', $html, 4);
             } catch (Throwable $mailErr) {
                 // Non-fatal: the code above still works without the email.
                 error_log('reset-password: courtesy email failed (non-fatal): ' . $mailErr->getMessage());
