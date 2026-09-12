@@ -64,6 +64,7 @@ try {
         $customerData = [
             'customer_code' => generateCode('CUST'),
             'name' => $clientName,
+            'contact_person' => $quotation['client_contact_person'] ?? null,
             // customers.phone is NOT NULL (empty string satisfies it, but
             // null does not) — the assessment form only ever collects a
             // name, so this is empty unless it was filled in later while
@@ -71,8 +72,12 @@ try {
             'phone' => $quotation['client_phone'] ?? '',
             'email' => $quotation['client_email'] ?? null,
             'address' => $quotation['client_address'] ?? null,
-            'type' => 'residential',
-            'status' => 'active',
+            'city' => $quotation['client_city'] ?? null,
+            'state' => $quotation['client_state'] ?? null,
+            'pincode' => $quotation['client_pincode'] ?? null,
+            'gstin' => $quotation['client_gstin'] ?? null,
+            'type' => $quotation['client_type'] ?? 'residential',
+            'status' => $quotation['client_status'] ?? 'active',
             'created_at' => date('Y-m-d H:i:s'),
             'updated_at' => date('Y-m-d H:i:s'),
         ];

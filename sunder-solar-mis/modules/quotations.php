@@ -125,15 +125,14 @@ include_once __DIR__ . '/../includes/header.php';
                          client has no Customer record yet — one is created automatically
                          when this quotation is approved. -->
                     <div id="clientNameFieldsSection" style="display:none">
-                        <div class="grid-cols-2">
-                            <div class="form-group">
-                                <label class="form-label">Client Name *</label>
-                                <input type="text" id="clientNameField" class="form-control" placeholder="Full name">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Phone</label>
-                                <input type="tel" id="clientPhoneField" class="form-control">
-                            </div>
+                        <p style="font-size:11px;color:#94a3b8;margin:0 0 12px"><i class="fas fa-circle-info"></i> No Customer record exists yet for this client — the details below become the real Customer record automatically when this quotation is approved.</p>
+                        <div class="form-group">
+                            <label class="form-label">Company Name *</label>
+                            <input type="text" id="clientNameField" class="form-control" placeholder="Full name">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Contact Person</label>
+                            <input type="text" id="clientContactPersonField" class="form-control">
                         </div>
                         <div class="grid-cols-2">
                             <div class="form-group">
@@ -141,11 +140,52 @@ include_once __DIR__ . '/../includes/header.php';
                                 <input type="email" id="clientEmailField" class="form-control">
                             </div>
                             <div class="form-group">
-                                <label class="form-label">Address</label>
-                                <input type="text" id="clientAddressField" class="form-control">
+                                <label class="form-label">Phone *</label>
+                                <input type="tel" id="clientPhoneField" class="form-control">
                             </div>
                         </div>
-                        <p style="font-size:11px;color:#94a3b8;margin:-4px 0 12px"><i class="fas fa-circle-info"></i> No Customer record exists yet for this client — one is created automatically when this quotation is approved.</p>
+                        <div class="form-group">
+                            <label class="form-label">Address</label>
+                            <textarea id="clientAddressField" class="form-textarea"></textarea>
+                        </div>
+                        <div class="grid-cols-2">
+                            <div class="form-group">
+                                <label class="form-label">City</label>
+                                <input type="text" id="clientCityField" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Province</label>
+                                <input type="text" id="clientStateField" class="form-control">
+                            </div>
+                        </div>
+                        <div class="grid-cols-2">
+                            <div class="form-group">
+                                <label class="form-label">Postal Code</label>
+                                <input type="text" id="clientPincodeField" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">GSTIN</label>
+                                <input type="text" id="clientGstinField" class="form-control">
+                            </div>
+                        </div>
+                        <div class="grid-cols-2">
+                            <div class="form-group">
+                                <label class="form-label">Type</label>
+                                <select id="clientTypeField" class="form-select">
+                                    <option value="commercial">Commercial</option>
+                                    <option value="residential">Residential</option>
+                                    <option value="industrial">Industrial</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Status</label>
+                                <select id="clientStatusField" class="form-select">
+                                    <option value="active">Active</option>
+                                    <option value="pending">Pending</option>
+                                    <option value="inactive">Inactive</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
                     <div class="grid-cols-2">
                         <div class="form-group" style="margin-bottom:0">
@@ -562,9 +602,16 @@ function openQuotationModal(quotation = null) {
         if (!quotation.customer_id && quotation.client_name) {
             setQuotationCustomerMode(true);
             document.getElementById('clientNameField').value = quotation.client_name || '';
+            document.getElementById('clientContactPersonField').value = quotation.client_contact_person || '';
             document.getElementById('clientPhoneField').value = quotation.client_phone || '';
             document.getElementById('clientEmailField').value = quotation.client_email || '';
             document.getElementById('clientAddressField').value = quotation.client_address || '';
+            document.getElementById('clientCityField').value = quotation.client_city || '';
+            document.getElementById('clientStateField').value = quotation.client_state || '';
+            document.getElementById('clientPincodeField').value = quotation.client_pincode || '';
+            document.getElementById('clientGstinField').value = quotation.client_gstin || '';
+            document.getElementById('clientTypeField').value = quotation.client_type || 'residential';
+            document.getElementById('clientStatusField').value = quotation.client_status || 'active';
         } else {
             setQuotationCustomerMode(false);
             document.getElementById('customerId').value = quotation.customer_id;
@@ -628,11 +675,22 @@ async function saveQuotation() {
 
     if (editingClientOnly) {
         data.client_name = document.getElementById('clientNameField').value.trim();
+        data.client_contact_person = document.getElementById('clientContactPersonField').value.trim();
         data.client_phone = document.getElementById('clientPhoneField').value.trim();
         data.client_email = document.getElementById('clientEmailField').value.trim();
         data.client_address = document.getElementById('clientAddressField').value.trim();
+        data.client_city = document.getElementById('clientCityField').value.trim();
+        data.client_state = document.getElementById('clientStateField').value.trim();
+        data.client_pincode = document.getElementById('clientPincodeField').value.trim();
+        data.client_gstin = document.getElementById('clientGstinField').value.trim();
+        data.client_type = document.getElementById('clientTypeField').value;
+        data.client_status = document.getElementById('clientStatusField').value;
         if (!data.client_name) {
             showToast('Please enter the client\'s name', 'error');
+            return;
+        }
+        if (!data.client_phone) {
+            showToast('Please enter the client\'s phone number', 'error');
             return;
         }
     } else {

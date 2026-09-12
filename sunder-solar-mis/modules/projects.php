@@ -96,10 +96,31 @@ include_once __DIR__ . '/../includes/header.php';
                 </div>
                 <div class="form-group">
                     <label class="form-label">Customer *</label>
-                    <select id="customerId" class="form-select" required>
+                    <select id="customerId" class="form-select" required onchange="onProjectCustomerChange()">
                         <option value="">Select Customer</option>
                     </select>
                 </div>
+
+                <!-- Upgrade of an existing project — recommends compatible items
+                     (matched against what the customer already has) instead of
+                     sizing a whole new system from scratch. -->
+                <div class="form-group" id="upgradeToggleGroup" style="display:none">
+                    <label class="checkbox-wrap" style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                        <input type="checkbox" id="isUpgrade" onchange="onUpgradeToggle()">
+                        <span>This is an upgrade to an existing project for this customer</span>
+                    </label>
+                </div>
+                <div class="form-group" id="upgradeProjectGroup" style="display:none">
+                    <label class="form-label">Upgrade of Project *</label>
+                    <select id="upgradeOfProjectId" class="form-select" onchange="loadUpgradeRecommendations()">
+                        <option value="">Select Past Project</option>
+                    </select>
+                </div>
+                <div id="upgradeRecommendations" style="display:none;margin-bottom:16px;padding:14px;border:1px solid #F97316;border-radius:8px;background:#FFF7ED">
+                    <p style="font-weight:600;margin-bottom:8px;font-size:0.85rem">Compatible items to add</p>
+                    <div id="upgradeRecommendationsList" style="font-size:0.82rem;color:#64748b">Select a past project above to see what's compatible with it.</div>
+                </div>
+
                 <div class="form-group">
                     <label class="form-label">Description</label>
                     <textarea id="description" class="form-textarea"></textarea>
@@ -292,10 +313,21 @@ function formatCurrency(amount) {
     return '₱' + Number(amount).toLocaleString();
 }
 
+let upgradeRecommendationGroups = [];
+
 function openProjectModal(project = null) {
     const modal = document.getElementById('projectModal');
     const title = document.getElementById('modalTitle');
-    
+
+    // The upgrade flow only makes sense when creating a brand-new project —
+    // hidden and reset every time the modal opens either way.
+    document.getElementById('isUpgrade').checked = false;
+    document.getElementById('upgradeToggleGroup').style.display = 'none';
+    document.getElementById('upgradeProjectGroup').style.display = 'none';
+    document.getElementById('upgradeRecommendations').style.display = 'none';
+    document.getElementById('upgradeOfProjectId').innerHTML = '<option value="">Select Past Project</option>';
+    upgradeRecommendationGroups = [];
+
     if (project) {
         title.textContent = 'Edit Project';
         document.getElementById('projectId').value = project.id;
@@ -316,8 +348,91 @@ function openProjectModal(project = null) {
         document.getElementById('progress').value = 0;
         document.getElementById('status').value = 'planning';
     }
-    
+
     modal.classList.add('active');
+}
+
+// Only offer the upgrade option once a customer with at least one existing
+// project is picked — nothing to upgrade otherwise. Only relevant when
+// adding a new project (projectId is empty); editing hides it entirely.
+function onProjectCustomerChange() {
+    const isEditing = !!document.getElementById('projectId').value;
+    const customerId = parseInt(document.getElementById('customerId').value);
+    const pastProjects = isEditing ? [] : projects.filter(p => p.customer_id === customerId);
+
+    const toggleGroup = document.getElementById('upgradeToggleGroup');
+    if (pastProjects.length > 0) {
+        toggleGroup.style.display = '';
+        document.getElementById('upgradeOfProjectId').innerHTML = '<option value="">Select Past Project</option>' +
+            pastProjects.map(p => `<option value="${p.id}">${escapeHtml(p.project_name)} (${escapeHtml(p.project_code)})</option>`).join('');
+    } else {
+        toggleGroup.style.display = 'none';
+        document.getElementById('isUpgrade').checked = false;
+        onUpgradeToggle();
+    }
+}
+
+function onUpgradeToggle() {
+    const isUpgrade = document.getElementById('isUpgrade').checked;
+    document.getElementById('upgradeProjectGroup').style.display = isUpgrade ? '' : 'none';
+    document.getElementById('upgradeRecommendations').style.display = isUpgrade ? 'block' : 'none';
+    if (!isUpgrade) {
+        upgradeRecommendationGroups = [];
+        document.getElementById('upgradeRecommendationsList').innerHTML = "Select a past project above to see what's compatible with it.";
+    }
+}
+
+async function loadUpgradeRecommendations() {
+    const pastProjectId = document.getElementById('upgradeOfProjectId').value;
+    const listEl = document.getElementById('upgradeRecommendationsList');
+    if (!pastProjectId) { listEl.innerHTML = "Select a past project above to see what's compatible with it."; return; }
+
+    listEl.innerHTML = 'Loading compatible items…';
+    try {
+        const res = await fetch(`../api/project-upgrade-recommendations.php?project_id=${pastProjectId}`);
+        const result = await res.json();
+        if (!result.success) { listEl.innerHTML = escapeHtml(result.error || 'Could not load recommendations.'); return; }
+
+        upgradeRecommendationGroups = result.data || [];
+        if (upgradeRecommendationGroups.length === 0) {
+            listEl.innerHTML = escapeHtml(result.message || 'No compatible items found for that project.');
+            return;
+        }
+
+        listEl.innerHTML = upgradeRecommendationGroups.map((group, gi) => `
+            <div style="margin-bottom:10px">
+                <div style="font-size:0.78rem;color:#94a3b8;margin-bottom:4px">They currently have: ${escapeHtml(group.existing_item)} &times; ${group.existing_quantity}</div>
+                ${group.compatible.map((c, ci) => `
+                    <label style="display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer">
+                        <input type="checkbox" class="upgrade-item-check" data-group="${gi}" data-candidate="${ci}">
+                        <span style="flex:1">${escapeHtml(c.item_name)}${c.is_exact_match ? ' <span style="color:#16a34a;font-size:0.72rem">(exact match)</span>' : ''} — ${formatCurrency(c.unit_price)}</span>
+                        <input type="number" class="form-control upgrade-item-qty" data-group="${gi}" data-candidate="${ci}" value="1" min="1" style="width:60px;padding:4px" disabled>
+                    </label>
+                `).join('')}
+            </div>
+        `).join('');
+
+        document.querySelectorAll('.upgrade-item-check').forEach(cb => {
+            cb.addEventListener('change', function() {
+                const qtyInput = document.querySelector(`.upgrade-item-qty[data-group="${this.dataset.group}"][data-candidate="${this.dataset.candidate}"]`);
+                if (qtyInput) qtyInput.disabled = !this.checked;
+            });
+        });
+    } catch (e) {
+        listEl.innerHTML = 'Could not load recommendations.';
+    }
+}
+
+function collectSelectedUpgradeItems() {
+    const items = [];
+    document.querySelectorAll('.upgrade-item-check:checked').forEach(cb => {
+        const group = upgradeRecommendationGroups[cb.dataset.group];
+        const candidate = group?.compatible?.[cb.dataset.candidate];
+        if (!candidate) return;
+        const qtyInput = document.querySelector(`.upgrade-item-qty[data-group="${cb.dataset.group}"][data-candidate="${cb.dataset.candidate}"]`);
+        items.push({ inventory_id: candidate.id, quantity: parseFloat(qtyInput?.value) || 1 });
+    });
+    return items;
 }
 
 function closeProjectModal() {
@@ -327,6 +442,19 @@ function closeProjectModal() {
 
 async function saveProject() {
     const id = document.getElementById('projectId').value;
+    const isUpgrade = !id && document.getElementById('isUpgrade').checked;
+    const upgradeOfProjectId = document.getElementById('upgradeOfProjectId').value;
+
+    if (isUpgrade && !upgradeOfProjectId) {
+        showToast('Select which past project this upgrades', 'error');
+        return;
+    }
+    const upgradeItems = isUpgrade ? collectSelectedUpgradeItems() : [];
+    if (isUpgrade && upgradeItems.length === 0) {
+        showToast('Select at least one item to add for this upgrade', 'error');
+        return;
+    }
+
     const data = {
         project_name: document.getElementById('projectName').value,
         customer_id: parseInt(document.getElementById('customerId').value),
@@ -338,15 +466,18 @@ async function saveProject() {
         start_date: document.getElementById('startDate').value,
         expected_end_date: document.getElementById('expectedEndDate').value
     };
-    
+    if (isUpgrade) {
+        data.upgrade_of_project_id = parseInt(upgradeOfProjectId);
+    }
+
     if (!data.project_name || !data.customer_id) {
         showToast('Please fill all required fields', 'error');
         return;
     }
-    
+
     const url = id ? `../api/projects-api.php?id=${id}` : '../api/projects-api.php';
     const method = id ? 'PUT' : 'POST';
-    
+
     try {
         const response = await fetch(url, {
             method: method,
@@ -354,14 +485,36 @@ async function saveProject() {
             body: JSON.stringify(data)
         });
         const result = await response.json();
-        
-        if (result.success) {
-            showToast(result.message, 'success');
-            closeProjectModal();
-            loadProjects();
-        } else {
+
+        if (!result.success) {
             showToast(result.error, 'error');
+            return;
         }
+
+        // Upgrade mode also needs a draft quotation for the chosen items —
+        // same approve-to-deduct-inventory pipeline as any other quotation.
+        if (isUpgrade) {
+            const newProjectId = result.data?.id ?? (Array.isArray(result.data) ? result.data[0]?.id : null);
+            try {
+                const qRes = await fetch('../api/create-upgrade-quotation.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ project_id: newProjectId, items: upgradeItems })
+                });
+                const qResult = await qRes.json();
+                showToast(qResult.success
+                    ? `Project created — upgrade quotation ${qResult.quotation_number} is ready in Quotations.`
+                    : `Project created, but the upgrade quotation failed: ${qResult.error}`,
+                    qResult.success ? 'success' : 'error');
+            } catch (e) {
+                showToast('Project created, but the upgrade quotation could not be generated.', 'error');
+            }
+        } else {
+            showToast(result.message, 'success');
+        }
+
+        closeProjectModal();
+        loadProjects();
     } catch (error) {
         showToast('Error saving project', 'error');
     }

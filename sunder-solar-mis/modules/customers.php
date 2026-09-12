@@ -78,14 +78,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
                     echo json_encode(['success' => false, 'message' => 'Permission denied']);
                 }
             } else {
-                if (hasPermission('customers', 'create')) {
-                    $data['created_at'] = date('Y-m-d H:i:s');
-                    $supabase->insert('customers', $data);
-                    logActivity($_SESSION['user_id'], 'create', 'customers', "Created customer: {$data['name']}");
-                    echo json_encode(['success' => true, 'message' => 'Customer created successfully']);
-                } else {
-                    echo json_encode(['success' => false, 'message' => 'Permission denied']);
-                }
+                // Customers are no longer created by hand here — they're
+                // created automatically when a quotation is approved (see
+                // api/approve-quotation.php), from the client details
+                // entered on that quotation. This module is view/edit/
+                // archive only now.
+                echo json_encode(['success' => false, 'message' => 'Customers are created automatically when a quotation is approved — there is no manual "Add Customer" here.']);
             }
             break;
 
@@ -112,11 +110,7 @@ include_once __DIR__ . '/../includes/header.php';
 <div class="card">
     <div class="card-header">
         <h3 class="card-title">All Customers</h3>
-        <?php if (hasPermission('customers', 'create')): ?>
-        <button onclick="openCustomerModal()" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Add Customer
-        </button>
-        <?php endif; ?>
+        <span style="font-size:0.78rem;color:var(--text-muted)"><i class="fas fa-circle-info"></i> Customers are created automatically when a quotation is approved — view, edit, or archive them here.</span>
     </div>
     <div class="card-body">
         <div class="filters-bar">
