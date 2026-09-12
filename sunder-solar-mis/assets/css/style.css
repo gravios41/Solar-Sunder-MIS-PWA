@@ -2847,6 +2847,7 @@ body {
     margin: 0 auto 18px;
 }
 .gmModal-icon.danger { background: #FEE2E2; color: var(--danger); }
+.gmModal-icon.confirm { background: rgba(16,185,129,.14); color: var(--success); }
 
 .gmModal-title {
     font-size: 1.1rem;

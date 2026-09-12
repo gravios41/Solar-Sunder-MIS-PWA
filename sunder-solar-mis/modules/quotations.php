@@ -870,58 +870,53 @@ async function archiveQuotation(id) {
 }
 
 // Two separate confirmations, since this is an irreversible action that
-// deducts real stock and creates an installation + task list: the first
-// is the general warning; the second names exactly which real inventory
-// items will be deducted (fetched fresh, matched against inventoryItems
-// the same way approve-quotation.php itself matches them — a service
-// line simply won't match anything and is correctly left out), so the
-// second click is an informed one, not just re-confirming blind.
+// Deducting inventory and creating the installation/tasks is exactly what
+// approval is FOR — expected, not a dangerous side effect — so this reads
+// as a normal approval confirmation (green check, branded button), not a
+// red "are you sure?!" warning. Still names exactly which real inventory
+// items will be deducted (matched against inventoryItems the same way
+// approve-quotation.php itself matches them — a service line simply won't
+// match anything and is correctly left out), so it's an informed approval.
 async function approveQuotation(id) {
     const quotation = quotations.find(q => q.id === id);
     const name = quotation?.quotation_number || 'this quotation';
 
-    showConfirmModal(
-        `Approve "${name}"? This deducts its line items from inventory and creates the installation and task list — it can't be undone from here.`,
-        async () => {
-            let deductionSummary = 'No matching inventory items were found to deduct — only services on this quotation.';
-            try {
-                const res = await fetch(`../api/quotations-api.php?id=${id}`);
-                const result = await res.json();
-                const items = (result.success && result.data?.items) || [];
-                const deductions = items
-                    .map(item => ({ ...item, inv: inventoryItems.find(inv => inv.item_name === item.description) }))
-                    .filter(item => item.inv);
-                if (deductions.length > 0) {
-                    deductionSummary = 'This will deduct: ' + deductions.map(d => `${d.description} ×${d.quantity}`).join(', ');
-                }
-            } catch (e) {
-                deductionSummary = 'Could not verify exact deductions ahead of time — approving will still deduct whatever matches inventory.';
-            }
+    let deductionSummary = 'No inventory items on this quotation — services only.';
+    try {
+        const res = await fetch(`../api/quotations-api.php?id=${id}`);
+        const result = await res.json();
+        const items = (result.success && result.data?.items) || [];
+        const deductions = items
+            .map(item => ({ ...item, inv: inventoryItems.find(inv => inv.item_name === item.description) }))
+            .filter(item => item.inv);
+        if (deductions.length > 0) {
+            deductionSummary = 'Inventory to deduct: ' + deductions.map(d => `${d.description} ×${d.quantity}`).join(', ') + '.';
+        }
+    } catch (e) {
+        deductionSummary = 'Inventory will be deducted for whatever matches on approval.';
+    }
 
-            showConfirmModal(
-                `Final confirmation for "${name}". ${deductionSummary}. This cannot be undone. Approve now?`,
-                async () => {
-                    try {
-                        const response = await fetch('../api/approve-quotation.php', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ quotation_id: id })
-                        });
-                        const result = await response.json();
-                        if (result.success) {
-                            showToast(result.message, 'success');
-                            loadQuotations();
-                        } else {
-                            showToast(result.error, 'error');
-                        }
-                    } catch (error) {
-                        showToast('Error approving quotation', 'error');
-                    }
-                },
-                { title: 'Confirm Approval', confirmText: 'Yes, Approve' }
-            );
+    showConfirmModal(
+        `Approve "${name}"? This creates the installation and task list and deducts stock. ${deductionSummary}`,
+        async () => {
+            try {
+                const response = await fetch('../api/approve-quotation.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ quotation_id: id })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    showToast(result.message, 'success');
+                    loadQuotations();
+                } else {
+                    showToast(result.error, 'error');
+                }
+            } catch (error) {
+                showToast('Error approving quotation', 'error');
+            }
         },
-        { title: 'Approve Quotation', confirmText: 'Continue' }
+        { title: 'Approve Quotation', confirmText: 'Approve', danger: false }
     );
 }
 

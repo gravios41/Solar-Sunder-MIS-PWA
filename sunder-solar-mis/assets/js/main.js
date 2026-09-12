@@ -179,6 +179,7 @@ function showConfirmModal(message, onConfirm, options = {}) {
     const modal     = document.getElementById('gmConfirm');
     const titleEl   = document.getElementById('gmConfirmTitle');
     const msgEl     = document.getElementById('gmConfirmMsg');
+    const iconEl    = document.getElementById('gmConfirmIcon');
     const okBtn     = document.getElementById('gmConfirmOk');
     const cancelBtn = document.getElementById('gmConfirmCancel');
 
@@ -194,6 +195,15 @@ function showConfirmModal(message, onConfirm, options = {}) {
     msgEl.textContent   = message;
     okBtn.textContent   = confirmText;
     okBtn.className     = `btn ${danger ? 'btn-danger' : 'btn-primary'}`;
+
+    // danger:false is a plain go-ahead confirmation (e.g. approving
+    // something that's SUPPOSED to happen), not a warning about an
+    // irreversible/destructive action — the icon shouldn't look alarming
+    // for something the user is deliberately choosing to do.
+    if (iconEl) {
+        iconEl.className = `gmModal-icon ${danger ? 'danger' : 'confirm'}`;
+        iconEl.innerHTML = `<i class="fas ${danger ? 'fa-exclamation-triangle' : 'fa-check'}"></i>`;
+    }
 
     modal.classList.add('active');
 
