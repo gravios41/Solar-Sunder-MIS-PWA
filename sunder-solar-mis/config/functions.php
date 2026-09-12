@@ -311,7 +311,7 @@ function buildRecommendationMaterials($supabase, $requestedPanelWattage, $system
     $items[] = [
         'inventory_id' => $bestPanel['id'] ?? null,
         'item_name' => $bestPanel['item_name'] ?? ('Solar Panels ' . $requestedPanelWattage . 'W'),
-        'category' => 'solar_panel',
+        'category' => 'panel',
         'quantity' => $panelCount,
         'unit_price' => $panelUnitPrice,
         'total_price' => $panelUnitPrice * $panelCount,
@@ -432,7 +432,11 @@ function buildRecommendationMaterials($supabase, $requestedPanelWattage, $system
     $items[] = [
         'inventory_id' => $cable['id'] ?? null,
         'item_name' => $cable['item_name'] ?? 'DC Cable 4mm',
-        'category' => 'cable',
+        // recommendation_items.category only allows panel/inverter/battery/
+        // mounting/other — cable and accessories both map to 'other' (the
+        // inventory-side lookup just above still uses the real 'cable'
+        // category; only this stored label is constrained).
+        'category' => 'other',
         'quantity' => $cableQuantity,
         'unit_price' => $cableUnitPrice,
         'total_price' => $cableUnitPrice * $cableQuantity,
@@ -443,7 +447,7 @@ function buildRecommendationMaterials($supabase, $requestedPanelWattage, $system
     $items[] = [
         'inventory_id' => $accessories['id'] ?? null,
         'item_name' => $accessories['item_name'] ?? 'Breaker & Accessories',
-        'category' => 'accessories',
+        'category' => 'other', // see note above — DB only allows panel/inverter/battery/mounting/other
         'quantity' => 1,
         'unit_price' => $accessoriesUnitPrice,
         'total_price' => $accessoriesUnitPrice,
