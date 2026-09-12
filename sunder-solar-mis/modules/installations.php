@@ -100,7 +100,7 @@ include_once __DIR__ . '/../includes/header.php';
                     </select>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Customer</label>
+                    <label class="form-label">Client</label>
                     <input type="text" id="customerName" class="form-control" readonly>
                 </div>
                 <div class="form-group">
@@ -255,7 +255,7 @@ function renderInstallations() {
                                     ${getStatusBadgeHtml(i.status)}
                                 </div>
                                 <h4 class="font-semibold">${escapeHtml(project?.project_name || 'Unknown Project')}</h4>
-                                <p class="text-sm text-gray-600 mt-1">${escapeHtml(customer?.name || 'Unknown Customer')}</p>
+                                <p class="text-sm text-gray-600 mt-1">${escapeHtml(customer?.name || 'Unknown Client')}</p>
                             </div>
                         </div>
                         <div class="space-y-2 mb-3">
@@ -432,7 +432,7 @@ async function viewInstallation(id) {
     if (installation) {
         showDetailModal(installation.installation_code, [
             { label: 'Project',     value: project?.project_name },
-            { label: 'Customer',    value: customer?.name },
+            { label: 'Client',      value: customer?.name },
             { label: 'Location',    value: installation.location || customer?.address },
             { label: 'Sched. Date', value: formatDate(installation.installation_date) },
             { label: 'Status',      value: installation.status?.replace('_', ' ') },

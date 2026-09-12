@@ -56,7 +56,7 @@ include_once __DIR__ . '/../includes/header.php';
     </div>
     <div class="stat-card">
         <div class="stat-value" id="customerCount">0</div>
-        <div class="stat-label">Customer Reports</div>
+        <div class="stat-label">Client Reports</div>
     </div>
     <div class="stat-card">
         <div class="stat-value" id="projectCount">0</div>
@@ -80,7 +80,7 @@ include_once __DIR__ . '/../includes/header.php';
                     <option value="Sales">Sales</option>
                     <option value="Inventory">Inventory</option>
                     <option value="Projects">Projects</option>
-                    <option value="Customers">Customers</option>
+                    <option value="Customers">Clients</option>
                     <option value="Installations">Installations</option>
                     <option value="Financial">Financial</option>
                     <option value="Tasks">Tasks</option>
@@ -149,7 +149,7 @@ include_once __DIR__ . '/../includes/header.php';
                     ['key'=>'Financial',     'icon'=>'fa-coins',         'color'=>'#3B82F6', 'desc'=>'Financial overview'],
                     ['key'=>'Inventory',     'icon'=>'fa-boxes',         'color'=>'#F97316', 'desc'=>'Stock & items'],
                     ['key'=>'Projects',      'icon'=>'fa-solar-panel',   'color'=>'#8B5CF6', 'desc'=>'Project status'],
-                    ['key'=>'Customers',     'icon'=>'fa-users',         'color'=>'#06B6D4', 'desc'=>'Customer list'],
+                    ['key'=>'Customers',     'icon'=>'fa-users',         'color'=>'#06B6D4', 'desc'=>'Client list'],
                     ['key'=>'Installations', 'icon'=>'fa-tools',         'color'=>'#EF4444', 'desc'=>'Installation records'],
                     ['key'=>'Tasks',         'icon'=>'fa-check-square',  'color'=>'#10B981', 'desc'=>'Tasks & assignments'],
                 ];

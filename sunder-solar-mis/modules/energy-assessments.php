@@ -25,7 +25,7 @@ include_once __DIR__ . '/../includes/header.php';
                 <div class="form-group"><label class="form-label">Client Name *</label><input id="clientName" class="form-control" type="text" placeholder="Full name of the client" required></div>
                 <div class="form-group"><label class="form-label">Peak sun hours</label><input id="peakSunHours" class="form-control" type="number" value="5" min="1" max="10" step="0.1"></div>
             </div>
-            <p style="margin:-10px 0 16px;font-size:12px;color:#64748b">No Customer record is created yet — that happens automatically once the resulting quotation is approved.</p>
+            <p style="margin:-10px 0 16px;font-size:12px;color:#64748b">No Client record is created yet — that happens automatically once the resulting quotation is approved.</p>
 
             <!-- OCR Bill Upload Section -->
             <div style="border-top:1px solid #e2e8f0;margin-top:20px;padding-top:20px">
@@ -72,7 +72,7 @@ include_once __DIR__ . '/../includes/header.php';
     </div>
 </div>
 
-<div class="card"><div class="card-header"><h3 class="card-title">Saved Assessments</h3></div><div class="card-body"><div class="table-container"><table class="table"><thead><tr><th>Customer</th><th>Average monthly</th><th>Recommended system</th><th>Panels</th><th>Status</th><th>Approval</th><th>Actions</th></tr></thead><tbody id="assessmentRows"><tr><td colspan="7" class="text-center">Loading...</td></tr></tbody></table></div></div></div>
+<div class="card"><div class="card-header"><h3 class="card-title">Saved Assessments</h3></div><div class="card-body"><div class="table-container"><table class="table"><thead><tr><th>Client</th><th>Average monthly</th><th>Recommended system</th><th>Panels</th><th>Status</th><th>Approval</th><th>Actions</th></tr></thead><tbody id="assessmentRows"><tr><td colspan="7" class="text-center">Loading...</td></tr></tbody></table></div></div></div>
 
 <!-- Recommendation Approval Modal -->
 <div id="recommendationModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;padding:20px;overflow-y:auto">
@@ -485,7 +485,7 @@ function showRecommendationModal(assessmentId) {
                     <p><strong>System efficiency:</strong> ${(assessment.system_efficiency * 100).toFixed(0)}%</p>
                 </div>
                 <div id="modalMaterials"><div style="text-align:center;color:#94a3b8;font-size:13px">Loading recommended materials…</div></div>
-                <p style="color:#64748b;font-size:13px;margin-top:12px">Click a tier below to choose it, then save — a draft quotation will be built from whichever one is selected (<strong>Actual Recommendation</strong> by default). No Project or Customer record is created yet — that, along with the inventory deduction and installation/task list, only happens once the quotation itself is approved in the Quotations module.</p>
+                <p style="color:#64748b;font-size:13px;margin-top:12px">Click a tier below to choose it, then save — a draft quotation will be built from whichever one is selected (<strong>Actual Recommendation</strong> by default). No Project or Client record is created yet — that, along with the inventory deduction and installation/task list, only happens once the quotation itself is approved in the Quotations module.</p>
             `;
 
             const params = new URLSearchParams({

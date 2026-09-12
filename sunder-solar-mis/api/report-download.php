@@ -39,7 +39,7 @@ foreach ($types as $type) {
             $q = $supabase->from('quotations')->select('*')->isNull('deleted_at')->order('quotation_date', false);
             applyDateFilter($q, 'quotation_date', $dateFrom, $dateTo);
             $data = $q->execute() ?? [];
-            $headers = ['#','Quotation No.','Customer','Project','Quotation Date','Valid Until',
+            $headers = ['#','Quotation No.','Client','Project','Quotation Date','Valid Until',
                         'Status','Total Amount (PHP)','Items Count','Notes'];
             $n = 1;
             foreach ($data as $r) {
@@ -95,7 +95,7 @@ foreach ($types as $type) {
             $q = $supabase->from('projects')->select('*')->isNull('deleted_at')->order('created_at', false);
             applyDateFilter($q, 'created_at', $dateFrom, $dateTo);
             $data = $q->execute() ?? [];
-            $headers = ['#','Project Code','Project Name','Customer','Status','Progress (%)',
+            $headers = ['#','Project Code','Project Name','Client','Status','Progress (%)',
                         'Budget (PHP)','Manager','Start Date','End Date','Description'];
             $n = 1;
             foreach ($data as $p) {
@@ -120,7 +120,7 @@ foreach ($types as $type) {
             $q = $supabase->from('customers')->select('*')->isNull('deleted_at')->order('name', true);
             applyDateFilter($q, 'created_at', $dateFrom, $dateTo);
             $data = $q->execute() ?? [];
-            $headers = ['#','Customer Code','Name','Email','Phone','Address','Type','Status','Created At'];
+            $headers = ['#','Client Code','Name','Email','Phone','Address','Type','Status','Created At'];
             $n = 1;
             foreach ($data as $c) {
                 $rows[] = [
@@ -141,7 +141,7 @@ foreach ($types as $type) {
             $q = $supabase->from('installations')->select('*')->isNull('deleted_at')->order('installation_date', false);
             applyDateFilter($q, 'installation_date', $dateFrom, $dateTo);
             $data = $q->execute() ?? [];
-            $headers = ['#','Code','Customer','Project','Install Date','Completion Date',
+            $headers = ['#','Code','Client','Project','Install Date','Completion Date',
                         'Status','Progress (%)','Technician','Team','Notes'];
             $n = 1;
             foreach ($data as $i) {

@@ -82,7 +82,7 @@ if (!in_array($section, $valid, true)) $section = 'privacy';
         <h3>2. What we collect</h3>
         <ul>
             <li><strong>Account data:</strong> name, username, email address, phone number, role, hashed password, profile photo.</li>
-            <li><strong>Operational data you enter:</strong> customer records, energy assessments, quotations, projects, installations, tasks, inventory, reports, and uploaded documents (e.g. electric bills).</li>
+            <li><strong>Operational data you enter:</strong> client records, energy assessments, quotations, projects, installations, tasks, inventory, reports, and uploaded documents (e.g. electric bills).</li>
             <li><strong>Usage and security data:</strong> login timestamps, IP address, browser/device information, and activity logs (create/update/delete actions).</li>
             <li><strong>Cookies / local storage:</strong> a session cookie for authentication and limited browser storage for interface preferences. No third-party advertising or tracking cookies are used.</li>
         </ul>
@@ -147,7 +147,7 @@ if (!in_array($section, $valid, true)) $section = 'privacy';
         which forms part of these Terms. Prohibited activities include unauthorised access, interference with the System, and misuse of data.</p>
 
         <h3>3. Data ownership</h3>
-        <p>All business records, customer data, and content in the System are the property of <?php echo htmlspecialchars($company); ?>.
+        <p>All business records, client data, and content in the System are the property of <?php echo htmlspecialchars($company); ?>.
         You obtain no ownership rights by entering or accessing data. Personal data is handled under our <a class="link" href="?doc=privacy">Privacy Policy</a>.</p>
 
         <h3>4. Intellectual property</h3>
@@ -202,7 +202,7 @@ if (!in_array($section, $valid, true)) $section = 'privacy';
             <li>Use or possess devices, passwords, or codes to commit any of the above (Misuse of Devices, §4(a)(5));</li>
             <li>Engage in computer-related forgery, fraud, or identity theft (§4(b));</li>
             <li>Circumvent authentication, rate limits, logging, or access controls;</li>
-            <li>Copy, export, or disclose customer or company data except as required for authorised work;</li>
+            <li>Copy, export, or disclose client or company data except as required for authorised work;</li>
             <li>Use the System to harass, defame, or unlawfully process another person's data.</li>
         </ul>
 
@@ -224,7 +224,7 @@ if (!in_array($section, $valid, true)) $section = 'privacy';
         <a class="link" href="mailto:<?php echo htmlspecialchars($contact); ?>"><?php echo htmlspecialchars($contact); ?></a>.
         We will not pursue legal action against researchers who: act in good faith, do not access or modify data beyond the minimum
         necessary to demonstrate the issue, do not disrupt services, and give us reasonable time to remediate before public disclosure.
-        This does not authorise access to third-party or customer data.</p>
+        This does not authorise access to third-party or client data.</p>
 
         <h3>6. Developer protection</h3>
         <p>The System is provided by its developers to <?php echo htmlspecialchars($company); ?> for authorised internal use.

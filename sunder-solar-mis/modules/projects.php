@@ -95,9 +95,9 @@ include_once __DIR__ . '/../includes/header.php';
                     <input type="text" id="projectName" class="form-control" required>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Customer *</label>
+                    <label class="form-label">Client *</label>
                     <select id="customerId" class="form-select" required onchange="onProjectCustomerChange()">
-                        <option value="">Select Customer</option>
+                        <option value="">Select Client</option>
                     </select>
                 </div>
 
@@ -107,7 +107,7 @@ include_once __DIR__ . '/../includes/header.php';
                 <div class="form-group" id="upgradeToggleGroup" style="display:none">
                     <label class="checkbox-wrap" style="display:flex;align-items:center;gap:8px;cursor:pointer">
                         <input type="checkbox" id="isUpgrade" onchange="onUpgradeToggle()">
-                        <span>This is an upgrade to an existing project for this customer</span>
+                        <span>This is an upgrade to an existing project for this client</span>
                     </label>
                 </div>
                 <div class="form-group" id="upgradeProjectGroup" style="display:none">
@@ -182,7 +182,7 @@ async function loadCustomers() {
             customers = result.data;
             const select = document.getElementById('customerId');
             if (select) {
-                select.innerHTML = '<option value="">Select Customer</option>' + 
+                select.innerHTML = '<option value="">Select Client</option>' + 
                     customers.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
             }
         }
@@ -525,7 +525,7 @@ async function viewProject(id) {
     if (project) {
         showDetailModal(project.project_name, [
             { label: 'Project Code', value: project.project_code },
-            { label: 'Customer',     value: project.customer_name },
+            { label: 'Client',       value: project.customer_name },
             { label: 'Status',       value: project.status?.replace(/_/g, ' ') },
             { label: 'Progress',     value: project.progress + '%' },
             { label: 'Budget',       value: formatCurrency(project.estimated_cost) },

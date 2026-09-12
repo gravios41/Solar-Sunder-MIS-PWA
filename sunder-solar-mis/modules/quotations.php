@@ -77,7 +77,7 @@ include_once __DIR__ . '/../includes/header.php';
                 <thead>
                     <tr>
                         <th>Quotation ID</th>
-                        <th>Customer / Project</th>
+                        <th>Client / Project</th>
                         <th>Amount</th>
                         <th>Items</th>
                         <th>Date</th>
@@ -109,9 +109,9 @@ include_once __DIR__ . '/../includes/header.php';
                     <!-- Shown for quotations tied to an existing Customer record -->
                     <div id="customerFieldsSection" class="grid-cols-2">
                         <div class="form-group">
-                            <label class="form-label">Customer *</label>
+                            <label class="form-label">Client *</label>
                             <select id="customerId" class="form-select" onchange="loadProjectsForCustomer()">
-                                <option value="">Select Customer</option>
+                                <option value="">Select Client</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -125,7 +125,7 @@ include_once __DIR__ . '/../includes/header.php';
                          client has no Customer record yet — one is created automatically
                          when this quotation is approved. -->
                     <div id="clientNameFieldsSection" style="display:none">
-                        <p style="font-size:11px;color:#94a3b8;margin:0 0 12px"><i class="fas fa-circle-info"></i> No Customer record exists yet for this client — the details below become the real Customer record automatically when this quotation is approved.</p>
+                        <p style="font-size:11px;color:#94a3b8;margin:0 0 12px"><i class="fas fa-circle-info"></i> No Client record exists yet — the details below become the real Client record automatically when this quotation is approved.</p>
                         <div class="form-group">
                             <label class="form-label">Company Name *</label>
                             <input type="text" id="clientNameField" class="form-control" placeholder="Full name">
@@ -285,7 +285,7 @@ async function loadCustomers() {
             customers = result.data;
             const select = document.getElementById('customerId');
             if (select) {
-                select.innerHTML = '<option value="">Select Customer</option>' + 
+                select.innerHTML = '<option value="">Select Client</option>' + 
                     customers.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
             }
         }
@@ -696,7 +696,7 @@ async function saveQuotation() {
         data.customer_id = parseInt(document.getElementById('customerId').value);
         data.project_id = document.getElementById('projectId').value ? parseInt(document.getElementById('projectId').value) : null;
         if (!data.customer_id) {
-            showToast('Please select a customer', 'error');
+            showToast('Please select a client', 'error');
             return;
         }
     }
@@ -747,7 +747,7 @@ async function viewQuotation(id) {
         const q = result.data;
         const rows = [
             { label: 'Quotation No.',  value: q.quotation_number },
-            { label: 'Customer',       value: q.customer_name },
+            { label: 'Client',         value: q.customer_name },
             { label: 'Project',        value: q.project_name || '-' },
             { label: 'Quotation Date', value: formatDate(q.quotation_date) },
             { label: 'Valid Until',    value: formatDate(q.valid_until) },

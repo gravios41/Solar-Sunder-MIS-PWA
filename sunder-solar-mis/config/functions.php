@@ -579,7 +579,7 @@ function completeProjectPipelineIfDone($supabase, $projectId) {
         $customer = !empty($project['customer_id']) ? $supabase->getById('customers', $project['customer_id']) : null;
 
         $supabase->insert('reports', [
-            'report_name'    => sprintf('Installation Completion — %s (%s)', $project['project_name'] ?? 'Project', $customer['name'] ?? 'Customer'),
+            'report_name'    => sprintf('Installation Completion — %s (%s)', $project['project_name'] ?? 'Project', $customer['name'] ?? 'Client'),
             'report_type'    => 'Installations',
             'period'         => date('F Y'),
             'date_from'      => $project['start_date'] ?? null,

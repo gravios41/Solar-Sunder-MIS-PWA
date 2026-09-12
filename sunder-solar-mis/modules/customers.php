@@ -6,8 +6,8 @@ require_once __DIR__ . '/../config/config.php';
 requireAuth();
 checkPageAccess('customers');
 
-$pageTitle = 'Customers';
-$pageSubtitle = 'Manage your customer relationships';
+$pageTitle = 'Clients';
+$pageSubtitle = 'Manage your client relationships';
 
 // Handle AJAX requests
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
             ];
 
             if (empty($data['name'])) {
-                echo json_encode(['success' => false, 'message' => 'Customer name is required']);
+                echo json_encode(['success' => false, 'message' => 'Client name is required']);
                 break;
             }
 
@@ -73,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
                         }
                     }
 
-                    echo json_encode(['success' => true, 'message' => 'Customer updated successfully']);
+                    echo json_encode(['success' => true, 'message' => 'Client updated successfully']);
                 } else {
                     echo json_encode(['success' => false, 'message' => 'Permission denied']);
                 }
@@ -83,7 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
                 // api/approve-quotation.php), from the client details
                 // entered on that quotation. This module is view/edit/
                 // archive only now.
-                echo json_encode(['success' => false, 'message' => 'Customers are created automatically when a quotation is approved — there is no manual "Add Customer" here.']);
+                echo json_encode(['success' => false, 'message' => 'Clients are created automatically when a quotation is approved — there is no manual "Add Client" here.']);
             }
             break;
 
@@ -92,7 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
                 try {
                     archiveRecord('customers', $id);
                     logActivity($_SESSION['user_id'], 'archive', 'customers', "Archived customer ID: $id");
-                    echo json_encode(['success' => true, 'message' => 'Customer archived successfully']);
+                    echo json_encode(['success' => true, 'message' => 'Client archived successfully']);
                 } catch (Exception $e) {
                     echo json_encode(['success' => false, 'message' => $e->getMessage()]);
                 }
@@ -109,8 +109,8 @@ include_once __DIR__ . '/../includes/header.php';
 
 <div class="card">
     <div class="card-header">
-        <h3 class="card-title">All Customers</h3>
-        <span style="font-size:0.78rem;color:var(--text-muted)"><i class="fas fa-circle-info"></i> Customers are created automatically when a quotation is approved — view, edit, or archive them here.</span>
+        <h3 class="card-title">All Clients</h3>
+        <span style="font-size:0.78rem;color:var(--text-muted)"><i class="fas fa-circle-info"></i> Clients are created automatically when a quotation is approved — view, edit, or archive them here.</span>
     </div>
     <div class="card-body">
         <div class="filters-bar">
@@ -134,7 +134,7 @@ include_once __DIR__ . '/../includes/header.php';
             </div>
             <div class="filter-group flex-1">
                 <label class="filter-label">Search</label>
-                <input type="text" id="searchInput" placeholder="Search customers..." class="form-control">
+                <input type="text" id="searchInput" placeholder="Search clients..." class="form-control">
             </div>
         </div>
         
@@ -158,11 +158,11 @@ include_once __DIR__ . '/../includes/header.php';
     </div>
 </div>
 
-<!-- Customer Modal -->
+<!-- Client Modal -->
 <div id="customerModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <h3 id="modalTitle" class="modal-title">Add Customer</h3>
+            <h3 id="modalTitle" class="modal-title">Add Client</h3>
             <button class="modal-close" onclick="closeCustomerModal()">&times;</button>
         </div>
         <div class="modal-body">
@@ -232,7 +232,7 @@ include_once __DIR__ . '/../includes/header.php';
         </div>
         <div class="modal-footer">
             <button type="button" class="btn btn-secondary" onclick="closeCustomerModal()">Cancel</button>
-            <button type="button" class="btn btn-primary" onclick="saveCustomer()">Save Customer</button>
+            <button type="button" class="btn btn-primary" onclick="saveCustomer()">Save Client</button>
         </div>
     </div>
 </div>
@@ -277,7 +277,7 @@ function renderCustomers() {
     if (!tbody) return;
     
     if (filtered.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center">No customers found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center">No clients found</td></tr>';
         return;
     }
     
@@ -353,7 +353,7 @@ function openCustomerModal(customer = null) {
     const title = document.getElementById('modalTitle');
     
     if (customer) {
-        title.textContent = 'Edit Customer';
+        title.textContent = 'Edit Client';
         document.getElementById('customerId').value = customer.id;
         document.getElementById('customerName').value = customer.name;
         document.getElementById('contactPerson').value = customer.contact_person || '';
@@ -367,7 +367,7 @@ function openCustomerModal(customer = null) {
         document.getElementById('customerType').value = customer.type || 'commercial';
         document.getElementById('customerStatus').value = customer.status || 'active';
     } else {
-        title.textContent = 'Add New Customer';
+        title.textContent = 'Add New Client';
         document.getElementById('customerForm').reset();
         document.getElementById('customerId').value = '';
     }
@@ -416,7 +416,7 @@ async function saveCustomer() {
             showToast(result.message, 'error');
         }
     } catch (error) {
-        showToast('Error saving customer', 'error');
+        showToast('Error saving client', 'error');
     }
 }
 
@@ -424,7 +424,7 @@ function viewCustomer(id) {
     const c = customers.find(c => c.id === id);
     if (!c) return;
     showDetailModal(c.name, [
-        { label: 'Customer Code',  value: c.customer_code },
+        { label: 'Client Code',   value: c.customer_code },
         { label: 'Contact Person', value: c.contact_person },
         { label: 'Email',          value: c.email },
         { label: 'Phone',          value: c.phone },
@@ -447,7 +447,7 @@ async function archiveCustomer(id) {
     const customer = customers.find(c => c.id === id);
     const name = customer?.name || 'this customer';
     showConfirmModal(
-        `"${name}" will be archived and hidden from the customer list.`,
+        `"${name}" will be archived and hidden from the client list.`,
         async () => {
             const formData = new URLSearchParams();
             formData.append('action', 'delete');
@@ -469,10 +469,10 @@ async function archiveCustomer(id) {
                     showToast(result.message, 'error');
                 }
             } catch (error) {
-                showToast('Error archiving customer', 'error');
+                showToast('Error archiving client', 'error');
             }
         },
-        { title: 'Archive Customer', confirmText: 'Archive' }
+        { title: 'Archive Client', confirmText: 'Archive' }
     );
 }
 

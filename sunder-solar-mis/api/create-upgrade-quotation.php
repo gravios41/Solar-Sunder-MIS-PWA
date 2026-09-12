@@ -84,7 +84,7 @@ try {
         'valid_until' => date('Y-m-d', strtotime('+30 days')),
         'notes' => sprintf(
             "Upgrade for %s\nProject: %s (upgrade of project #%s)",
-            $customer['name'] ?? 'Customer',
+            $customer['name'] ?? 'Client',
             $project['project_name'] ?? '',
             $project['upgrade_of_project_id'] ?? '-'
         ),

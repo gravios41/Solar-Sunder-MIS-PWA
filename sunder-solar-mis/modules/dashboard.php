@@ -66,7 +66,7 @@ include_once __DIR__ . '/../includes/header.php';
             <span class="stat-trend neutral"><i class="fas fa-minus"></i> All time</span>
         </div>
         <div class="stat-value" data-counter="<?php echo $totalCustomers; ?>"><?php echo $totalCustomers; ?></div>
-        <div class="stat-label">Total Customers</div>
+        <div class="stat-label">Total Clients</div>
     </div>
 
     <div class="stat-card blue">
@@ -152,7 +152,7 @@ include_once __DIR__ . '/../includes/header.php';
         document.getElementById('archiveTotalCount').textContent = archives.length;
         const counts = {};
         archives.forEach(a => { counts[a.entity_type] = (counts[a.entity_type] || 0) + 1; });
-        const labels = { tasks:'Tasks', projects:'Projects', customers:'Customers', quotations:'Quotations', installations:'Installations', inventory:'Inventory', reports:'Reports', users:'Users' };
+        const labels = { tasks:'Tasks', projects:'Projects', customers:'Clients', quotations:'Quotations', installations:'Installations', inventory:'Inventory', reports:'Reports', users:'Users' };
         document.getElementById('archiveBreakdown').innerHTML = Object.entries(counts)
             .map(([type, n]) => `<span><span style="color:#F97316;font-weight:600">${n}</span> ${labels[type]||type}</span>`).join('');
     } catch(e) {}
@@ -269,7 +269,7 @@ include_once __DIR__ . '/../includes/header.php';
     <div class="card-body">
         <div style="display:flex;gap:12px;flex-wrap:wrap">
             <a href="customers.php" class="btn btn-secondary">
-                <i class="fas fa-user-plus"></i> Add Customer
+                <i class="fas fa-users"></i> View Clients
             </a>
             <a href="projects.php" class="btn btn-secondary">
                 <i class="fas fa-solar-panel"></i> New Project

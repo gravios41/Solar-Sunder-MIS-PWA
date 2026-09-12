@@ -87,9 +87,9 @@ function isActive($page) {
             <div class="nav-item">
                 <a href="<?php echo htmlspecialchars($appBasePath); ?>modules/customers.php"
                    class="nav-link <?= isActive('customers.php') ?>"
-                   data-tooltip="Customers">
+                   data-tooltip="Clients">
                     <i class="fas fa-users nav-icon"></i>
-                    <span>Customers</span>
+                    <span>Clients</span>
                 </a>
             </div>
             <?php endif; ?>

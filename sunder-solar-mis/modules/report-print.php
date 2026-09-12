@@ -265,7 +265,7 @@ foreach ($sections as $type => $rows):
 
 <table class="dt">
     <thead><tr>
-        <th>#</th><th>Quotation No.</th><th>Customer</th><th>Project</th>
+        <th>#</th><th>Quotation No.</th><th>Client</th><th>Project</th>
         <th>Date</th><th>Valid Until</th><th>Status</th>
         <th class="num">Amount (₱)</th><th>Notes</th>
     </tr></thead>
@@ -392,7 +392,7 @@ foreach ($sections as $type => $rows):
 
 <table class="dt">
     <thead><tr>
-        <th>#</th><th>Project Code</th><th>Project Name</th><th>Customer</th>
+        <th>#</th><th>Project Code</th><th>Project Name</th><th>Client</th>
         <th>Status</th><th class="num">Progress</th><th class="num">Budget (₱)</th>
         <th>Manager</th><th>Start Date</th><th>End Date</th><th>Description</th>
     </tr></thead>
@@ -423,8 +423,8 @@ foreach ($sections as $type => $rows):
 <?php /* ═══ CUSTOMERS ═══ */ elseif ($type === 'Customers'): ?>
 
 <div class="section-title">
-    👥 Customers Report
-    <span class="section-count"><?php echo $count; ?> customers</span>
+    👥 Clients Report
+    <span class="section-count"><?php echo $count; ?> clients</span>
 </div>
 
 <?php
@@ -442,12 +442,12 @@ foreach ($sections as $type => $rows):
 
 <table class="dt">
     <thead><tr>
-        <th>#</th><th>Customer Code</th><th>Name</th><th>Email</th><th>Phone</th>
+        <th>#</th><th>Client Code</th><th>Name</th><th>Email</th><th>Phone</th>
         <th>Type</th><th>Address</th><th>Status</th><th>Created</th>
     </tr></thead>
     <tbody>
     <?php if (!$rows): ?>
-        <tr class="empty"><td colspan="9">No customers found for this period.</td></tr>
+        <tr class="empty"><td colspan="9">No clients found for this period.</td></tr>
     <?php else: foreach ($rows as $i => $r): ?>
         <tr>
             <td style="color:#9CA3AF"><?php echo $i+1; ?></td>
@@ -487,7 +487,7 @@ foreach ($sections as $type => $rows):
 
 <table class="dt">
     <thead><tr>
-        <th>#</th><th>Code</th><th>Customer</th><th>Project</th>
+        <th>#</th><th>Code</th><th>Client</th><th>Project</th>
         <th>Install Date</th><th>Completion Date</th><th>Status</th>
         <th class="num">Progress</th><th>Technician</th><th>Team</th><th>Notes</th>
     </tr></thead>

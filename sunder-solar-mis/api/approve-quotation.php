@@ -86,7 +86,7 @@ try {
         $customerId = $customer['id'] ?? null;
 
         if (!$customerId) {
-            throw new Exception('Failed to create a Customer record for this client');
+            throw new Exception('Failed to create a client record.');
         }
         $customerCreated = true;
 
@@ -104,7 +104,7 @@ try {
         $projectData = [
             'customer_id' => $customerId,
             'project_code' => $projectCode,
-            'project_name' => sprintf('%s - %s', $customer['name'] ?? 'Customer', $quotation['quotation_number']),
+            'project_name' => sprintf('%s - %s', $customer['name'] ?? 'Client', $quotation['quotation_number']),
             'manager' => getOwnerFullName($supabase),
             'status' => 'planning',
             'progress' => 0,
@@ -265,7 +265,7 @@ try {
             ],
         ],
         [
-            'title' => 'Customer Training & Handover',
+            'title' => 'Client Training & Handover',
             'description' => 'Train customer on system operation and monitoring (est. 1 hr)',
             'days_offset' => 13,
             'checklist' => [

@@ -53,7 +53,7 @@ include_once __DIR__ . '/../includes/header.php';
             <div class="stat-icon green"><i class="fas fa-users"></i></div>
         </div>
         <div class="stat-value" id="customersCount">0</div>
-        <div class="stat-label">Customers</div>
+        <div class="stat-label">Clients</div>
     </div>
 </div>
 
@@ -65,7 +65,7 @@ include_once __DIR__ . '/../includes/header.php';
     <div class="card-body">
         <div class="archive-tabs">
             <button class="archive-tab active" onclick="setTab('all', this)">All</button>
-            <button class="archive-tab" onclick="setTab('customers', this)">Customers</button>
+            <button class="archive-tab" onclick="setTab('customers', this)">Clients</button>
             <button class="archive-tab" onclick="setTab('projects', this)">Projects</button>
             <button class="archive-tab" onclick="setTab('quotations', this)">Quotations</button>
             <button class="archive-tab" onclick="setTab('installations', this)">Installations</button>
@@ -103,7 +103,7 @@ let activeTab = 'all';
 const entityConfig = {
     tasks:         { color: '#3B82F6', icon: 'fa-tasks',           label: 'Task' },
     projects:      { color: '#F97316', icon: 'fa-solar-panel',     label: 'Project' },
-    customers:     { color: '#10B981', icon: 'fa-users',           label: 'Customer' },
+    customers:     { color: '#10B981', icon: 'fa-users',           label: 'Client' },
     quotations:    { color: '#8B5CF6', icon: 'fa-file-invoice-dollar', label: 'Quotation' },
     installations: { color: '#14B8A6', icon: 'fa-tools',           label: 'Installation' },
     inventory:     { color: '#6B7280', icon: 'fa-boxes',           label: 'Inventory' },
