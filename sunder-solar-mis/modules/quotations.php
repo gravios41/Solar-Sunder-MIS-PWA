@@ -417,53 +417,23 @@ function getStatusBadgeHtml(status) {
     return `<span class="badge ${badges[status]}">${labels[status]}</span>`;
 }
 
-// One fixed row per category, in a natural solar system build sequence —
-// Each category gets its own section, grouping the dropdown to just that
-// category's items — but a category like Accessories is naturally a basket
-// of several distinct things (connectors, tape, lugs, breakers...) needed
-// together, not a single choice, so every section can hold multiple rows
-// via its own "+ Add" button, not just one fixed row.
+// Only the major, big-ticket components get their own picker row — a panel
+// or battery upgrade obviously brings its own brackets, wiring, tape/fuses
+// along with it, so those supporting categories (and the old free-text
+// Services list) aren't itemized separately here anymore.
 const QUOTATION_ROW_CATEGORIES = [
     { key: 'solar_panel', label: 'Solar Panel' },
     { key: 'inverter', label: 'Inverter' },
     { key: 'battery', label: 'Battery' },
-    { key: 'mounting', label: 'Mounting' },
-    { key: 'cable', label: 'Cable' },
-    { key: 'accessories', label: 'Accessories' },
-    { key: 'services', label: 'Services' }
 ];
 
-// Accessories is naturally a basket of several distinct small items
-// (connectors, tape, lugs, breakers...) needed together, and a quotation
-// can just as easily need several DIFFERENT services at once (e.g.
-// Installation & Labor plus a System Upgrade) — every other category is
-// a single physical choice per quotation, so only these two get a button
-// to add more rows, and their rows can be removed outright since another
-// can always be added back. A single-row category's row can only be
-// cleared back to "None", never removed, since there'd be no way to bring
-// it back without an "Add" button.
-const MULTI_ITEM_CATEGORIES = ['accessories', 'services'];
-
-// Services aren't physical stock, so they don't belong in Inventory — this
-// is a fixed list rather than a category pulled from inventoryItems.
-// Priced at 0 by default: labor/service cost is quoted per job, not a
-// fixed catalog price, so staff fill in the actual amount per quotation.
-const SERVICE_OPTIONS = [
-    'Site Survey & Assessment',
-    'System Design & Engineering',
-    'Installation & Labor',
-    'Permit Processing & Documentation',
-    'Grid Connection & System Testing',
-    'Customer Training & Handover',
-    'System Upgrade',
-    'Maintenance Service',
-    'Annual Maintenance Service'
-];
+// No category here needs more than one row anymore (that was Accessories'
+// and Services' job, both removed) — kept as an array so the "+Add"
+// checks elsewhere stay valid without touching that logic.
+const MULTI_ITEM_CATEGORIES = [];
 
 function categoryItemSource(categoryKey) {
-    return categoryKey === 'services'
-        ? SERVICE_OPTIONS.map(name => ({ item_name: name, unit_price: 0 }))
-        : inventoryItems.filter(inv => inv.category === categoryKey);
+    return inventoryItems.filter(inv => inv.category === categoryKey);
 }
 
 function buildCategoryOptions(categoryKey, selectedDesc) {
@@ -479,9 +449,6 @@ function buildCategoryOptions(categoryKey, selectedDesc) {
 // category, so editing an existing quotation re-populates every row.
 function findExistingItemsForCategory(categoryKey, existingItems) {
     if (!existingItems || !existingItems.length) return [];
-    if (categoryKey === 'services') {
-        return existingItems.filter(it => SERVICE_OPTIONS.includes(it.description));
-    }
     return existingItems.filter(it => {
         const inv = inventoryItems.find(i => i.item_name === it.description);
         return inv && inv.category === categoryKey;
@@ -516,8 +483,21 @@ function buildItemRowHtml(categoryKey, existingItem) {
     `;
 }
 
+// Quotations built from an Energy Assessment (or an older version of this
+// form) can carry Mounting/Cable/Accessories/Services line items that no
+// longer have a picker section here. They're kept out of sight but NOT
+// discarded — re-saving a quotation like that must not silently delete
+// them just because this form got simpler.
+let unmanagedQuotationItems = [];
+
 function renderItemRows(existingItems) {
     const container = document.getElementById('itemsContainer');
+    const managedKeys = new Set(QUOTATION_ROW_CATEGORIES.map(c => c.key));
+    unmanagedQuotationItems = (existingItems || []).filter(it => {
+        const inv = inventoryItems.find(i => i.item_name === it.description);
+        return !(inv && managedKeys.has(inv.category));
+    });
+
     container.innerHTML = QUOTATION_ROW_CATEGORIES.map(cat => {
         const existingForCat = findExistingItemsForCategory(cat.key, existingItems);
         const rowsHtml = (existingForCat.length ? existingForCat : [null])
@@ -535,6 +515,14 @@ function renderItemRows(existingItems) {
             </div>
         `;
     }).join('');
+
+    if (unmanagedQuotationItems.length > 0) {
+        container.insertAdjacentHTML('beforeend', `
+            <p style="font-size:11px;color:#94a3b8;margin-top:4px"><i class="fas fa-circle-info"></i>
+                This quotation also includes ${unmanagedQuotationItems.length} supporting item(s) (mounting/cable/accessories) not shown here — they're kept as-is when you save.</p>
+        `);
+    }
+
     calculateTotal();
 }
 
@@ -566,7 +554,10 @@ function clearItemRow(btn) {
 }
 
 function calculateTotal() {
-    let subtotal = 0;
+    // Includes the hidden carried-over items (see unmanagedQuotationItems)
+    // so the displayed total still matches what actually gets saved.
+    let subtotal = unmanagedQuotationItems.reduce((sum, it) =>
+        sum + (parseFloat(it.quantity) || 0) * (parseFloat(it.unit_price) || 0), 0);
     document.querySelectorAll('.item-row').forEach(row => {
         const qty   = parseFloat(row.querySelector('.item-qty')?.value)   || 0;
         const price = parseFloat(row.querySelector('.item-price')?.value) || 0;
@@ -646,8 +637,16 @@ function closeQuotationModal() {
 
 async function saveQuotation() {
     const id = document.getElementById('quotationId').value;
-    const items = [];
-    
+    // Carry forward whatever supporting items this quotation already had
+    // (see renderItemRows) — this form no longer shows them, but saving
+    // must not delete them.
+    const items = unmanagedQuotationItems.map(it => ({
+        description: it.description,
+        quantity: parseFloat(it.quantity) || 0,
+        unit_price: parseFloat(it.unit_price) || 0,
+        amount: (parseFloat(it.quantity) || 0) * (parseFloat(it.unit_price) || 0)
+    }));
+
     document.querySelectorAll('.item-row').forEach(row => {
         const desc = row.querySelector('.item-desc')?.value;
         if (desc) {
