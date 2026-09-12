@@ -2849,6 +2849,19 @@ body {
 .gmModal-icon.danger { background: #FEE2E2; color: var(--danger); }
 .gmModal-icon.confirm { background: rgba(16,185,129,.14); color: var(--success); }
 
+/* Left-aligned, scannable list inside an otherwise centered gmModal-msg —
+   used for e.g. the "inventory to deduct" list on quotation approval,
+   which reads as a confusing run-on sentence when centered/wrapped. */
+.gmModal-msg .deduction-intro { margin-bottom: 10px; }
+.gmModal-msg .deduction-list {
+    text-align: left;
+    margin: 0 auto;
+    max-width: 320px;
+    padding-left: 20px;
+    font-size: 0.85rem;
+}
+.gmModal-msg .deduction-list li { margin-bottom: 5px; }
+
 .gmModal-title {
     font-size: 1.1rem;
     font-weight: 700;

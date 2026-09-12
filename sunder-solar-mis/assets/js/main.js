@@ -175,7 +175,7 @@ function initRipple() {
  * options: { confirmText, title, danger }
  */
 function showConfirmModal(message, onConfirm, options = {}) {
-    const { confirmText = 'Delete', title = 'Are you sure?', danger = true } = options;
+    const { confirmText = 'Delete', title = 'Are you sure?', danger = true, html = false } = options;
     const modal     = document.getElementById('gmConfirm');
     const titleEl   = document.getElementById('gmConfirmTitle');
     const msgEl     = document.getElementById('gmConfirmMsg');
@@ -192,7 +192,10 @@ function showConfirmModal(message, onConfirm, options = {}) {
     }
 
     titleEl.textContent = title;
-    msgEl.textContent   = message;
+    // html:true lets a caller pass pre-built, already-escaped markup (e.g. a
+    // proper bulleted list) instead of one run-on plain-text sentence.
+    // Off by default so every existing plain-text caller is unaffected.
+    if (html) { msgEl.innerHTML = message; } else { msgEl.textContent = message; }
     okBtn.textContent   = confirmText;
     okBtn.className     = `btn ${danger ? 'btn-danger' : 'btn-primary'}`;
 

@@ -881,7 +881,7 @@ async function approveQuotation(id) {
     const quotation = quotations.find(q => q.id === id);
     const name = quotation?.quotation_number || 'this quotation';
 
-    let deductionSummary = 'No inventory items on this quotation — services only.';
+    let deductionHtml = '<p class="deduction-intro">No inventory items on this quotation — services only.</p>';
     try {
         const res = await fetch(`../api/quotations-api.php?id=${id}`);
         const result = await res.json();
@@ -890,14 +890,15 @@ async function approveQuotation(id) {
             .map(item => ({ ...item, inv: inventoryItems.find(inv => inv.item_name === item.description) }))
             .filter(item => item.inv);
         if (deductions.length > 0) {
-            deductionSummary = 'Inventory to deduct: ' + deductions.map(d => `${d.description} ×${d.quantity}`).join(', ') + '.';
+            const rows = deductions.map(d => `<li>${escapeHtml(d.description)} &times; ${d.quantity}</li>`).join('');
+            deductionHtml = `<p class="deduction-intro">Inventory to deduct:</p><ul class="deduction-list">${rows}</ul>`;
         }
     } catch (e) {
-        deductionSummary = 'Inventory will be deducted for whatever matches on approval.';
+        deductionHtml = '<p class="deduction-intro">Inventory will be deducted for whatever matches on approval.</p>';
     }
 
     showConfirmModal(
-        `Approve "${name}"? This creates the installation and task list and deducts stock. ${deductionSummary}`,
+        `<p class="deduction-intro">Approve "${escapeHtml(name)}"? This creates the installation and task list and deducts stock.</p>${deductionHtml}`,
         async () => {
             try {
                 const response = await fetch('../api/approve-quotation.php', {
@@ -916,7 +917,7 @@ async function approveQuotation(id) {
                 showToast('Error approving quotation', 'error');
             }
         },
-        { title: 'Approve Quotation', confirmText: 'Approve', danger: false }
+        { title: 'Approve Quotation', confirmText: 'Approve', danger: false, html: true }
     );
 }
 
