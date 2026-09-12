@@ -52,6 +52,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
                 if (hasPermission('customers', 'edit')) {
                     $supabase->update('customers', $id, $data);
                     logActivity($_SESSION['user_id'], 'update', 'customers', "Updated customer ID: $id");
+
+                    // Keep any Installation(s) already on file for this
+                    // customer in sync with their address/city/province —
+                    // the owner updates the customer once, not each
+                    // installation separately. Comma-joins whichever of the
+                    // three are actually filled in.
+                    $fullAddress = implode(', ', array_filter([
+                        $data['address'],
+                        $data['city'],
+                        $data['state'],
+                    ], fn($part) => $part !== ''));
+                    if ($fullAddress !== '') {
+                        $installations = $supabase->getAll('installations', ['customer_id' => 'eq.' . $id]) ?: [];
+                        foreach ($installations as $installation) {
+                            $supabase->update('installations', $installation['id'], [
+                                'location' => $fullAddress,
+                                'updated_at' => date('Y-m-d H:i:s'),
+                            ]);
+                        }
+                    }
+
                     echo json_encode(['success' => true, 'message' => 'Customer updated successfully']);
                 } else {
                     echo json_encode(['success' => false, 'message' => 'Permission denied']);
@@ -181,13 +202,13 @@ include_once __DIR__ . '/../includes/header.php';
                         <input type="text" id="customerCity" class="form-control">
                     </div>
                     <div class="form-group">
-                        <label class="form-label">State</label>
+                        <label class="form-label">Province</label>
                         <input type="text" id="customerState" class="form-control">
                     </div>
                 </div>
                 <div class="grid-cols-2">
                     <div class="form-group">
-                        <label class="form-label">Pincode</label>
+                        <label class="form-label">Postal Code</label>
                         <input type="text" id="customerPincode" class="form-control">
                     </div>
                     <div class="form-group">
@@ -415,8 +436,8 @@ function viewCustomer(id) {
         { label: 'Phone',          value: c.phone },
         { label: 'Address',        value: c.address },
         { label: 'City',           value: c.city },
-        { label: 'State',          value: c.state },
-        { label: 'Pincode',        value: c.pincode },
+        { label: 'Province',      value: c.state },
+        { label: 'Postal Code',   value: c.pincode },
         { label: 'GSTIN',          value: c.gstin },
         { label: 'Type',           value: c.type },
         { label: 'Status',         value: c.status },
