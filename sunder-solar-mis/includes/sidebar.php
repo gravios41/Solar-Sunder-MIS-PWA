@@ -49,17 +49,18 @@ function isActive($page) {
         <div class="sidebar-divider"></div>
         <?php endif; ?>
 
-        <!-- CRM & Sales -->
+        <!-- CRM & Sales — ordered to follow the actual workflow: assess the
+             site, quote it, open the project, then the customer record. -->
         <div class="sidebar-section">
             <div class="sidebar-section-title">CRM &amp; Sales</div>
 
-            <?php if (hasPermission('customers', 'view')): ?>
+            <?php if (hasPermission('energy-assessments', 'view')): ?>
             <div class="nav-item">
-                <a href="<?php echo htmlspecialchars($appBasePath); ?>modules/customers.php"
-                   class="nav-link <?= isActive('customers.php') ?>"
-                   data-tooltip="Customers">
-                    <i class="fas fa-users nav-icon"></i>
-                    <span>Customers</span>
+                <a href="<?php echo htmlspecialchars($appBasePath); ?>modules/energy-assessments.php"
+                   class="nav-link <?= isActive('energy-assessments.php') ?>"
+                   data-tooltip="Energy Assessments">
+                    <i class="fas fa-bolt nav-icon"></i>
+                    <span>Energy Assessments</span>
                 </a>
             </div>
             <?php endif; ?>
@@ -73,13 +74,22 @@ function isActive($page) {
                 </a>
             </div>
 
-            <?php if (hasPermission('energy-assessments', 'view')): ?>
             <div class="nav-item">
-                <a href="<?php echo htmlspecialchars($appBasePath); ?>modules/energy-assessments.php"
-                   class="nav-link <?= isActive('energy-assessments.php') ?>"
-                   data-tooltip="Energy Assessments">
-                    <i class="fas fa-bolt nav-icon"></i>
-                    <span>Energy Assessments</span>
+                <a href="<?php echo htmlspecialchars($appBasePath); ?>modules/projects.php"
+                   class="nav-link <?= isActive('projects.php') ?>"
+                   data-tooltip="Projects">
+                    <i class="fas fa-solar-panel nav-icon"></i>
+                    <span>Projects</span>
+                </a>
+            </div>
+
+            <?php if (hasPermission('customers', 'view')): ?>
+            <div class="nav-item">
+                <a href="<?php echo htmlspecialchars($appBasePath); ?>modules/customers.php"
+                   class="nav-link <?= isActive('customers.php') ?>"
+                   data-tooltip="Customers">
+                    <i class="fas fa-users nav-icon"></i>
+                    <span>Customers</span>
                 </a>
             </div>
             <?php endif; ?>
@@ -90,15 +100,6 @@ function isActive($page) {
         <!-- Operations -->
         <div class="sidebar-section">
             <div class="sidebar-section-title">Operations</div>
-
-            <div class="nav-item">
-                <a href="<?php echo htmlspecialchars($appBasePath); ?>modules/projects.php"
-                   class="nav-link <?= isActive('projects.php') ?>"
-                   data-tooltip="Projects">
-                    <i class="fas fa-solar-panel nav-icon"></i>
-                    <span>Projects</span>
-                </a>
-            </div>
 
             <div class="nav-item">
                 <a href="<?php echo htmlspecialchars($appBasePath); ?>modules/installations.php"
