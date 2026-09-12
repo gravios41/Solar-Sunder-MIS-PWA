@@ -7,7 +7,7 @@ requireAuth();
 checkPageAccess('energy-assessments');
 
 $pageTitle = 'Energy Assessments';
-$pageSubtitle = 'Verify three months of consumption and size a solar system';
+$pageSubtitle = 'Verify a bill and size a solar system';
 include_once __DIR__ . '/../includes/header.php';
 ?>
 
@@ -23,17 +23,12 @@ include_once __DIR__ . '/../includes/header.php';
         <form id="assessmentForm">
             <div class="grid-cols-2">
                 <div class="form-group"><label class="form-label">Customer *</label><select id="customerId" class="form-select" required><option value="">Select Customer</option></select></div>
-                <div class="form-group"><label class="form-label">Panel wattage</label><input id="panelWattage" class="form-control" type="number" value="550" min="100" max="1000"></div>
-            </div>
-            <div class="grid-cols-3">
                 <div class="form-group"><label class="form-label">Peak sun hours</label><input id="peakSunHours" class="form-control" type="number" value="5" min="1" max="10" step="0.1"></div>
-                <div class="form-group"><label class="form-label">System efficiency</label><input id="efficiency" class="form-control" type="number" value="80" min="40" max="100" step="1"><small>Percent</small></div>
-                <div class="form-group"><label class="form-label">Bills required</label><input class="form-control" value="3 months" readonly></div>
             </div>
 
             <!-- OCR Bill Upload Section -->
             <div style="border-top:1px solid #e2e8f0;margin-top:20px;padding-top:20px">
-                <h4 style="margin:0 0 15px">Upload Bill Images for OCR</h4>
+                <h4 style="margin:0 0 15px">Upload Bill Image for OCR</h4>
 
                 <div class="form-group" style="max-width:360px;margin-bottom:18px">
                     <label class="form-label">Solar System Type</label>
@@ -47,19 +42,17 @@ include_once __DIR__ . '/../includes/header.php';
 
                 <div id="billUploadHint" style="margin:-8px 0 15px;font-size:12.5px;color:#F97316"><i class="fas fa-circle-info"></i> Select a customer above before uploading a bill.</div>
                 <div id="billUploadSection">
-                    <div class="grid-cols-3" style="gap:15px">
-                        <?php for ($i = 1; $i <= 3; $i++): ?>
+                    <div style="max-width:280px;gap:15px">
                         <div class="form-group" style="border:2px dashed #cbd5e1;padding:15px;border-radius:8px;text-align:center">
-                            <input type="file" id="billFile<?php echo $i; ?>" class="form-control bill-file-upload" accept="image/jpeg,image/png,image/webp,application/pdf" style="display:none" disabled>
-                            <label for="billFile<?php echo $i; ?>" style="cursor:pointer;display:block">
-                                <div class="form-label" style="margin-bottom:8px">Bill <?php echo $i; ?></div>
+                            <input type="file" id="billFile1" class="form-control bill-file-upload" accept="image/jpeg,image/png,image/webp,application/pdf" style="display:none" disabled>
+                            <label for="billFile1" style="cursor:pointer;display:block">
+                                <div class="form-label" style="margin-bottom:8px">Bill</div>
                                 <i class="fas fa-cloud-upload-alt" style="font-size:24px;color:#94a3b8;margin-bottom:8px;display:block"></i>
                                 <small style="color:#64748b">JPG, PNG, WEBP, or PDF</small>
-                                <div id="billUploadStatus<?php echo $i; ?>" style="margin-top:8px;font-size:12px"></div>
+                                <div id="billUploadStatus1" style="margin-top:8px;font-size:12px"></div>
                             </label>
-                            <button type="button" class="btn btn-sm btn-secondary" style="margin-top:8px;display:none" id="billUploadBtn<?php echo $i; ?>" onclick="uploadBill(<?php echo $i; ?>)"><i class="fas fa-upload"></i> Upload</button>
+                            <button type="button" class="btn btn-sm btn-secondary" style="margin-top:8px;display:none" id="billUploadBtn1" onclick="uploadBill(1)"><i class="fas fa-upload"></i> Upload</button>
                         </div>
-                        <?php endfor; ?>
                     </div>
                 </div>
                 <div id="ocrResultsPanel" style="margin-top:15px;display:none">
@@ -70,9 +63,9 @@ include_once __DIR__ . '/../includes/header.php';
 
             <h4 style="margin:20px 0 10px">Or Enter Manually</h4>
             <div class="table-container"><table class="table manual-bills-table"><thead><tr><th>Billing month</th><th>Consumption (kWh) *</th><th>Amount</th></tr></thead><tbody>
-                <?php for ($i = 0; $i < 3; $i++): ?><tr><td><input class="form-control bill-period" type="month" required></td><td><input class="form-control bill-kwh" type="number" min="0.01" step="0.01" required></td><td><input class="form-control bill-amount" type="number" min="0" step="0.01"></td></tr><?php endfor; ?>
+                <tr><td><input class="form-control bill-period" type="month" required></td><td><input class="form-control bill-kwh" type="number" min="0.01" step="0.01" required></td><td><input class="form-control bill-amount" type="number" min="0" step="0.01"></td></tr>
             </tbody></table></div>
-            <div class="card" style="margin-top:20px;background:#f8fafc"><div class="card-body"><strong>Recommendation preview</strong><div id="recommendation" style="margin-top:8px;color:#475569">Enter the three monthly kWh readings.</div><div id="recommendationItems"></div></div></div>
+            <div class="card" style="margin-top:20px;background:#f8fafc"><div class="card-body"><strong>Recommendation preview</strong><div id="sizingAssumptions" style="margin-top:2px;font-size:12px;color:#64748b"></div><div id="recommendation" style="margin-top:8px;color:#475569">Enter the bill's kWh reading.</div><div id="recommendationItems"></div></div></div>
             <div style="margin-top:20px"><button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Assessment</button></div>
         </form>
     </div>
@@ -130,6 +123,15 @@ function selectReviewTier(key) {
 const billInputs = [...document.querySelectorAll('.bill-kwh')];
 const recommendation = document.getElementById('recommendation');
 
+// Panel wattage and system efficiency are no longer user-editable fields —
+// the sizing math still needs a value for each, so these are the fixed
+// defaults that used to be the inputs' starting values. Not hidden, though:
+// shown right under "Recommendation preview" so the assumption is visible.
+const DEFAULT_EFFICIENCY = 80;   // percent
+const DEFAULT_PANEL_WATTAGE = 550; // watts
+document.getElementById('sizingAssumptions').textContent =
+    `Sizing assumes ${DEFAULT_PANEL_WATTAGE}W panels at ${DEFAULT_EFFICIENCY}% system efficiency.`;
+
 // The actual sizing/matching math lives server-side in
 // buildRecommendationMaterials() (config/functions.php) — the same
 // function create-approved-project.php calls on real approval — so this
@@ -141,17 +143,17 @@ let recommendationPreviewTimer = null;
 function calculateRecommendation() {
     const values = billInputs.map(input => Number(input.value)).filter(value => value > 0);
     const itemsEl = document.getElementById('recommendationItems');
-    if (values.length !== 3) {
-        recommendation.textContent = 'Enter the three monthly kWh readings.';
+    if (values.length !== 1) {
+        recommendation.textContent = "Enter the bill's kWh reading.";
         if (itemsEl) itemsEl.innerHTML = '';
         clearTimeout(recommendationPreviewTimer);
         return null;
     }
 
-    const averageMonthly = values.reduce((sum, value) => sum + value, 0) / 3;
+    const averageMonthly = values[0];
     const sunHours = Number(document.getElementById('peakSunHours').value) || 5;
-    const efficiency = Number(document.getElementById('efficiency').value) || 80;
-    const panelWattage = Number(document.getElementById('panelWattage').value) || 550;
+    const efficiency = DEFAULT_EFFICIENCY;
+    const panelWattage = DEFAULT_PANEL_WATTAGE;
     const systemType = document.getElementById('systemType')?.value || 'hybrid';
 
     recommendation.textContent = 'Calculating…';
@@ -161,9 +163,9 @@ function calculateRecommendation() {
         400
     );
 
-    // Only used as a "did the user finish entering three valid readings?"
-    // gate by the submit handler — the real numbers come from the server
-    // both here (debounced, for preview) and on save (energy-assessments-api.php).
+    // Only used as a "did the user finish entering a valid reading?" gate by
+    // the submit handler — the real numbers come from the server both here
+    // (debounced, for preview) and on save (energy-assessments-api.php).
     return { averageMonthly };
 }
 
@@ -334,7 +336,7 @@ async function uploadBill(billNum) {
 
     // First save a temporary assessment if not yet created
     if (!currentAssessmentId) {
-        const tempBills = [{billing_period: '2025-01-01', consumption_kwh: 0}, {billing_period: '2025-01-01', consumption_kwh: 0}, {billing_period: '2025-01-01', consumption_kwh: 0}];
+        const tempBills = [{billing_period: '2025-01-01', consumption_kwh: 0}];
         const response = await fetch('../api/energy-assessments-api.php', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
@@ -578,8 +580,8 @@ document.getElementById('assessmentForm').addEventListener('submit', async event
         customer_id: document.getElementById('customerId').value,
         bills,
         peak_sun_hours: document.getElementById('peakSunHours').value,
-        system_efficiency: Number(document.getElementById('efficiency').value) / 100,
-        panel_wattage: document.getElementById('panelWattage').value
+        system_efficiency: DEFAULT_EFFICIENCY / 100,
+        panel_wattage: DEFAULT_PANEL_WATTAGE
     };
     // If bills were already scanned via OCR, an assessment placeholder
     // exists for them — finalize that same record instead of creating a
@@ -594,9 +596,7 @@ document.getElementById('assessmentForm').addEventListener('submit', async event
     if (result.success) {
         showToast(result.message);
         event.target.reset();
-        document.getElementById('panelWattage').value = 550;
         document.getElementById('peakSunHours').value = 5;
-        document.getElementById('efficiency').value = 80;
         currentAssessmentId = null;
         ocrBillsData = {};
         document.getElementById('ocrResultsPanel').style.display = 'none';

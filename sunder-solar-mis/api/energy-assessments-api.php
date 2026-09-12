@@ -197,9 +197,9 @@ try {
 }
 
 /**
- * Validates exactly 3 monthly bills and computes the recommended system
- * sizing from their average consumption. Returns ['error' => string] on
- * invalid input, or the computed assessment fields.
+ * Validates exactly 1 bill and computes the recommended system sizing from
+ * its consumption. Returns ['error' => string] on invalid input, or the
+ * computed assessment fields.
  *
  * $allowZeroKwh exists only for the OCR-upload placeholder bootstrap,
  * which needs a real assessment row to attach scanned images to before
@@ -207,8 +207,8 @@ try {
  * false so a genuine zero-kWh bill is rejected.
  */
 function computeAssessmentSizing($bills, $peakSunHours, $efficiency, $panelWattage, $allowZeroKwh) {
-    if (count($bills) !== 3) {
-        return ['error' => 'Exactly three bills are required'];
+    if (count($bills) !== 1) {
+        return ['error' => 'Exactly one bill is required'];
     }
 
     if (count(array_filter($bills, static fn($bill) => empty($bill['billing_period']))) > 0) {
