@@ -311,7 +311,7 @@ function buildRecommendationMaterials($supabase, $requestedPanelWattage, $system
     $items[] = [
         'inventory_id' => $bestPanel['id'] ?? null,
         'item_name' => $bestPanel['item_name'] ?? ('Solar Panels ' . $requestedPanelWattage . 'W'),
-        'category' => 'panel',
+        'category' => 'solar_panel',
         'quantity' => $panelCount,
         'unit_price' => $panelUnitPrice,
         'total_price' => $panelUnitPrice * $panelCount,
