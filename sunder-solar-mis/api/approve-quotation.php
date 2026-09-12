@@ -42,12 +42,47 @@ try {
         throw new Exception('This quotation is already approved');
     }
 
-    $customerId = $quotation['customer_id'];
-    $customer = $supabase->getById('customers', $customerId);
     $quotationItems = $supabase->getAll('quotation_items', ['quotation_id' => 'eq.' . $quotationId]) ?: [];
 
     if (empty($quotationItems)) {
         throw new Exception('This quotation has no line items to approve');
+    }
+
+    // This is the moment a brand-new client becomes a real Customer record —
+    // the quotation only had a name (and maybe contact details) until now.
+    // An already-existing customer (quotation created manually, or for a
+    // client already in the Customers module) skips straight past this.
+    $customerId = $quotation['customer_id'] ?? null;
+    $customer = $customerId ? $supabase->getById('customers', $customerId) : null;
+    $customerCreated = false;
+
+    if (!$customerId) {
+        $clientName = trim($quotation['client_name'] ?? '');
+        if ($clientName === '') {
+            throw new Exception('This quotation has no customer and no client name on file — cannot approve');
+        }
+        $customerData = [
+            'customer_code' => generateCode('CUST'),
+            'name' => $clientName,
+            'phone' => $quotation['client_phone'] ?? null,
+            'email' => $quotation['client_email'] ?? null,
+            'address' => $quotation['client_address'] ?? null,
+            'type' => 'residential',
+            'status' => 'active',
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ];
+        $customerResponse = $supabase->insert('customers', $customerData);
+        $customer = $customerResponse[0] ?? $customerResponse;
+        $customerId = $customer['id'] ?? null;
+
+        if (!$customerId) {
+            throw new Exception('Failed to create a Customer record for this client');
+        }
+        $customerCreated = true;
+
+        $supabase->update('quotations', $quotationId, ['customer_id' => $customerId]);
+        logActivity($_SESSION['user_id'], 'create', 'customers', "Created customer: $clientName (from approved quotation {$quotation['quotation_number']})");
     }
 
     // Use the quotation's existing project if it has one; otherwise this
@@ -277,13 +312,16 @@ try {
         'updated_at' => date('Y-m-d H:i:s')
     ]);
 
-    // If this quotation traces back to an energy assessment (same
-    // project), close that out too. status stays 'quoted' — that check
-    // constraint's allowed values don't include 'approved' — but
-    // approval_status is the field the UI actually reads for this.
-    $linkedAssessments = $supabase->getAll('energy_assessments', ['project_id' => 'eq.' . $projectId]) ?: [];
+    // If this quotation traces back to an energy assessment, close that out
+    // too — link it to the now-real project and customer, and mark it
+    // approved. status stays 'quoted' — that check constraint's allowed
+    // values don't include 'approved' — but approval_status is the field
+    // the UI actually reads for this.
+    $linkedAssessments = $supabase->getAll('energy_assessments', ['quotation_id' => 'eq.' . $quotationId]) ?: [];
     if (!empty($linkedAssessments)) {
         $supabase->update('energy_assessments', $linkedAssessments[0]['id'], [
+            'project_id' => $projectId,
+            'customer_id' => $customerId,
             'approval_status' => 'approved'
         ]);
     }
@@ -292,8 +330,12 @@ try {
 
     echo json_encode([
         'success' => true,
-        'message' => 'Quotation approved — inventory deducted, installation scheduled, and tasks created.',
+        'message' => $customerCreated
+            ? 'Quotation approved — customer record created, inventory deducted, installation scheduled, and tasks created.'
+            : 'Quotation approved — inventory deducted, installation scheduled, and tasks created.',
         'created' => [
+            'customer_id' => $customerId,
+            'customer_created' => $customerCreated,
             'project_id' => $projectId,
             'project_code' => $projectCode,
             'installation_id' => $installationId,

@@ -106,10 +106,11 @@ include_once __DIR__ . '/../includes/header.php';
 
                 <!-- Section: Customer & Project -->
                 <div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid #F3F4F6">
-                    <div class="grid-cols-2">
+                    <!-- Shown for quotations tied to an existing Customer record -->
+                    <div id="customerFieldsSection" class="grid-cols-2">
                         <div class="form-group">
                             <label class="form-label">Customer *</label>
-                            <select id="customerId" class="form-select" required onchange="loadProjectsForCustomer()">
+                            <select id="customerId" class="form-select" onchange="loadProjectsForCustomer()">
                                 <option value="">Select Customer</option>
                             </select>
                         </div>
@@ -119,6 +120,32 @@ include_once __DIR__ . '/../includes/header.php';
                                 <option value="">Select Project (Optional)</option>
                             </select>
                         </div>
+                    </div>
+                    <!-- Shown instead, for a draft quotation from Energy Assessments whose
+                         client has no Customer record yet — one is created automatically
+                         when this quotation is approved. -->
+                    <div id="clientNameFieldsSection" style="display:none">
+                        <div class="grid-cols-2">
+                            <div class="form-group">
+                                <label class="form-label">Client Name *</label>
+                                <input type="text" id="clientNameField" class="form-control" placeholder="Full name">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Phone</label>
+                                <input type="tel" id="clientPhoneField" class="form-control">
+                            </div>
+                        </div>
+                        <div class="grid-cols-2">
+                            <div class="form-group">
+                                <label class="form-label">Email</label>
+                                <input type="email" id="clientEmailField" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Address</label>
+                                <input type="text" id="clientAddressField" class="form-control">
+                            </div>
+                        </div>
+                        <p style="font-size:11px;color:#94a3b8;margin:-4px 0 12px"><i class="fas fa-circle-info"></i> No Customer record exists yet for this client — one is created automatically when this quotation is approved.</p>
                     </div>
                     <div class="grid-cols-2">
                         <div class="form-group" style="margin-bottom:0">
@@ -189,6 +216,10 @@ include_once __DIR__ . '/../includes/header.php';
         </div>
     </div>
 </div>
+
+<!-- One-click PDF download for the quotation — client-side generation, no server changes needed -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
 <script>
 let quotations = [];
@@ -306,6 +337,9 @@ function renderQuotations() {
                 <div style="display:flex;align-items:center;gap:6px">
                     <button onclick="viewQuotation(${q.id})" class="btn-icon" title="View">
                         <i class="fas fa-eye" style="color:#3B82F6"></i>
+                    </button>
+                    <button onclick="downloadQuotationPdf(${q.id})" class="btn-icon" title="Download PDF">
+                        <i class="fas fa-file-pdf" style="color:#DC2626"></i>
                     </button>
                     ${(USER_ROLE === 'super_admin' || USER_ROLE === 'owner') && q.status !== 'approved' ? `
                     <button onclick="approveQuotation(${q.id})" class="btn-icon" title="Approve — deducts inventory and creates the installation and tasks">
@@ -508,13 +542,36 @@ function calculateTotal() {
     document.getElementById('totalAmount').value = formatCurrency(total);
 }
 
+// True while the modal is editing a quotation that has no Customer record
+// yet (created from an Energy Assessment for a not-yet-existing client) —
+// toggles which of the two field sections above is active/validated.
+let editingClientOnly = false;
+
+function setQuotationCustomerMode(isClientOnly) {
+    editingClientOnly = isClientOnly;
+    document.getElementById('customerFieldsSection').style.display = isClientOnly ? 'none' : '';
+    document.getElementById('clientNameFieldsSection').style.display = isClientOnly ? 'block' : 'none';
+    document.getElementById('customerId').required = !isClientOnly;
+}
+
 function openQuotationModal(quotation = null) {
     if (quotation) {
         document.getElementById('modalTitle').textContent = 'Edit Quotation';
         document.getElementById('quotationId').value = quotation.id;
-        document.getElementById('customerId').value = quotation.customer_id;
-        loadProjectsForCustomer();
-        document.getElementById('projectId').value = quotation.project_id || '';
+
+        if (!quotation.customer_id && quotation.client_name) {
+            setQuotationCustomerMode(true);
+            document.getElementById('clientNameField').value = quotation.client_name || '';
+            document.getElementById('clientPhoneField').value = quotation.client_phone || '';
+            document.getElementById('clientEmailField').value = quotation.client_email || '';
+            document.getElementById('clientAddressField').value = quotation.client_address || '';
+        } else {
+            setQuotationCustomerMode(false);
+            document.getElementById('customerId').value = quotation.customer_id;
+            loadProjectsForCustomer();
+            document.getElementById('projectId').value = quotation.project_id || '';
+        }
+
         document.getElementById('quotationDate').value = quotation.quotation_date;
         document.getElementById('validUntil').value = quotation.valid_until;
         document.getElementById('status').value = quotation.status;
@@ -524,6 +581,7 @@ function openQuotationModal(quotation = null) {
         document.getElementById('modalTitle').textContent = 'Add New Quotation';
         document.getElementById('quotationForm').reset();
         document.getElementById('quotationId').value = '';
+        setQuotationCustomerMode(false);
         document.getElementById('quotationDate').value = new Date().toISOString().split('T')[0];
         const validUntil = new Date();
         validUntil.setDate(validUntil.getDate() + 30);
@@ -559,8 +617,6 @@ async function saveQuotation() {
     const totalAmount = parseFloat(totalAmountStr.replace(/[^0-9.-]+/g, '')) || 0;
     
     const data = {
-        customer_id: parseInt(document.getElementById('customerId').value),
-        project_id: document.getElementById('projectId').value ? parseInt(document.getElementById('projectId').value) : null,
         quotation_date: document.getElementById('quotationDate').value,
         valid_until: document.getElementById('validUntil').value,
         total_amount: totalAmount,
@@ -569,10 +625,23 @@ async function saveQuotation() {
         notes: document.getElementById('notes').value,
         items: items
     };
-    
-    if (!data.customer_id) {
-        showToast('Please select a customer', 'error');
-        return;
+
+    if (editingClientOnly) {
+        data.client_name = document.getElementById('clientNameField').value.trim();
+        data.client_phone = document.getElementById('clientPhoneField').value.trim();
+        data.client_email = document.getElementById('clientEmailField').value.trim();
+        data.client_address = document.getElementById('clientAddressField').value.trim();
+        if (!data.client_name) {
+            showToast('Please enter the client\'s name', 'error');
+            return;
+        }
+    } else {
+        data.customer_id = parseInt(document.getElementById('customerId').value);
+        data.project_id = document.getElementById('projectId').value ? parseInt(document.getElementById('projectId').value) : null;
+        if (!data.customer_id) {
+            showToast('Please select a customer', 'error');
+            return;
+        }
     }
     
     const url = id ? `../api/quotations-api.php?id=${id}` : '../api/quotations-api.php';
@@ -667,6 +736,111 @@ async function editQuotation(id) {
         }
     } catch (error) {
         showToast('Error loading quotation', 'error');
+    }
+}
+
+// One-click PDF — built entirely client-side (jsPDF + autotable) from the
+// same data the View/Edit modals use, so what the client receives always
+// matches what's on screen. No server-side PDF library needed.
+async function downloadQuotationPdf(id) {
+    try {
+        const response = await fetch(`../api/quotations-api.php?id=${id}`);
+        const result = await response.json();
+        if (!result.success || !result.data) {
+            showToast('Error loading quotation for PDF', 'error');
+            return;
+        }
+        const q = result.data;
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        // Header band
+        doc.setFillColor(249, 115, 22);
+        doc.rect(0, 0, 210, 28, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(16);
+        doc.setFont(undefined, 'bold');
+        doc.text('Sunder Solar Energy', 14, 13);
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'normal');
+        doc.text('Solar PV Quotation', 14, 20);
+        doc.setFontSize(13);
+        doc.setFont(undefined, 'bold');
+        doc.text(q.quotation_number || '', 196, 16, { align: 'right' });
+
+        doc.setTextColor(30, 41, 59);
+        let y = 38;
+        doc.setFontSize(11);
+        doc.setFont(undefined, 'bold');
+        doc.text('Prepared for:', 14, y);
+        doc.setFont(undefined, 'normal');
+        doc.text(q.customer_name || q.client_name || 'Client', 45, y);
+        y += 6;
+        if (q.client_phone) { doc.text(`Phone: ${q.client_phone}`, 14, y); y += 6; }
+        if (q.client_email) { doc.text(`Email: ${q.client_email}`, 14, y); y += 6; }
+        if (q.client_address) { doc.text(`Address: ${q.client_address}`, 14, y); y += 6; }
+
+        doc.setFont(undefined, 'bold');
+        doc.text('Quotation Date:', 130, 38);
+        doc.setFont(undefined, 'normal');
+        doc.text(q.quotation_date ? formatDate(q.quotation_date) : '-', 168, 38);
+        doc.setFont(undefined, 'bold');
+        doc.text('Valid Until:', 130, 44);
+        doc.setFont(undefined, 'normal');
+        doc.text(q.valid_until ? formatDate(q.valid_until) : '-', 168, 44);
+
+        y = Math.max(y, 50) + 4;
+
+        const items = q.items || [];
+        const rows = items.map(item => [
+            item.description || '',
+            String(item.quantity ?? ''),
+            formatCurrency(item.unit_price),
+            formatCurrency((parseFloat(item.quantity) || 0) * (parseFloat(item.unit_price) || 0))
+        ]);
+        doc.autoTable({
+            startY: y,
+            head: [['Description', 'Qty', 'Unit Price', 'Amount']],
+            body: rows,
+            theme: 'grid',
+            headStyles: { fillColor: [249, 115, 22], textColor: 255 },
+            styles: { fontSize: 9 },
+            columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' }, 3: { halign: 'right' } }
+        });
+
+        const subtotal = items.reduce((s, item) => s + (parseFloat(item.quantity) || 0) * (parseFloat(item.unit_price) || 0), 0);
+        const tax = subtotal * 0.18;
+        let ty = doc.lastAutoTable.finalY + 8;
+        doc.setFontSize(10);
+        const totalsLine = (label, value, bold) => {
+            doc.setFont(undefined, bold ? 'bold' : 'normal');
+            doc.text(label, 140, ty);
+            doc.text(value, 196, ty, { align: 'right' });
+            ty += 6;
+        };
+        totalsLine('Subtotal', formatCurrency(subtotal), false);
+        totalsLine('Tax (18%)', formatCurrency(tax), false);
+        totalsLine('Total Amount', formatCurrency(q.total_amount), true);
+
+        if (q.notes) {
+            ty += 6;
+            doc.setFont(undefined, 'bold');
+            doc.setFontSize(10);
+            doc.text('Notes', 14, ty);
+            ty += 5;
+            doc.setFont(undefined, 'normal');
+            const noteLines = doc.splitTextToSize(q.notes, 180);
+            doc.text(noteLines, 14, ty);
+        }
+
+        doc.setFontSize(8);
+        doc.setTextColor(148, 163, 184);
+        doc.text('This quotation is an estimate and subject to final site assessment.', 14, 287);
+
+        doc.save(`${q.quotation_number || 'Quotation'}.pdf`);
+    } catch (error) {
+        console.error('PDF generation error:', error);
+        showToast('Error generating PDF', 'error');
     }
 }
 

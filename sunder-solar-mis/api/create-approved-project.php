@@ -1,13 +1,17 @@
 <?php
 /**
- * Create Project + Draft Quotation from an Energy Assessment
+ * Create a Draft Quotation from an Energy Assessment
  *
- * Approving an assessment only gets you this far: a Project container and
- * a DRAFT Quotation pre-filled with the system's recommendation. Nothing
- * is deducted from inventory and no Installation/Tasks exist yet — that
- * only happens once the quotation itself is reviewed (line items can be
- * added/changed/removed in the Quotations module) and then approved via
- * api/approve-quotation.php. See that file for the rest of the flow.
+ * Despite the filename (kept to avoid touching every caller), this no
+ * longer creates a Project. Saving a tier here only produces a DRAFT
+ * Quotation pre-filled with the system's recommendation — no Customer
+ * record exists yet either if this assessment was for a not-yet-existing
+ * client (customer_id null, client_name set instead). Nothing is deducted
+ * from inventory, and no Project/Customer/Installation/Tasks exist until
+ * that quotation is reviewed (line items can be added/changed/removed in
+ * the Quotations module) and then approved via api/approve-quotation.php —
+ * THAT is the step that creates the Customer, the Project, deducts
+ * inventory, and schedules the installation. See that file for the rest.
  */
 
 header('Content-Type: application/json');
@@ -53,12 +57,14 @@ try {
     // single() always returns a bare row or null (never a list to unwrap)
     $assessment = $assessments;
 
-    if (!empty($assessment['project_id'])) {
-        throw new Exception('This assessment already has a project — check the Projects module instead of approving again');
+    if (!empty($assessment['quotation_id'])) {
+        throw new Exception('This assessment already has a quotation — check the Quotations module instead of saving again');
     }
 
-    $customerId = $assessment['customer_id'];
-    $customer = $supabase->getById('customers', $customerId);
+    $customerId = $assessment['customer_id'] ?? null;
+    $clientName = $assessment['client_name'] ?? null;
+    $customer = $customerId ? $supabase->getById('customers', $customerId) : null;
+    $displayName = $customer['name'] ?? $clientName ?? 'Client';
 
     // Build the full bill of materials from real inventory, matched against
     // actual specs (wattage/kW/kWh parsed from each item's `specification`
@@ -97,37 +103,11 @@ try {
     $laborCost = $totalSystemCost * 0.15; // 15% for labor
     $totalQuotationPrice = $totalSystemCost + $laborCost;
 
-    // Create project first — quotations reference project_id, not the other way around
-    $projectData = [
-        'customer_id' => $customerId,
-        'project_code' => generateSequentialCode($supabase, 'projects', 'project_code', 'PRJ'),
-        'project_name' => sprintf('%s - Solar Installation %.2f kW', $customer['name'] ?? 'Customer', $assessment['recommended_system_kw']),
-        // The owner is always the project manager at this company — no
-        // manual input needed, ever.
-        'manager' => getOwnerFullName($supabase),
-        'status' => 'planning',
-        'progress' => 0,
-        'estimated_cost' => round($totalQuotationPrice, 2),
-        'start_date' => date('Y-m-d', strtotime('+7 days')),
-        'expected_end_date' => date('Y-m-d', strtotime('+21 days')),
-        'created_at' => date('Y-m-d H:i:s'),
-        'updated_at' => date('Y-m-d H:i:s')
-    ];
-
-    $projectResponse = $supabase->insert('projects', $projectData);
-    $project = $projectResponse[0] ?? $projectResponse;
-    $projectId = $project['id'] ?? null;
-
-    if (!$projectId) {
-        throw new Exception('Failed to create project');
-    }
-
-    // Update assessment with project link — status stays short of
-    // 'approved' until the quotation itself is approved (see
-    // approve-quotation.php), since that's the point real commitments
-    // (inventory deduction, installation, tasks) actually get made
+    // No Project yet — quotations.project_id stays null until this
+    // quotation is approved. Mark the assessment 'quoted' so it's no
+    // longer offered for another "Save & Create Quotation" pass, but its
+    // approval_status stays 'pending' until the quotation is approved.
     $supabase->update('energy_assessments', $assessmentId, [
-        'project_id' => $projectId,
         'status' => 'quoted',
         'approval_status' => 'pending',
         'approved_by' => $_SESSION['user_id'],
@@ -139,7 +119,8 @@ try {
 
     $quotationData = [
         'customer_id' => $customerId,
-        'project_id' => $projectId,
+        'client_name' => $customerId ? null : $clientName,
+        'project_id' => null,
         'quotation_number' => generateSequentialCode($supabase, 'quotations', 'quotation_number', "Q-$year"),
         'status' => 'draft',
         'total_amount' => round($totalQuotationPrice, 2),
@@ -148,7 +129,7 @@ try {
         'valid_until' => date('Y-m-d', strtotime('+30 days')),
         'notes' => sprintf(
             "Solar PV System for %s\nRecommendation tier: %s\nRecommended size: %.2f kW\nPanel count: %d x %dW\nAverage consumption: %.2f kWh/month",
-            $customer['name'] ?? 'Customer',
+            $displayName,
             ['budget' => 'Budget-Friendly', 'luxury' => 'Luxury'][$tier] ?? 'Actual Recommendation',
             $assessment['recommended_system_kw'],
             $materials['panel_count'],
@@ -166,6 +147,10 @@ try {
     if (!$quotationId) {
         throw new Exception('Failed to create quotation');
     }
+
+    // Link the assessment to its quotation. project_id stays null on both
+    // until approve-quotation.php creates the real project at approval time.
+    $supabase->update('energy_assessments', $assessmentId, ['quotation_id' => $quotationId]);
 
     // Quotation line items — equipment plus labor. Staff can still edit,
     // add, or remove these in the Quotations module before approving it.
@@ -186,14 +171,12 @@ try {
         'amount' => round($laborCost, 2)
     ]);
 
-    logActivity($_SESSION['user_id'], 'create', 'projects', "Created project and draft quotation from approved assessment");
+    logActivity($_SESSION['user_id'], 'create', 'quotations', "Created draft quotation from assessment for $displayName");
 
     echo json_encode([
         'success' => true,
-        'message' => 'Created project and draft quotation. Review the quotation and approve it to deduct inventory and schedule installation.',
+        'message' => 'Draft quotation created. Review it in the Quotations module, download the PDF to send to the client, then approve it once they accept.',
         'created' => [
-            'project_id' => $projectId,
-            'project_code' => $projectData['project_code'],
             'quotation_id' => $quotationId,
             'quotation_number' => $quotationData['quotation_number'],
             'total_cost' => $totalQuotationPrice,

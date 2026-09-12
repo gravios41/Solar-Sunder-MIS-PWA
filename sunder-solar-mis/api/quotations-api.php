@@ -54,11 +54,13 @@ function handleGetQuotations() {
                 // Get quotation items
                 $items = $supabase->getAll('quotation_items', ['quotation_id' => 'eq.' . $id]);
                 $quotation['items'] = $items ?: [];
-                
-                // Get customer name
-                $customer = $supabase->getById('customers', $quotation['customer_id']);
-                $quotation['customer_name'] = $customer ? $customer['name'] : 'Unknown';
-                
+
+                // Get customer name — a brand-new client has no Customer
+                // record yet (customer_id null), so fall back to the raw
+                // client_name captured on the quotation until it's approved.
+                $customer = $quotation['customer_id'] ? $supabase->getById('customers', $quotation['customer_id']) : null;
+                $quotation['customer_name'] = $customer ? $customer['name'] : ($quotation['client_name'] ?: 'Unknown');
+
                 // Get project name
                 if ($quotation['project_id']) {
                     $project = $supabase->getById('projects', $quotation['project_id']);
@@ -86,9 +88,9 @@ function handleGetQuotations() {
         
         // Add customer names
         foreach ($quotations as &$q) {
-            $customer = $supabase->getById('customers', $q['customer_id']);
-            $q['customer_name'] = $customer ? $customer['name'] : 'Unknown';
-            
+            $customer = $q['customer_id'] ? $supabase->getById('customers', $q['customer_id']) : null;
+            $q['customer_name'] = $customer ? $customer['name'] : ($q['client_name'] ?: 'Unknown');
+
             if ($q['project_id']) {
                 $project = $supabase->getById('projects', $q['project_id']);
                 $q['project_name'] = $project ? $project['project_name'] : 'Unknown';
@@ -108,9 +110,11 @@ function handlePostQuotation() {
     global $supabase;
     
     $data = json_decode(file_get_contents('php://input'), true);
-    
-    if (!$data || !isset($data['customer_id'])) {
-        echo json_encode(['success' => false, 'error' => 'Missing required fields']);
+
+    // Either an existing customer, or a name for a client who doesn't have
+    // a Customer record yet (one gets created automatically on approval).
+    if (!$data || (empty($data['customer_id']) && empty($data['client_name']))) {
+        echo json_encode(['success' => false, 'error' => 'Select a customer or enter a client name']);
         return;
     }
     

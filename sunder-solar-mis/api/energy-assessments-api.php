@@ -32,7 +32,9 @@ try {
         }
 
         if (!empty($assessments)) {
-            $customerIds = array_values(array_unique(array_column($assessments, 'customer_id')));
+            // A brand-new client has no Customer row yet (customer_id is
+            // null) — filter those out before building the IN clause.
+            $customerIds = array_values(array_unique(array_filter(array_column($assessments, 'customer_id'))));
             $customersById = [];
             if ($customerIds) {
                 $customerRows = $supabase->getAll('customers', ['id' => 'in.(' . implode(',', $customerIds) . ')']) ?: [];
@@ -54,7 +56,9 @@ try {
             }
 
             foreach ($assessments as &$assessment) {
-                $assessment['customer_name'] = $customersById[$assessment['customer_id']]['name'] ?? 'Unknown';
+                $assessment['customer_name'] = $assessment['customer_id']
+                    ? ($customersById[$assessment['customer_id']]['name'] ?? 'Unknown')
+                    : ($assessment['client_name'] ?: 'Unknown');
                 $assessment['bills'] = $billsByAssessment[$assessment['id']] ?? [];
             }
             unset($assessment);
@@ -138,14 +142,21 @@ try {
     }
 
     $data = json_decode(file_get_contents('php://input'), true) ?: [];
-    $customerId = $data['customer_id'] ?? '';
+    // No Customer record needs to exist yet — a brand-new client is just a
+    // name at this point. customer_id is used when the assessment is for
+    // someone already in the Customers module; otherwise client_name is
+    // carried on the assessment (and later the quotation) until the
+    // quotation is approved, at which point the real Customer row is
+    // created and these get linked via customer_id (see approve-quotation.php).
+    $customerId = $data['customer_id'] ?? null;
+    $clientName = trim($data['client_name'] ?? '');
     $bills = $data['bills'] ?? [];
     $peakSunHours = max(1, min(10, (float)($data['peak_sun_hours'] ?? 5)));
     $efficiency = max(0.4, min(1, (float)($data['system_efficiency'] ?? 0.8)));
     $panelWattage = max(100, min(1000, (int)($data['panel_wattage'] ?? 550)));
 
-    if (!$customerId) {
-        echo json_encode(['success' => false, 'error' => 'Select a customer']);
+    if (!$customerId && !$clientName) {
+        echo json_encode(['success' => false, 'error' => 'Enter the client\'s name']);
         exit;
     }
 
@@ -162,7 +173,8 @@ try {
     }
 
     $assessmentData = array_merge($sizing, [
-        'customer_id' => $customerId,
+        'customer_id' => $customerId ?: null,
+        'client_name' => $customerId ? null : $clientName,
         'project_id' => $data['project_id'] ?? null,
         'status' => $isPlaceholder ? 'draft' : 'verified',
         'created_by' => $_SESSION['user_id'],

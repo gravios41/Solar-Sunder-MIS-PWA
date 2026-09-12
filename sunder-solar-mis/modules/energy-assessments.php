@@ -22,9 +22,10 @@ include_once __DIR__ . '/../includes/header.php';
     <div class="card-body">
         <form id="assessmentForm">
             <div class="grid-cols-2">
-                <div class="form-group"><label class="form-label">Customer *</label><select id="customerId" class="form-select" required><option value="">Select Customer</option></select></div>
+                <div class="form-group"><label class="form-label">Client Name *</label><input id="clientName" class="form-control" type="text" placeholder="Full name of the client" required></div>
                 <div class="form-group"><label class="form-label">Peak sun hours</label><input id="peakSunHours" class="form-control" type="number" value="5" min="1" max="10" step="0.1"></div>
             </div>
+            <p style="margin:-10px 0 16px;font-size:12px;color:#64748b">No Customer record is created yet — that happens automatically once the resulting quotation is approved.</p>
 
             <!-- OCR Bill Upload Section -->
             <div style="border-top:1px solid #e2e8f0;margin-top:20px;padding-top:20px">
@@ -40,7 +41,7 @@ include_once __DIR__ . '/../includes/header.php';
                     <small style="color:#64748b;display:block;margin-top:4px">Changes battery sizing in the recommendation — Grid-Tied needs none, Off-Grid needs much more.</small>
                 </div>
 
-                <div id="billUploadHint" style="margin:-8px 0 15px;font-size:12.5px;color:#F97316"><i class="fas fa-circle-info"></i> Select a customer above before uploading a bill.</div>
+                <div id="billUploadHint" style="margin:-8px 0 15px;font-size:12.5px;color:#F97316"><i class="fas fa-circle-info"></i> Enter the client's name above before uploading a bill.</div>
                 <div id="billUploadSection">
                     <div style="max-width:280px;gap:15px">
                         <div class="form-group" style="border:2px dashed #cbd5e1;padding:15px;border-radius:8px;text-align:center">
@@ -83,7 +84,7 @@ include_once __DIR__ . '/../includes/header.php';
         <div id="modalContent" style="margin-bottom:20px"></div>
         <div style="display:flex;gap:10px;justify-content:flex-end">
             <button type="button" onclick="closeRecommendationModal()" class="btn btn-secondary">Cancel</button>
-            <button type="button" onclick="approveRecommendation()" class="btn btn-success"><i class="fas fa-check"></i> Approve & Create Project</button>
+            <button type="button" onclick="approveRecommendation()" class="btn btn-success"><i class="fas fa-check"></i> Save &amp; Create Quotation</button>
             <button type="button" onclick="rejectRecommendation()" class="btn btn-danger"><i class="fas fa-times"></i> Reject</button>
         </div>
     </div>
@@ -293,12 +294,12 @@ document.getElementById('systemType')?.addEventListener('change', calculateRecom
 // dropzones until one is selected instead of letting people hit a
 // confusing failure after already choosing a file.
 function updateBillUploadAvailability() {
-    const hasCustomer = !!document.getElementById('customerId').value;
-    document.querySelectorAll('.bill-file-upload').forEach(input => { input.disabled = !hasCustomer; });
+    const hasClientName = !!document.getElementById('clientName').value.trim();
+    document.querySelectorAll('.bill-file-upload').forEach(input => { input.disabled = !hasClientName; });
     const hint = document.getElementById('billUploadHint');
-    if (hint) hint.style.display = hasCustomer ? 'none' : 'block';
+    if (hint) hint.style.display = hasClientName ? 'none' : 'block';
 }
-document.getElementById('customerId').addEventListener('change', updateBillUploadAvailability);
+document.getElementById('clientName').addEventListener('input', updateBillUploadAvailability);
 updateBillUploadAvailability();
 
 // OCR Upload Handler — scans immediately on file selection instead of
@@ -325,12 +326,12 @@ document.querySelectorAll('.bill-file-upload').forEach((input, index) => {
 });
 
 async function uploadBill(billNum) {
-    const customerId = document.getElementById('customerId').value;
+    const clientName = document.getElementById('clientName').value.trim();
     const statusEl = document.getElementById(`billUploadStatus${billNum}`);
 
-    if (!customerId) {
-        statusEl.innerHTML = '<span style="color:#dc2626">Select a customer above first</span>';
-        showToast('Select a customer before uploading a bill', 'error');
+    if (!clientName) {
+        statusEl.innerHTML = '<span style="color:#dc2626">Enter the client\'s name above first</span>';
+        showToast('Enter the client\'s name before uploading a bill', 'error');
         return;
     }
 
@@ -341,7 +342,7 @@ async function uploadBill(billNum) {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
-                customer_id: customerId,
+                client_name: clientName,
                 bills: tempBills,
                 peak_sun_hours: 5,
                 system_efficiency: 0.80,
@@ -353,7 +354,7 @@ async function uploadBill(billNum) {
         if (result.success) {
             currentAssessmentId = result.assessment_id;
         } else {
-            // Show the server's actual reason (e.g. "Select a customer")
+            // Show the server's actual reason (e.g. "Enter the client's name")
             // instead of a generic message that hides what to fix — this
             // was previously leaving the status stuck on "scanning…"
             // forever with no indication of why.
@@ -429,13 +430,7 @@ function updateOCRResults() {
     }
 }
 
-async function loadCustomers() {
-    const response = await fetch('../api/customers-api.php'); 
-    const result = await response.json(); 
-    if (result.success) document.getElementById('customerId').innerHTML += (result.data || []).map(customer => `<option value="${customer.id}">${escapeHtml(customer.name)}</option>`).join(''); 
-}
-
-async function loadAssessments() { 
+async function loadAssessments() {
     const response = await fetch('../api/energy-assessments-api.php'); 
     const result = await response.json(); 
     if (!result.success) return; 
@@ -490,7 +485,7 @@ function showRecommendationModal(assessmentId) {
                     <p><strong>System efficiency:</strong> ${(assessment.system_efficiency * 100).toFixed(0)}%</p>
                 </div>
                 <div id="modalMaterials"><div style="text-align:center;color:#94a3b8;font-size:13px">Loading recommended materials…</div></div>
-                <p style="color:#64748b;font-size:13px;margin-top:12px">Click a tier below to choose it, then approve — the project and draft quotation will be built from whichever one is selected (<strong>Actual Recommendation</strong> by default). Inventory is only deducted, and the installation and task list only created, once that quotation is approved in the Quotations module.</p>
+                <p style="color:#64748b;font-size:13px;margin-top:12px">Click a tier below to choose it, then save — a draft quotation will be built from whichever one is selected (<strong>Actual Recommendation</strong> by default). No Project or Customer record is created yet — that, along with the inventory deduction and installation/task list, only happens once the quotation itself is approved in the Quotations module.</p>
             `;
 
             const params = new URLSearchParams({
@@ -577,7 +572,7 @@ document.getElementById('assessmentForm').addEventListener('submit', async event
         amount: document.querySelectorAll('.bill-amount')[index].value
     }));
     const payload = {
-        customer_id: document.getElementById('customerId').value,
+        client_name: document.getElementById('clientName').value.trim(),
         bills,
         peak_sun_hours: document.getElementById('peakSunHours').value,
         system_efficiency: DEFAULT_EFFICIENCY / 100,
@@ -604,6 +599,6 @@ document.getElementById('assessmentForm').addEventListener('submit', async event
     } else showToast(result.error || 'Unable to save assessment', 'error');
 });
 
-loadCustomers(); loadAssessments();
+loadAssessments();
 </script>
 <?php include_once __DIR__ . '/../includes/footer.php'; ?>
