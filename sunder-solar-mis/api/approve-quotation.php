@@ -64,7 +64,11 @@ try {
         $customerData = [
             'customer_code' => generateCode('CUST'),
             'name' => $clientName,
-            'phone' => $quotation['client_phone'] ?? null,
+            // customers.phone is NOT NULL (empty string satisfies it, but
+            // null does not) — the assessment form only ever collects a
+            // name, so this is empty unless it was filled in later while
+            // editing the quotation.
+            'phone' => $quotation['client_phone'] ?? '',
             'email' => $quotation['client_email'] ?? null,
             'address' => $quotation['client_address'] ?? null,
             'type' => 'residential',
