@@ -238,21 +238,19 @@ function renderProjects() {
     
     grid.innerHTML = filtered.map(p => `
         <div class="project-card">
-            <div class="card">
+            <div class="card" style="position:relative">
+                ${(USER_ROLE === 'super_admin' || USER_ROLE === 'owner') ? `
+                <button onclick="openUpgradeModal(${p.id})" class="btn btn-secondary btn-sm" title="Upgrade this project — add compatible equipment for this client" style="position:absolute;top:12px;right:12px;z-index:1">
+                    <i class="fas fa-arrow-up-right-dots"></i> Upgrade
+                </button>` : ''}
                 <div class="card-body">
-                    <div class="flex justify-between items-start mb-3">
-                        <div>
-                            <div class="flex items-center gap-2 mb-2">
-                                <span class="text-sm text-gray-500">${escapeHtml(p.project_code)}</span>
-                                ${getStatusBadgeHtml(p.status)}
-                            </div>
-                            <h4 class="font-semibold text-lg">${escapeHtml(p.project_name)}</h4>
-                            <p class="text-sm text-gray-600 mt-1">${escapeHtml(p.customer_name || 'Unknown')}</p>
+                    <div class="mb-3" style="padding-right:${(USER_ROLE === 'super_admin' || USER_ROLE === 'owner') ? '96px' : '0'}">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="text-sm text-gray-500">${escapeHtml(p.project_code)}</span>
+                            ${getStatusBadgeHtml(p.status)}
                         </div>
-                        ${(USER_ROLE === 'super_admin' || USER_ROLE === 'owner') ? `
-                        <button onclick="openUpgradeModal(${p.id})" class="btn btn-secondary btn-sm" title="Upgrade this project — add compatible equipment for this client" style="flex-shrink:0">
-                            <i class="fas fa-arrow-up-right-dots"></i> Upgrade
-                        </button>` : ''}
+                        <h4 class="font-semibold text-lg">${escapeHtml(p.project_name)}</h4>
+                        <p class="text-sm text-gray-600 mt-1">${escapeHtml(p.customer_name || 'Unknown')}</p>
                     </div>
                     <div class="space-y-2 mt-3">
                         <div class="flex items-center gap-2 text-sm text-gray-600">
