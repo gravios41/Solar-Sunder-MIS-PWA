@@ -137,9 +137,9 @@ include_once __DIR__ . '/../includes/header.php';
         </div>
         <div id="modalContent" style="margin-bottom:20px"></div>
         <div style="display:flex;gap:10px;justify-content:flex-end">
-            <button type="button" onclick="closeRecommendationModal()" class="btn btn-secondary">Cancel</button>
-            <button type="button" onclick="approveRecommendation()" class="btn btn-success"><i class="fas fa-check"></i> Save &amp; Create Quotation</button>
-            <button type="button" onclick="rejectRecommendation()" class="btn btn-danger"><i class="fas fa-times"></i> Reject</button>
+            <button type="button" onclick="closeRecommendationModal()" class="btn btn-secondary" id="modalCloseBtn">Cancel</button>
+            <button type="button" onclick="approveRecommendation()" class="btn btn-success" id="modalSaveBtn"><i class="fas fa-check"></i> Save &amp; Create Quotation</button>
+            <button type="button" onclick="rejectRecommendation()" class="btn btn-danger" id="modalRejectBtn"><i class="fas fa-times"></i> Reject</button>
         </div>
     </div>
 </div>
@@ -194,6 +194,13 @@ document.getElementById('sizingAssumptions').textContent =
 // creates. Debounced since it hits the database (inventory spec matching)
 // on every keystroke otherwise.
 let recommendationPreviewTimer = null;
+// Bumped on every new preview request, and stamped onto that request when
+// it's sent. On a slow/unstable connection, an older request can finish
+// AFTER a newer one — without this guard, whichever response happens to
+// arrive last wins, even if it's the stale one, silently showing the wrong
+// recommendation. Only the response whose stamp still matches the latest
+// counter value is allowed to update the UI; everything else is discarded.
+let recommendationRequestSeq = 0;
 
 function calculateRecommendation() {
     const values = billInputs.map(input => Number(input.value)).filter(value => value > 0);
@@ -225,6 +232,7 @@ function calculateRecommendation() {
 }
 
 async function fetchRecommendationPreview(averageMonthly, sunHours, efficiency, panelWattage, systemType) {
+    const requestId = ++recommendationRequestSeq;
     try {
         const params = new URLSearchParams({
             average_monthly_kwh: averageMonthly,
@@ -235,6 +243,13 @@ async function fetchRecommendationPreview(averageMonthly, sunHours, efficiency, 
         });
         const response = await fetch(`../api/recommendation-preview.php?${params}`);
         const result = await response.json();
+
+        // A newer request was sent while this one was in flight — its
+        // response (or the "Calculating…" state it left behind) is the
+        // current truth, so this now-stale response is dropped rather than
+        // overwriting it.
+        if (requestId !== recommendationRequestSeq) return;
+
         if (!result.success) {
             recommendation.textContent = result.error || 'Could not calculate a recommendation.';
             return;
@@ -252,6 +267,7 @@ async function fetchRecommendationPreview(averageMonthly, sunHours, efficiency, 
             itemsEl.innerHTML = renderTierContainers(result.tiers, sunHours, efficiency, previewSelectedTier, 'selectPreviewTier');
         }
     } catch (e) {
+        if (requestId !== recommendationRequestSeq) return; // stale request — a newer one is already in flight or resolved
         console.error('Error loading recommendation preview:', e);
         recommendation.textContent = 'Could not calculate a recommendation.';
     }
@@ -527,6 +543,15 @@ function showRecommendationModal(assessmentId) {
         .then(async result => {
             if (!result.success || !result.data.length) return;
             const assessment = result.data[0];
+            const alreadyQuoted = !!assessment.quotation_id;
+
+            // Once a tier's been picked and a quotation exists, re-showing
+            // all three tiers for re-comparison is pointless (and picking
+            // again would just error, since one quotation per assessment
+            // already exists) — show only what was actually chosen.
+            document.getElementById('modalSaveBtn').style.display = alreadyQuoted ? 'none' : '';
+            document.getElementById('modalRejectBtn').style.display = alreadyQuoted ? 'none' : '';
+            document.getElementById('modalCloseBtn').textContent = alreadyQuoted ? 'Close' : 'Cancel';
 
             content.innerHTML = `
                 <h4>${assessment.customer_name}</h4>
@@ -538,9 +563,41 @@ function showRecommendationModal(assessmentId) {
                     <p><strong>Peak sun hours:</strong> ${assessment.peak_sun_hours}</p>
                     <p><strong>System efficiency:</strong> ${(assessment.system_efficiency * 100).toFixed(0)}%</p>
                 </div>
-                <div id="modalMaterials"><div style="text-align:center;color:#94a3b8;font-size:13px">Loading recommended materials…</div></div>
-                <p style="color:#64748b;font-size:13px;margin-top:12px">Click a tier below to choose it, then save — a draft quotation will be built from whichever one is selected (<strong>Actual Recommendation</strong> by default). No Project or Client record is created yet — that, along with the inventory deduction and installation/task list, only happens once the quotation itself is approved in the Quotations module.</p>
+                <div id="modalMaterials"><div style="text-align:center;color:#94a3b8;font-size:13px">Loading…</div></div>
+                ${alreadyQuoted
+                    ? `<p style="color:#64748b;font-size:13px;margin-top:12px">This is the recommendation already saved as a quotation. Edit line items or approve it in the <strong>Quotations</strong> module.</p>`
+                    : `<p style="color:#64748b;font-size:13px;margin-top:12px">Click a tier below to choose it, then save — a draft quotation will be built from whichever one is selected (<strong>Actual Recommendation</strong> by default). No Project or Client record is created yet — that, along with the inventory deduction and installation/task list, only happens once the quotation itself is approved in the Quotations module.</p>`}
             `;
+
+            const materialsEl = document.getElementById('modalMaterials');
+
+            if (alreadyQuoted) {
+                // Show the real, already-saved quotation line items — not a
+                // recomputed preview — since that's what's actually on file.
+                try {
+                    const res = await fetch(`../api/quotations-api.php?id=${assessment.quotation_id}`);
+                    const q = await res.json();
+                    if (!q.success || !q.data) {
+                        materialsEl.innerHTML = `<p style="color:#dc2626;font-size:13px">Could not load the saved quotation.</p>`;
+                        return;
+                    }
+                    const items = q.data.items || [];
+                    const rows = items.map(item => `
+                        <li style="display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:13px">
+                            <span style="color:#475569">${escapeHtml(item.description)} &times; ${item.quantity}</span>
+                            <span style="color:#334155;white-space:nowrap;font-variant-numeric:tabular-nums">${money((parseFloat(item.quantity) || 0) * (parseFloat(item.unit_price) || 0))}</span>
+                        </li>`).join('');
+                    materialsEl.innerHTML = `
+                        <div style="font-size:12px;font-weight:600;color:#334155;margin-bottom:4px">Selected recommendation — ${escapeHtml(q.data.quotation_number)} (${escapeHtml(q.data.status)})</div>
+                        <ul style="list-style:none;margin:0;padding:0">${rows}</ul>
+                        <div style="display:flex;justify-content:space-between;margin-top:10px;padding-top:8px;border-top:1px solid #e2e8f0;font-weight:700;font-size:14px">
+                            <span>Total</span><span>${money(q.data.total_amount)}</span>
+                        </div>`;
+                } catch (e) {
+                    materialsEl.innerHTML = `<p style="color:#dc2626;font-size:13px">Could not load the saved quotation.</p>`;
+                }
+                return;
+            }
 
             const params = new URLSearchParams({
                 average_monthly_kwh: assessment.average_monthly_kwh,
@@ -548,7 +605,6 @@ function showRecommendationModal(assessmentId) {
                 efficiency: assessment.system_efficiency * 100,
                 panel_wattage: assessment.panel_wattage,
             });
-            const materialsEl = document.getElementById('modalMaterials');
             try {
                 const res = await fetch(`../api/recommendation-preview.php?${params}`);
                 const preview = await res.json();
