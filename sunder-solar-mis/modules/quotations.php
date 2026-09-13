@@ -190,6 +190,14 @@ include_once __DIR__ . '/../includes/header.php';
                             </div>
                         </div>
                     </div>
+                    <div class="form-group" style="max-width:360px">
+                        <label class="form-label">Solar System Type</label>
+                        <select id="quotationSystemType" class="form-select">
+                            <option value="hybrid">Hybrid Systems</option>
+                            <option value="grid_tied">Grid-Tied Systems</option>
+                            <option value="off_grid">Off-Grid Systems</option>
+                        </select>
+                    </div>
                     <div class="grid-cols-2">
                         <div class="form-group" style="margin-bottom:0">
                             <label class="form-label">Quotation Date</label>
@@ -616,16 +624,27 @@ function openQuotationModal(quotation = null) {
             document.getElementById('projectId').value = quotation.project_id || '';
         }
 
+        // No dedicated column for this yet — recovered from the "System
+        // Type: X" line the save routine stamps into notes, so reopening
+        // an existing quotation shows what was picked instead of resetting
+        // to the default every time.
+        const systemTypeMatch = /System Type:\s*(hybrid|grid_tied|off_grid)/i.exec(quotation.notes || '');
+        document.getElementById('quotationSystemType').value = systemTypeMatch ? systemTypeMatch[1].toLowerCase() : 'hybrid';
+
         document.getElementById('quotationDate').value = quotation.quotation_date;
         document.getElementById('validUntil').value = quotation.valid_until;
         document.getElementById('status').value = quotation.status;
-        document.getElementById('notes').value = quotation.notes || '';
+        document.getElementById('notes').value = (quotation.notes || '').replace(/\s*\[System Type:\s*(hybrid|grid_tied|off_grid)\]\s*/i, ' ').trim();
         renderItemRows(quotation.items || []);
     } else {
         document.getElementById('modalTitle').textContent = 'New Manual Project Quotation';
         document.getElementById('quotationForm').reset();
         document.getElementById('quotationId').value = '';
-        setQuotationCustomerMode(false);
+        // A brand-new manual quotation is, by definition, for a client with
+        // no bill/assessment on file — same as Energy Assessments, they're
+        // entered directly here rather than picked from an existing list.
+        setQuotationCustomerMode(true);
+        document.getElementById('quotationSystemType').value = 'hybrid';
         document.getElementById('quotationDate').value = new Date().toISOString().split('T')[0];
         const validUntil = new Date();
         validUntil.setDate(validUntil.getDate() + 30);
@@ -668,13 +687,19 @@ async function saveQuotation() {
     const totalAmountStr = document.getElementById('totalAmount').value;
     const totalAmount = parseFloat(totalAmountStr.replace(/[^0-9.-]+/g, '')) || 0;
     
+    // No dedicated column for system type yet — stamped as a tag in notes
+    // (and stripped back out for display when reopening this quotation, see
+    // openQuotationModal) rather than adding a migration for one field.
+    const systemTypeTag = `[System Type: ${document.getElementById('quotationSystemType').value}]`;
+    const notesText = document.getElementById('notes').value.trim();
+
     const data = {
         quotation_date: document.getElementById('quotationDate').value,
         valid_until: document.getElementById('validUntil').value,
         total_amount: totalAmount,
         items_count: items.length,
         status: document.getElementById('status').value,
-        notes: document.getElementById('notes').value,
+        notes: notesText ? `${notesText}\n${systemTypeTag}` : systemTypeTag,
         items: items
     };
 
