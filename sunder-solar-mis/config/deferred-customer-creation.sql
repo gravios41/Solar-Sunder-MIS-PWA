@@ -13,6 +13,19 @@ alter table public.energy_assessments add column if not exists client_address te
 -- project_id (which now stays null until that quotation is approved).
 alter table public.energy_assessments add column if not exists quotation_id bigint references public.quotations(id);
 
+-- The Energy Assessment form now collects the FULL client record up front
+-- (same fields as the Quotation's client-only form) so it doesn't need to
+-- be re-typed in Quotations — these carry straight over onto the draft
+-- quotation's own client_* columns below, and from there into the real
+-- Customer record at approval.
+alter table public.energy_assessments add column if not exists client_contact_person text;
+alter table public.energy_assessments add column if not exists client_city text;
+alter table public.energy_assessments add column if not exists client_state text;      -- Province
+alter table public.energy_assessments add column if not exists client_pincode text;    -- Postal Code
+alter table public.energy_assessments add column if not exists client_gstin text;
+alter table public.energy_assessments add column if not exists client_type text default 'residential';
+alter table public.energy_assessments add column if not exists client_status text default 'active';
+
 alter table public.quotations alter column customer_id drop not null;
 alter table public.quotations add column if not exists client_name text;
 alter table public.quotations add column if not exists client_phone text;

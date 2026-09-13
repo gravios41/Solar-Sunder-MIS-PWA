@@ -21,11 +21,64 @@ include_once __DIR__ . '/../includes/header.php';
     <div class="card-header"><h3 class="card-title">New Energy Assessment</h3></div>
     <div class="card-body">
         <form id="assessmentForm">
-            <div class="grid-cols-2">
-                <div class="form-group"><label class="form-label">Client Name *</label><input id="clientName" class="form-control" type="text" placeholder="Full name of the client" required></div>
-                <div class="form-group"><label class="form-label">Peak sun hours</label><input id="peakSunHours" class="form-control" type="number" value="5" min="1" max="10" step="0.1"></div>
+            <p style="margin:0 0 16px;font-size:12px;color:#64748b"><i class="fas fa-circle-info"></i> No Client record is created yet — the details below carry over to the quotation automatically and become the real Client record once that quotation is approved.</p>
+            <div class="form-group"><label class="form-label">Client Name *</label><input id="clientName" class="form-control" type="text" placeholder="Full name of the client" required></div>
+            <div class="form-group">
+                <label class="form-label">Contact Person</label>
+                <input type="text" id="clientContactPerson" class="form-control">
             </div>
-            <p style="margin:-10px 0 16px;font-size:12px;color:#64748b">No Client record is created yet — that happens automatically once the resulting quotation is approved.</p>
+            <div class="grid-cols-2">
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" id="clientEmail" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Phone *</label>
+                    <input type="tel" id="clientPhone" class="form-control">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Address</label>
+                <textarea id="clientAddress" class="form-textarea"></textarea>
+            </div>
+            <div class="grid-cols-2">
+                <div class="form-group">
+                    <label class="form-label">City</label>
+                    <input type="text" id="clientCity" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Province</label>
+                    <input type="text" id="clientState" class="form-control">
+                </div>
+            </div>
+            <div class="grid-cols-2">
+                <div class="form-group">
+                    <label class="form-label">Postal Code</label>
+                    <input type="text" id="clientPincode" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">GSTIN</label>
+                    <input type="text" id="clientGstin" class="form-control">
+                </div>
+            </div>
+            <div class="grid-cols-2">
+                <div class="form-group">
+                    <label class="form-label">Type</label>
+                    <select id="clientType" class="form-select">
+                        <option value="commercial">Commercial</option>
+                        <option value="residential" selected>Residential</option>
+                        <option value="industrial">Industrial</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Status</label>
+                    <select id="clientStatus" class="form-select">
+                        <option value="active">Active</option>
+                        <option value="pending">Pending</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+            </div>
 
             <!-- OCR Bill Upload Section -->
             <div style="border-top:1px solid #e2e8f0;margin-top:20px;padding-top:20px">
@@ -63,7 +116,8 @@ include_once __DIR__ . '/../includes/header.php';
             </div>
 
             <h4 style="margin:20px 0 10px">Or Enter Manually</h4>
-            <div class="table-container"><table class="table manual-bills-table"><thead><tr><th>Billing month</th><th>Consumption (kWh) *</th><th>Amount</th></tr></thead><tbody>
+            <div class="form-group" style="max-width:220px"><label class="form-label">Peak Sun Hours</label><input id="peakSunHours" class="form-control" type="number" value="5" min="1" max="10" step="0.1"></div>
+            <div class="table-container"><table class="table manual-bills-table"><thead><tr><th>Billing Month</th><th>Monthly Consumption (kWh) *</th><th>Monthly Bill (₱)</th></tr></thead><tbody>
                 <tr><td><input class="form-control bill-period" type="month" required></td><td><input class="form-control bill-kwh" type="number" min="0.01" step="0.01" required></td><td><input class="form-control bill-amount" type="number" min="0" step="0.01"></td></tr>
             </tbody></table></div>
             <div class="card" style="margin-top:20px;background:#f8fafc"><div class="card-body"><strong>Recommendation preview</strong><div id="sizingAssumptions" style="margin-top:2px;font-size:12px;color:#64748b"></div><div id="recommendation" style="margin-top:8px;color:#475569">Enter the bill's kWh reading.</div><div id="recommendationItems"></div></div></div>
@@ -573,6 +627,16 @@ document.getElementById('assessmentForm').addEventListener('submit', async event
     }));
     const payload = {
         client_name: document.getElementById('clientName').value.trim(),
+        client_contact_person: document.getElementById('clientContactPerson').value.trim(),
+        client_phone: document.getElementById('clientPhone').value.trim(),
+        client_email: document.getElementById('clientEmail').value.trim(),
+        client_address: document.getElementById('clientAddress').value.trim(),
+        client_city: document.getElementById('clientCity').value.trim(),
+        client_state: document.getElementById('clientState').value.trim(),
+        client_pincode: document.getElementById('clientPincode').value.trim(),
+        client_gstin: document.getElementById('clientGstin').value.trim(),
+        client_type: document.getElementById('clientType').value,
+        client_status: document.getElementById('clientStatus').value,
         bills,
         peak_sun_hours: document.getElementById('peakSunHours').value,
         system_efficiency: DEFAULT_EFFICIENCY / 100,

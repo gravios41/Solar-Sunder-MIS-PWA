@@ -30,7 +30,6 @@ function fetchSection($supabase, $type, $dateFrom, $dateTo) {
     switch ($type) {
 
         case 'Sales':
-        case 'Financial':
             $q = $supabase->from('quotations')->select('*')->isNull('deleted_at')->order('quotation_date', false);
             applyDateFilter($q, 'quotation_date', $dateFrom, $dateTo);
             $rows = $q->execute() ?? [];
@@ -42,6 +41,24 @@ function fetchSection($supabase, $type, $dateFrom, $dateTo) {
                 $r['customer_name'] = $cust['name']         ?? 'Unknown';
                 $r['project_name']  = $proj['project_name'] ?? '—';
                 $r['items']         = $items ?? [];
+                $enriched[] = $r;
+            }
+            return $enriched;
+
+        // Same quotation data as Sales, but Financial is meant to answer a
+        // different question (money, not pipeline activity) — the render
+        // step below computes revenue realized / pipeline value / inventory
+        // value from this instead of reusing the Sales stat chips.
+        case 'Financial':
+            $q = $supabase->from('quotations')->select('*')->isNull('deleted_at')->order('quotation_date', false);
+            applyDateFilter($q, 'quotation_date', $dateFrom, $dateTo);
+            $rows = $q->execute() ?? [];
+            $enriched = [];
+            foreach ($rows as $r) {
+                $cust = $supabase->getById('customers', $r['customer_id'] ?? 0);
+                $proj = $r['project_id'] ? $supabase->getById('projects', $r['project_id']) : null;
+                $r['customer_name'] = $cust['name']         ?? 'Unknown';
+                $r['project_name']  = $proj['project_name'] ?? '—';
                 $enriched[] = $r;
             }
             return $enriched;
@@ -242,10 +259,10 @@ foreach ($sections as $type => $rows):
 
 <?php if (count($sections) > 1): ?><div class="<?php echo $type !== array_key_first($sections) ? 'page-break' : ''; ?>"><?php endif; ?>
 
-<?php /* ═══ SALES / FINANCIAL ═══ */ if (in_array($type, ['Sales','Financial'])): ?>
+<?php /* ═══ SALES ═══ */ if ($type === 'Sales'): ?>
 
 <div class="section-title">
-    📊 <?php echo $type; ?> Report
+    📊 Sales Report
     <span class="section-count"><?php echo $count; ?> quotations</span>
 </div>
 
@@ -313,6 +330,55 @@ foreach ($sections as $type => $rows):
         <td></td>
     </tr>
     <?php endif; ?>
+    </tbody>
+</table>
+
+<?php /* ═══ FINANCIAL ═══ */ elseif ($type === 'Financial'): ?>
+
+<div class="section-title">
+    💰 Financial Report
+    <span class="section-count"><?php echo $count; ?> quotations</span>
+</div>
+
+<?php
+    $revenueRealized = array_sum(array_map(fn($r) => $r['status'] === 'approved' ? (float)($r['total_amount'] ?? 0) : 0, $rows));
+    $pipelineValue    = array_sum(array_map(fn($r) => in_array($r['status'], ['pending','draft','under_review'], true) ? (float)($r['total_amount'] ?? 0) : 0, $rows));
+    $inventoryRowsFin = $supabase->from('inventory')->select('quantity,unit_price')->execute() ?? [];
+    $inventoryValue   = array_sum(array_map(fn($i) => (float)($i['quantity'] ?? 0) * (float)($i['unit_price'] ?? 0), $inventoryRowsFin));
+?>
+<div class="stat-chips">
+    <div class="stat-chip"><strong><?php echo money($revenueRealized); ?></strong>Revenue Realized</div>
+    <div class="stat-chip"><strong><?php echo money($pipelineValue); ?></strong>Pipeline Value</div>
+    <div class="stat-chip"><strong><?php echo money($inventoryValue); ?></strong>Inventory Value On Hand</div>
+</div>
+<p style="font-size:9.5px;color:#9CA3AF;margin-bottom:10px">Revenue Realized counts only approved quotations; Pipeline Value is pending/draft/under-review quotations not yet closed. There is no separate cost-price field on inventory, so a profit margin can't be computed from current data.</p>
+
+<table class="dt">
+    <thead><tr>
+        <th>#</th><th>Quotation No.</th><th>Client</th><th>Project</th>
+        <th>Date</th><th>Status</th><th class="num">Amount (₱)</th><th>Counted As</th>
+    </tr></thead>
+    <tbody>
+    <?php if (!$rows): ?>
+        <tr class="empty"><td colspan="8">No quotations found for this period.</td></tr>
+    <?php else: foreach ($rows as $i => $r): ?>
+        <tr>
+            <td style="color:#9CA3AF"><?php echo $i+1; ?></td>
+            <td style="font-weight:700"><?php echo fmt($r['quotation_number']); ?></td>
+            <td><?php echo fmt($r['customer_name']); ?></td>
+            <td><?php echo fmt($r['project_name']); ?></td>
+            <td><?php echo shortDate($r['quotation_date']); ?></td>
+            <td><?php
+                $sc = ['approved'=>'b-green','pending'=>'b-yellow','draft'=>'b-gray','rejected'=>'b-red','under_review'=>'b-blue'];
+                echo '<span class="badge '.($sc[$r['status']]??'b-gray').'">'.status($r['status']).'</span>';
+            ?></td>
+            <td class="num"><?php echo number_format($r['total_amount']??0,2); ?></td>
+            <td><?php
+                echo $r['status'] === 'approved' ? 'Revenue Realized'
+                    : (in_array($r['status'], ['pending','draft','under_review'], true) ? 'Pipeline' : 'Not counted');
+            ?></td>
+        </tr>
+    <?php endforeach; endif; ?>
     </tbody>
 </table>
 

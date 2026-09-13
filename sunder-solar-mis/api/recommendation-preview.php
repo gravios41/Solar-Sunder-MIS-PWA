@@ -5,7 +5,7 @@
  * Read-only preview of the THREE recommendation tiers (Budget-friendly,
  * Actual Recommendation, Luxury) an Energy Assessment would offer — used
  * by the live "Recommendation preview" panel in modules/energy-assessments.php
- * as the three bill readings are typed in, and by the Review Recommendation
+ * as the bill's kWh reading is typed in, and by the Review Recommendation
  * modal for an already-saved assessment. All three tiers come from
  * buildAllRecommendationTiers() in config/functions.php — the same
  * function create-approved-project.php's "standard" tier is built from —

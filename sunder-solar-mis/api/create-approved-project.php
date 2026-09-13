@@ -117,7 +117,20 @@ try {
     // Create draft quotation
     $year = date('Y');
 
-    $quotationData = [
+    // Carry the client's full details straight over from the assessment —
+    // they were already collected there, so the quotation shouldn't have to
+    // ask again. Only relevant while there's no real Customer record yet.
+    $clientFieldKeys = [
+        'client_contact_person', 'client_phone', 'client_email', 'client_address',
+        'client_city', 'client_state', 'client_pincode', 'client_gstin',
+        'client_type', 'client_status',
+    ];
+    $clientFields = [];
+    foreach ($clientFieldKeys as $key) {
+        $clientFields[$key] = $customerId ? null : ($assessment[$key] ?? null);
+    }
+
+    $quotationData = array_merge($clientFields, [
         'customer_id' => $customerId,
         'client_name' => $customerId ? null : $clientName,
         'project_id' => null,
@@ -138,7 +151,7 @@ try {
         ),
         'created_at' => date('Y-m-d H:i:s'),
         'updated_at' => date('Y-m-d H:i:s')
-    ];
+    ]);
 
     $quotationResponse = $supabase->insert('quotations', $quotationData);
     $quotation = $quotationResponse[0] ?? $quotationResponse;

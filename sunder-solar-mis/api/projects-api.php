@@ -49,6 +49,27 @@ function handleGetProjects($supabase) {
             if ($project) {
                 $customer = $supabase->getById('customers', $project['customer_id']);
                 $project['customer_name'] = $customer ? $customer['name'] : 'Unknown';
+                // Full client info + the items/package actually approved for
+                // this project — the detail view needs more than just the
+                // name to show a complete picture in one place.
+                $project['customer'] = $customer;
+
+                $quotations = $supabase->getAll('quotations', ['project_id' => 'eq.' . $id]) ?: [];
+                $quotation = $quotations[0] ?? null;
+                if ($quotation) {
+                    $project['quotation_number'] = $quotation['quotation_number'] ?? null;
+                    $project['quotation_items'] = $supabase->getAll('quotation_items', ['quotation_id' => 'eq.' . $quotation['id']]) ?: [];
+
+                    // The chosen tier (Budget-Friendly / Actual Recommendation /
+                    // Luxury) is only ever recorded as free text in the
+                    // quotation's notes (see create-approved-project.php) — no
+                    // dedicated column exists, so pull it back out of there.
+                    $selectedPackage = null;
+                    if (!empty($quotation['notes']) && preg_match('/Recommendation tier:\s*(.+)/', $quotation['notes'], $m)) {
+                        $selectedPackage = trim($m[1]);
+                    }
+                    $project['selected_package'] = $selectedPackage;
+                }
             }
             echo json_encode(['success' => true, 'data' => $project]);
             return;

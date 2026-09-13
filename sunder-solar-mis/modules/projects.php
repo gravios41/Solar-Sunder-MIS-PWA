@@ -521,19 +521,57 @@ async function saveProject() {
 }
 
 async function viewProject(id) {
-    const project = projects.find(p => p.id === id);
-    if (project) {
-        showDetailModal(project.project_name, [
-            { label: 'Project Code', value: project.project_code },
-            { label: 'Client',       value: project.customer_name },
-            { label: 'Status',       value: project.status?.replace(/_/g, ' ') },
-            { label: 'Progress',     value: project.progress + '%' },
-            { label: 'Budget',       value: formatCurrency(project.estimated_cost) },
-            { label: 'Manager',      value: project.manager },
-            { label: 'Start Date',   value: formatDate(project.start_date) },
-            { label: 'End Date',     value: formatDate(project.end_date) },
-        ]);
+    const base = projects.find(p => p.id === id);
+    if (!base) return;
+
+    // The list payload only has customer_name — fetch the single-project
+    // endpoint for the full client record, the approved quotation's line
+    // items, and the selected package, so this view is a complete picture
+    // of the project (not just the board-card summary).
+    let project = base;
+    try {
+        const response = await fetch(`../api/projects-api.php?id=${id}`);
+        const result = await response.json();
+        if (result.success && result.data) project = result.data;
+    } catch (error) {
+        console.error('Error loading project detail:', error);
     }
+
+    const customer = project.customer || null;
+    const rows = [
+        { section: 'Client Info' },
+        { label: 'Client',         value: project.customer_name },
+        { label: 'Contact Person', value: customer?.contact_person },
+        { label: 'Phone',          value: customer?.phone },
+        { label: 'Email',          value: customer?.email },
+        { label: 'Address',        value: [customer?.address, customer?.city, customer?.state].filter(Boolean).join(', ') },
+
+        { section: 'Project Overview' },
+        { label: 'Project Code', value: project.project_code },
+        { label: 'Status',       value: project.status?.replace(/_/g, ' ') },
+        { label: 'Progress',     value: project.progress + '%' },
+        { label: 'Manager',      value: project.manager },
+        { label: 'Selected Package', value: project.selected_package },
+        { label: 'Quotation',    value: project.quotation_number },
+
+        { section: 'Timeline & Budget' },
+        { label: 'Start Date',       value: formatDate(project.start_date) },
+        { label: 'Expected Finish',  value: formatDate(project.expected_end_date) },
+        { label: 'Budget',           value: formatCurrency(project.estimated_cost) },
+    ];
+
+    const items = project.quotation_items || [];
+    if (items.length > 0) {
+        rows.push({ section: 'Items Used In This Project' });
+        items.forEach(item => {
+            rows.push({
+                label: item.description,
+                value: `${item.quantity} × ${formatCurrency(item.unit_price)} = ${formatCurrency(item.amount)}`
+            });
+        });
+    }
+
+    showDetailModal(project.project_name, rows);
 }
 
 async function editProject(id) {

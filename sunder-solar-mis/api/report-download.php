@@ -35,7 +35,6 @@ foreach ($types as $type) {
     switch ($type) {
 
         case 'Sales':
-        case 'Financial':
             $q = $supabase->from('quotations')->select('*')->isNull('deleted_at')->order('quotation_date', false);
             applyDateFilter($q, 'quotation_date', $dateFrom, $dateTo);
             $data = $q->execute() ?? [];
@@ -56,6 +55,65 @@ foreach ($types as $type) {
                     number_format($r['total_amount'] ?? 0, 2),
                     $r['items_count'] ?? 0,
                     $r['notes'] ?? '',
+                ];
+            }
+            break;
+
+        // A real financial overview, not a copy of the Sales pipeline list:
+        // revenue actually realized (approved quotations only) vs. revenue
+        // still in the pipeline (pending/draft/under review), plus how much
+        // money is currently tied up in inventory on hand. There's no
+        // separate cost-price column in inventory (only the selling
+        // unit_price), so a true profit margin can't be computed — this
+        // sticks to what the real data actually supports.
+        case 'Financial':
+            $q = $supabase->from('quotations')->select('*')->isNull('deleted_at')->order('quotation_date', false);
+            applyDateFilter($q, 'quotation_date', $dateFrom, $dateTo);
+            $quotationRows = $q->execute() ?? [];
+
+            $revenueRealized = 0;
+            $pipelineValue   = 0;
+            foreach ($quotationRows as $r) {
+                $amt = (float)($r['total_amount'] ?? 0);
+                if (($r['status'] ?? '') === 'approved') {
+                    $revenueRealized += $amt;
+                } elseif (in_array($r['status'] ?? '', ['pending', 'draft', 'under_review'], true)) {
+                    $pipelineValue += $amt;
+                }
+            }
+
+            $inventoryRows = $supabase->from('inventory')->select('quantity,unit_price')->execute() ?? [];
+            $inventoryValue = array_sum(array_map(
+                static fn($i) => (float)($i['quantity'] ?? 0) * (float)($i['unit_price'] ?? 0),
+                $inventoryRows
+            ));
+
+            $sheets['Financial Summary'] = [
+                'headers' => ['Metric', 'Value (PHP)'],
+                'rows' => [
+                    ['Revenue Realized (Approved Quotations)', number_format($revenueRealized, 2)],
+                    ['Pipeline Value (Pending/Draft Quotations)', number_format($pipelineValue, 2)],
+                    ['Inventory Value On Hand', number_format($inventoryValue, 2)],
+                ],
+            ];
+
+            $headers = ['#','Quotation No.','Client','Project','Quotation Date',
+                        'Status','Total Amount (PHP)','Counted As'];
+            $n = 1;
+            foreach ($quotationRows as $r) {
+                $cust = $supabase->getById('customers', $r['customer_id'] ?? 0);
+                $proj = $r['project_id'] ? $supabase->getById('projects', $r['project_id']) : null;
+                $countedAs = ($r['status'] ?? '') === 'approved' ? 'Revenue Realized'
+                    : (in_array($r['status'] ?? '', ['pending', 'draft', 'under_review'], true) ? 'Pipeline' : 'Not counted');
+                $rows[] = [
+                    $n++,
+                    $r['quotation_number'] ?? '',
+                    $cust['name'] ?? 'Unknown',
+                    $proj['project_name'] ?? '—',
+                    $r['quotation_date'] ?? '',
+                    ucwords(str_replace('_',' ',$r['status'] ?? '')),
+                    number_format($r['total_amount'] ?? 0, 2),
+                    $countedAs,
                 ];
             }
             break;

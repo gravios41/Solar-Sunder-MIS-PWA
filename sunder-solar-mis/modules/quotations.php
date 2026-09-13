@@ -381,6 +381,9 @@ function renderQuotations() {
                     <button onclick="downloadQuotationPdf(${q.id})" class="btn-icon" title="Download PDF">
                         <i class="fas fa-file-pdf" style="color:#DC2626"></i>
                     </button>
+                    <button onclick="downloadQuotationExcel(${q.id})" class="btn-icon" title="Download Excel (CSV)">
+                        <i class="fas fa-file-excel" style="color:#16a34a"></i>
+                    </button>
                     ${(USER_ROLE === 'super_admin' || USER_ROLE === 'owner') && q.status !== 'approved' ? `
                     <button onclick="approveQuotation(${q.id})" class="btn-icon" title="Approve — deducts inventory and creates the installation and tasks">
                         <i class="fas fa-check-circle" style="color:#16a34a"></i>
@@ -796,6 +799,11 @@ async function editQuotation(id) {
     }
 }
 
+// A quotation must actually be downloaded (PDF or Excel) — and handed to
+// the client — before it can be approved, so approveQuotation() checks
+// this set rather than just trusting the owner remembered to send it.
+const downloadedQuotations = new Set();
+
 // One-click PDF — built entirely client-side (jsPDF + autotable) from the
 // same data the View/Edit modals use, so what the client receives always
 // matches what's on screen. No server-side PDF library needed.
@@ -895,9 +903,67 @@ async function downloadQuotationPdf(id) {
         doc.text('This quotation is an estimate and subject to final site assessment.', 14, 287);
 
         doc.save(`${q.quotation_number || 'Quotation'}.pdf`);
+        downloadedQuotations.add(id);
     } catch (error) {
         console.error('PDF generation error:', error);
         showToast('Error generating PDF', 'error');
+    }
+}
+
+// Excel/CSV alternative to the PDF — same line items, spreadsheet-friendly
+// for owners who'd rather forward or tweak numbers before sending to the
+// client. Either this or the PDF satisfies the "must download before
+// approving" requirement in approveQuotation().
+async function downloadQuotationExcel(id) {
+    try {
+        const response = await fetch(`../api/quotations-api.php?id=${id}`);
+        const result = await response.json();
+        if (!result.success || !result.data) {
+            showToast('Error loading quotation for Excel export', 'error');
+            return;
+        }
+        const q = result.data;
+        const items = q.items || [];
+
+        const csvEscape = (val) => {
+            const s = String(val ?? '');
+            return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+        };
+
+        const subtotal = items.reduce((s, item) => s + (parseFloat(item.quantity) || 0) * (parseFloat(item.unit_price) || 0), 0);
+        const tax = subtotal * 0.18;
+
+        const lines = [];
+        lines.push(['Quotation Number', q.quotation_number || ''].map(csvEscape).join(','));
+        lines.push(['Client', q.customer_name || q.client_name || ''].map(csvEscape).join(','));
+        lines.push(['Quotation Date', q.quotation_date ? formatDate(q.quotation_date) : ''].map(csvEscape).join(','));
+        lines.push(['Valid Until', q.valid_until ? formatDate(q.valid_until) : ''].map(csvEscape).join(','));
+        lines.push('');
+        lines.push(['Description', 'Qty', 'Unit Price', 'Amount'].map(csvEscape).join(','));
+        items.forEach(item => {
+            const amount = (parseFloat(item.quantity) || 0) * (parseFloat(item.unit_price) || 0);
+            lines.push([item.description || '', item.quantity ?? '', item.unit_price ?? '', amount.toFixed(2)].map(csvEscape).join(','));
+        });
+        lines.push('');
+        lines.push(['', '', 'Subtotal', subtotal.toFixed(2)].map(csvEscape).join(','));
+        lines.push(['', '', 'Tax (18%)', tax.toFixed(2)].map(csvEscape).join(','));
+        lines.push(['', '', 'Total Amount', (parseFloat(q.total_amount) || 0).toFixed(2)].map(csvEscape).join(','));
+
+        const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${q.quotation_number || 'Quotation'}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+
+        downloadedQuotations.add(id);
+        showToast('Excel (CSV) file downloaded', 'success');
+    } catch (error) {
+        console.error('Excel export error:', error);
+        showToast('Error generating Excel file', 'error');
     }
 }
 
@@ -937,6 +1003,18 @@ async function archiveQuotation(id) {
 async function approveQuotation(id) {
     const quotation = quotations.find(q => q.id === id);
     const name = quotation?.quotation_number || 'this quotation';
+
+    // The client needs to actually see the quotation (PDF or Excel) before
+    // the owner approves it on their behalf — so approval is blocked here
+    // until one of those downloads has happened for this quotation.
+    if (!downloadedQuotations.has(id)) {
+        showConfirmModal(
+            `Download the PDF or Excel file for "${escapeHtml(name)}" and send it to the client before approving.`,
+            () => downloadQuotationPdf(id),
+            { title: 'Download Required First', confirmText: 'Download PDF Now', danger: false }
+        );
+        return;
+    }
 
     let deductionHtml = '<p class="deduction-intro">No inventory items on this quotation — services only.</p>';
     try {

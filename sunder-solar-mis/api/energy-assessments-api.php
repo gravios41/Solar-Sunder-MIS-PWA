@@ -95,6 +95,23 @@ try {
             $updateData['approval_notes'] = $data['approval_notes'];
         }
 
+        // The client's full details (same fields as the Quotation's
+        // client-only form) can be filled in — or corrected — right here on
+        // the assessment, including when finalizing a placeholder created
+        // for an OCR upload. Only meaningful while there's still no real
+        // Customer record (customer_id null); once approved this assessment
+        // is done being edited anyway.
+        $clientFieldKeys = [
+            'client_name', 'client_contact_person', 'client_phone', 'client_email',
+            'client_address', 'client_city', 'client_state', 'client_pincode',
+            'client_gstin', 'client_type', 'client_status',
+        ];
+        foreach ($clientFieldKeys as $key) {
+            if (isset($data[$key])) {
+                $updateData[$key] = trim($data[$key]) !== '' ? trim($data[$key]) : null;
+            }
+        }
+
         // Finalizing a placeholder assessment (created to attach OCR bill
         // uploads to) with real bill data — replaces its bills rather than
         // leaving the placeholder behind and creating a second record.
@@ -172,7 +189,22 @@ try {
         exit;
     }
 
-    $assessmentData = array_merge($sizing, [
+    // The full client record (mirrors the Quotation's client-only form) only
+    // matters when there's no existing Customer to fall back on — an
+    // already-existing customer_id already has all of this in Customers.
+    $clientFieldKeys = [
+        'client_contact_person', 'client_phone', 'client_email', 'client_address',
+        'client_city', 'client_state', 'client_pincode', 'client_gstin',
+    ];
+    $clientFields = [];
+    foreach ($clientFieldKeys as $key) {
+        $value = trim($data[$key] ?? '');
+        $clientFields[$key] = ($customerId || $value === '') ? null : $value;
+    }
+    $clientFields['client_type'] = $customerId ? null : ($data['client_type'] ?? 'residential');
+    $clientFields['client_status'] = $customerId ? null : ($data['client_status'] ?? 'active');
+
+    $assessmentData = array_merge($sizing, $clientFields, [
         'customer_id' => $customerId ?: null,
         'client_name' => $customerId ? null : $clientName,
         'project_id' => $data['project_id'] ?? null,

@@ -254,6 +254,17 @@ function renderTaskList(taskList) {
                             </button>
                         </div>`;
                 }
+            } else if (t.status === 'in_progress' && canEditChecklistFor(t)) {
+                // Field workers don't have time to tick off checklist items
+                // one by one while they're mid-install — this is the same
+                // one-click "job done" action as the task detail modal,
+                // available straight from the board card.
+                statusBtn = `
+                    <div class="flex gap-2 pt-2 border-t">
+                        <button onclick="event.stopPropagation();markTaskComplete(${t.id})" class="btn btn-success btn-sm flex-1">
+                            <i class="fas fa-check-circle"></i> Job Done
+                        </button>
+                    </div>`;
             }
             const editBtn = (USER_ROLE === 'super_admin' || USER_ROLE === 'owner')
                 ? `<button onclick="editTask(${t.id})" class="btn-icon" title="Edit"><i class="fas fa-edit" style="color:#F97316"></i></button>`
@@ -661,6 +672,15 @@ async function openTaskDetailModal(task) {
                 ` : `
                 <p style="font-size: 12px; color: #94a3b8; margin: 0;"><i class="fas fa-eye"></i> View only — checklist items are managed by the assigned employee.</p>
                 `}
+
+                ${canEditChecklist && task.status !== 'completed' ? `
+                <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e2e8f0;">
+                    <button onclick="markTaskComplete(${task.id})" class="btn btn-success" style="width: 100%;">
+                        <i class="fas fa-check-circle"></i> Job Done — Mark Task Complete
+                    </button>
+                    <p style="font-size: 11px; color: #94a3b8; margin: 6px 0 0; text-align: center;">Finished the work? Use this instead of ticking every box above.</p>
+                </div>
+                ` : ''}
             </div>
         </div>
     `;
@@ -777,6 +797,32 @@ async function toggleChecklist(checklistId, isCompleted) {
     } catch (error) {
         showToast('Error updating checklist', 'error');
     }
+}
+
+async function markTaskComplete(taskId) {
+    showConfirmModal(
+        'This marks the task as complete and checks off any remaining checklist items automatically.',
+        async () => {
+            try {
+                const response = await fetch('../api/complete-task.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ task_id: taskId })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    showToast(result.message, 'success');
+                    closeTaskDetailModal();
+                    loadTasks();
+                } else {
+                    showToast(result.error, 'error');
+                }
+            } catch (error) {
+                showToast('Error completing task', 'error');
+            }
+        },
+        { title: 'Mark Task Complete', confirmText: 'Mark Complete', danger: false }
+    );
 }
 
 async function deleteChecklistItem(checklistId) {
