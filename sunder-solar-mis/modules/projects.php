@@ -249,6 +249,10 @@ function renderProjects() {
                             <h4 class="font-semibold text-lg">${escapeHtml(p.project_name)}</h4>
                             <p class="text-sm text-gray-600 mt-1">${escapeHtml(p.customer_name || 'Unknown')}</p>
                         </div>
+                        ${(USER_ROLE === 'super_admin' || USER_ROLE === 'owner') ? `
+                        <button onclick="openUpgradeModal(${p.id})" class="btn btn-secondary btn-sm" title="Upgrade this project — add compatible equipment for this client" style="flex-shrink:0">
+                            <i class="fas fa-arrow-up-right-dots"></i> Upgrade
+                        </button>` : ''}
                     </div>
                     <div class="space-y-2 mt-3">
                         <div class="flex items-center gap-2 text-sm text-gray-600">
@@ -577,6 +581,27 @@ async function viewProject(id) {
 async function editProject(id) {
     const project = projects.find(p => p.id === id);
     if (project) openProjectModal(project);
+}
+
+// Entry point for the "Upgrade" button on an existing project's card —
+// jumps straight into the same upgrade flow the "Add New Project" modal
+// already has (compatible-item recommendations + upgrade quotation), just
+// pre-filled for THIS project instead of requiring the customer to be
+// picked and the past project found manually.
+function openUpgradeModal(projectId) {
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return;
+
+    openProjectModal(); // blank "Add New Project" state, upgrade UI reset
+    document.getElementById('modalTitle').textContent = `Upgrade — ${project.project_name}`;
+    document.getElementById('projectName').value = `${project.project_name} - Upgrade`;
+    document.getElementById('customerId').value = project.customer_id;
+
+    onProjectCustomerChange(); // populates the "Upgrade of Project" list for this client, shows the toggle
+    document.getElementById('isUpgrade').checked = true;
+    onUpgradeToggle();
+    document.getElementById('upgradeOfProjectId').value = projectId;
+    loadUpgradeRecommendations();
 }
 
 async function archiveProject(id) {

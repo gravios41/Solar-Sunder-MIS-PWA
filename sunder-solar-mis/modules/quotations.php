@@ -46,14 +46,17 @@ include_once __DIR__ . '/../includes/header.php';
 
 <div class="card">
     <div class="card-header">
-        <h3 class="card-title">All Quotations</h3>
+        <div>
+            <h3 class="card-title">All Quotations</h3>
+        </div>
         <?php if (checkPermission('quotations', 'create')): ?>
-        <button onclick="openQuotationModal()" class="btn btn-primary">
-            <i class="fas fa-plus"></i> New Quotation
+        <button onclick="openQuotationModal()" class="btn btn-primary" title="For a client with no bill / energy assessment on file — build a quotation manually">
+            <i class="fas fa-plus"></i> New Manual Quotation
         </button>
         <?php endif; ?>
     </div>
     <div class="card-body">
+        <p style="margin:-4px 0 16px;font-size:12.5px;color:#64748b"><i class="fas fa-circle-info"></i> Quotations from an Energy Assessment appear here automatically once a tier is saved. Use <strong>New Manual Quotation</strong> only when a client has no bill/assessment on file and you're pricing the system directly.</p>
         <div class="filters-bar">
             <div class="filter-group">
                 <label class="filter-label">Status</label>
@@ -97,7 +100,7 @@ include_once __DIR__ . '/../includes/header.php';
 <div id="quotationModal" class="modal">
     <div class="modal-content" style="max-width: 800px;">
         <div class="modal-header">
-            <h3 id="modalTitle" class="modal-title">Add New Quotation</h3>
+            <h3 id="modalTitle" class="modal-title">New Manual Quotation</h3>
             <button class="modal-close" onclick="closeQuotationModal()">&times;</button>
         </div>
         <div class="modal-body">
@@ -619,7 +622,7 @@ function openQuotationModal(quotation = null) {
         document.getElementById('notes').value = quotation.notes || '';
         renderItemRows(quotation.items || []);
     } else {
-        document.getElementById('modalTitle').textContent = 'Add New Quotation';
+        document.getElementById('modalTitle').textContent = 'New Manual Quotation';
         document.getElementById('quotationForm').reset();
         document.getElementById('quotationId').value = '';
         setQuotationCustomerMode(false);
