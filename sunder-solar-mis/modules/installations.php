@@ -246,10 +246,14 @@ function renderInstallations() {
         const customer = customers.find(c => c.id === i.customer_id);
         return `
             <div class="project-card">
-                <div class="card">
+                <div class="card" style="position:relative">
+                    ${project && (USER_ROLE === 'super_admin' || USER_ROLE === 'owner') ? `
+                    <button onclick="openProjectUpgrade(${project.id})" class="btn btn-secondary btn-sm" title="Upgrade this project — e.g. add a new battery — based on what it already has" style="position:absolute;top:12px;right:12px;z-index:1">
+                        <i class="fas fa-arrow-up-right-dots"></i> Upgrade
+                    </button>` : ''}
                     <div class="card-body">
                         <div class="flex justify-between items-start mb-3">
-                            <div>
+                            <div style="padding-right:${project && (USER_ROLE === 'super_admin' || USER_ROLE === 'owner') ? '96px' : '0'}">
                                 <div class="flex items-center gap-2 mb-2">
                                     <span class="text-sm text-gray-500">${escapeHtml(i.installation_code)}</span>
                                     ${getStatusBadgeHtml(i.status)}
@@ -447,6 +451,15 @@ async function viewInstallation(id) {
 async function editInstallation(id) {
     const installation = installations.find(i => i.id === id);
     if (installation) openInstallationModal(installation);
+}
+
+// "Upgrade" on an installation's card — e.g. adding a new battery to a
+// system already installed — is the same upgrade flow Projects already
+// has (recommends items compatible with what this project already has),
+// just entered from here. Hands off to the Projects page, which opens
+// straight into that flow for this exact project.
+function openProjectUpgrade(projectId) {
+    window.location.href = `../modules/projects.php?upgrade_project=${projectId}`;
 }
 
 async function archiveInstallation(id) {
