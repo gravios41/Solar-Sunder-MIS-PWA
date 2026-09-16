@@ -431,20 +431,22 @@ function getStatusBadgeHtml(status) {
     return `<span class="badge ${badges[status]}">${labels[status]}</span>`;
 }
 
-// Only the major, big-ticket components get their own picker row — a panel
-// or battery upgrade obviously brings its own brackets, wiring, tape/fuses
-// along with it, so those supporting categories (and the old free-text
-// Services list) aren't itemized separately here anymore.
+// Major components get one row each; supporting categories (Mounting,
+// Cable, Accessories) can hold several items per quotation, so they get an
+// "+Add" button instead. A manual quotation (no Energy Assessment behind
+// it) has no other way to attach these, so they must be pickable here too.
 const QUOTATION_ROW_CATEGORIES = [
     { key: 'solar_panel', label: 'Solar Panel' },
     { key: 'inverter', label: 'Inverter' },
     { key: 'battery', label: 'Battery' },
+    { key: 'mounting', label: 'Mounting' },
+    { key: 'cable', label: 'Cable' },
+    { key: 'accessories', label: 'Accessories' },
 ];
 
-// No category here needs more than one row anymore (that was Accessories'
-// and Services' job, both removed) — kept as an array so the "+Add"
-// checks elsewhere stay valid without touching that logic.
-const MULTI_ITEM_CATEGORIES = [];
+// Categories where more than one item commonly applies (e.g. multiple
+// cable runs, several accessory items) — these get a "+Add" button.
+const MULTI_ITEM_CATEGORIES = ['mounting', 'cable', 'accessories'];
 
 function categoryItemSource(categoryKey) {
     return inventoryItems.filter(inv => inv.category === categoryKey);
@@ -498,10 +500,10 @@ function buildItemRowHtml(categoryKey, existingItem) {
 }
 
 // Quotations built from an Energy Assessment (or an older version of this
-// form) can carry Mounting/Cable/Accessories/Services line items that no
-// longer have a picker section here. They're kept out of sight but NOT
-// discarded — re-saving a quotation like that must not silently delete
-// them just because this form got simpler.
+// form) can still carry line items in a category with no picker section
+// here (e.g. the old free-text Services list). They're kept out of sight
+// but NOT discarded — re-saving a quotation like that must not silently
+// delete them just because this form doesn't manage that category.
 let unmanagedQuotationItems = [];
 
 function renderItemRows(existingItems) {
@@ -533,7 +535,7 @@ function renderItemRows(existingItems) {
     if (unmanagedQuotationItems.length > 0) {
         container.insertAdjacentHTML('beforeend', `
             <p style="font-size:11px;color:#94a3b8;margin-top:4px"><i class="fas fa-circle-info"></i>
-                This quotation also includes ${unmanagedQuotationItems.length} supporting item(s) (mounting/cable/accessories) not shown here — they're kept as-is when you save.</p>
+                This quotation also includes ${unmanagedQuotationItems.length} other supporting item(s) not shown here — they're kept as-is when you save.</p>
         `);
     }
 
