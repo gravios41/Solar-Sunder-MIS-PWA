@@ -159,19 +159,43 @@ let lastPreviewTiers = null, lastPreviewSunHours = null, lastPreviewEfficiency =
 let reviewSelectedTier = 'standard';
 let lastReviewTiers = null, lastReviewSunHours = null, lastReviewEfficiency = null;
 
+// Starts expanded (all three tiers shown, for comparison). Clicking a tier
+// is a deliberate "I choose this one" action, so it collapses down to just
+// that card — "Compare all options" brings the other two back.
+let previewCompareMode = true;
+let reviewCompareMode = true;
+
 function selectPreviewTier(key) {
     previewSelectedTier = key;
+    previewCompareMode = false;
     if (lastPreviewTiers) {
         document.getElementById('recommendationItems').innerHTML =
-            renderTierContainers(lastPreviewTiers, lastPreviewSunHours, lastPreviewEfficiency, previewSelectedTier, 'selectPreviewTier');
+            renderTierContainers(lastPreviewTiers, lastPreviewSunHours, lastPreviewEfficiency, previewSelectedTier, 'selectPreviewTier', previewCompareMode, 'expandPreviewCompare');
+    }
+}
+
+function expandPreviewCompare() {
+    previewCompareMode = true;
+    if (lastPreviewTiers) {
+        document.getElementById('recommendationItems').innerHTML =
+            renderTierContainers(lastPreviewTiers, lastPreviewSunHours, lastPreviewEfficiency, previewSelectedTier, 'selectPreviewTier', previewCompareMode, 'expandPreviewCompare');
     }
 }
 
 function selectReviewTier(key) {
     reviewSelectedTier = key;
+    reviewCompareMode = false;
     if (lastReviewTiers) {
         document.getElementById('modalMaterials').innerHTML =
-            renderTierContainers(lastReviewTiers, lastReviewSunHours, lastReviewEfficiency, reviewSelectedTier, 'selectReviewTier');
+            renderTierContainers(lastReviewTiers, lastReviewSunHours, lastReviewEfficiency, reviewSelectedTier, 'selectReviewTier', reviewCompareMode, 'expandReviewCompare');
+    }
+}
+
+function expandReviewCompare() {
+    reviewCompareMode = true;
+    if (lastReviewTiers) {
+        document.getElementById('modalMaterials').innerHTML =
+            renderTierContainers(lastReviewTiers, lastReviewSunHours, lastReviewEfficiency, reviewSelectedTier, 'selectReviewTier', reviewCompareMode, 'expandReviewCompare');
     }
 }
 
@@ -219,6 +243,7 @@ function calculateRecommendation() {
     const systemType = document.getElementById('systemType')?.value || 'hybrid';
 
     recommendation.textContent = 'Calculating…';
+    previewCompareMode = true; // a freshly recalculated preview starts back in comparison view
     clearTimeout(recommendationPreviewTimer);
     recommendationPreviewTimer = setTimeout(
         () => fetchRecommendationPreview(averageMonthly, sunHours, efficiency, panelWattage, systemType),
@@ -264,7 +289,7 @@ async function fetchRecommendationPreview(averageMonthly, sunHours, efficiency, 
 
         const itemsEl = document.getElementById('recommendationItems');
         if (itemsEl) {
-            itemsEl.innerHTML = renderTierContainers(result.tiers, sunHours, efficiency, previewSelectedTier, 'selectPreviewTier');
+            itemsEl.innerHTML = renderTierContainers(result.tiers, sunHours, efficiency, previewSelectedTier, 'selectPreviewTier', previewCompareMode, 'expandPreviewCompare');
         }
     } catch (e) {
         if (requestId !== recommendationRequestSeq) return; // stale request — a newer one is already in flight or resolved
@@ -289,8 +314,9 @@ const SYSTEM_TYPE_NOTE = {
     hybrid:    null,
 };
 
-function renderTierContainers(tiers, peakSunHours, efficiencyPercent, selectedTier, onSelectFn) {
-    const cards = ['budget', 'standard', 'luxury'].map(key => {
+function renderTierContainers(tiers, peakSunHours, efficiencyPercent, selectedTier, onSelectFn, compareMode = true, expandFn = null) {
+    const keysToShow = (!compareMode && selectedTier) ? [selectedTier] : ['budget', 'standard', 'luxury'];
+    const cards = keysToShow.map(key => {
         const tier = tiers[key];
         const display = TIER_DISPLAY[key];
         const total = tier.items.reduce((sum, item) => sum + (item.unit_price * item.quantity), 0);
@@ -349,11 +375,16 @@ function renderTierContainers(tiers, peakSunHours, efficiencyPercent, selectedTi
 
     const note = SYSTEM_TYPE_NOTE[tiers.standard?.system_type] || null;
     const noteHtml = note ? `<div style="margin-top:8px;font-size:12px;color:#64748b"><i class="fas fa-circle-info"></i> ${note}</div>` : '';
+    const compareLinkHtml = (!compareMode && expandFn)
+        ? `<div style="margin-top:8px;text-align:center"><a href="javascript:void(0)" onclick="${expandFn}()" style="font-size:12px;color:#64748b;text-decoration:underline">Compare all options</a></div>`
+        : '';
+    const heading = compareMode ? 'Recommended materials (from inventory) — three options:' : 'Recommended materials (from inventory) — selected option:';
 
     return `
-        <div style="margin-top:12px;font-size:12px;font-weight:600;color:#334155">Recommended materials (from inventory) — three options:</div>
+        <div style="margin-top:12px;font-size:12px;font-weight:600;color:#334155">${heading}</div>
         <div class="tier-container" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px">${cards}</div>
-        ${noteHtml}`;
+        ${noteHtml}
+        ${compareLinkHtml}`;
 }
 
 document.querySelectorAll('#assessmentForm input').forEach(input => input.addEventListener('input', calculateRecommendation));
@@ -528,6 +559,7 @@ async function loadAssessments() {
 function showRecommendationModal(assessmentId) {
     currentAssessmentId = assessmentId;
     reviewSelectedTier = 'standard'; // reset each time — a prior assessment's choice shouldn't carry over
+    reviewCompareMode = true;
     lastReviewTiers = null;
     const modal = document.getElementById('recommendationModal');
     const content = document.getElementById('modalContent');
@@ -615,7 +647,7 @@ function showRecommendationModal(assessmentId) {
                 lastReviewTiers = preview.tiers;
                 lastReviewSunHours = assessment.peak_sun_hours;
                 lastReviewEfficiency = assessment.system_efficiency * 100;
-                materialsEl.innerHTML = renderTierContainers(preview.tiers, lastReviewSunHours, lastReviewEfficiency, reviewSelectedTier, 'selectReviewTier');
+                materialsEl.innerHTML = renderTierContainers(preview.tiers, lastReviewSunHours, lastReviewEfficiency, reviewSelectedTier, 'selectReviewTier', reviewCompareMode, 'expandReviewCompare');
             } catch (e) {
                 materialsEl.innerHTML = `<p style="color:#dc2626;font-size:13px">Could not load materials.</p>`;
             }
