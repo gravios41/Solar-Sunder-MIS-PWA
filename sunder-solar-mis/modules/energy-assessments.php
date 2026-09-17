@@ -116,9 +116,8 @@ include_once __DIR__ . '/../includes/header.php';
             </div>
 
             <h4 style="margin:20px 0 10px">Or Enter Manually</h4>
-            <div class="form-group" style="max-width:220px"><label class="form-label">Peak Sun Hours</label><input id="peakSunHours" class="form-control" type="number" value="5" min="1" max="10" step="0.1"></div>
-            <div class="table-container"><table class="table manual-bills-table"><thead><tr><th>Billing Month</th><th>Monthly Consumption (kWh) *</th><th>Monthly Bill (₱)</th></tr></thead><tbody>
-                <tr><td><input class="form-control bill-period" type="month" required></td><td><input class="form-control bill-kwh" type="number" min="0.01" step="0.01" required></td><td><input class="form-control bill-amount" type="number" min="0" step="0.01"></td></tr>
+            <div class="table-container"><table class="table manual-bills-table"><thead><tr><th>Billing Month</th><th>Monthly Consumption (kWh) *</th><th>Monthly Bill (₱)</th><th>Peak Sun Hours</th></tr></thead><tbody>
+                <tr><td><input class="form-control bill-period" type="month" required></td><td><input class="form-control bill-kwh" type="number" min="0.01" step="0.01" required></td><td><input class="form-control bill-amount" type="number" min="0" step="0.01"></td><td><input id="peakSunHours" class="form-control" type="number" value="5" min="1" max="10" step="0.1"></td></tr>
             </tbody></table></div>
             <div class="card" style="margin-top:20px;background:#f8fafc"><div class="card-body"><strong>Recommendation preview</strong><div id="sizingAssumptions" style="margin-top:2px;font-size:12px;color:#64748b"></div><div id="recommendation" style="margin-top:8px;color:#475569">Enter the bill's kWh reading.</div><div id="recommendationItems"></div></div></div>
             <div style="margin-top:20px"><button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Assessment</button></div>
@@ -558,8 +557,6 @@ async function loadAssessments() {
 
 function showRecommendationModal(assessmentId) {
     currentAssessmentId = assessmentId;
-    reviewSelectedTier = 'standard'; // reset each time — a prior assessment's choice shouldn't carry over
-    reviewCompareMode = true;
     lastReviewTiers = null;
     const modal = document.getElementById('recommendationModal');
     const content = document.getElementById('modalContent');
@@ -576,6 +573,14 @@ function showRecommendationModal(assessmentId) {
             if (!result.success || !result.data.length) return;
             const assessment = result.data[0];
             const alreadyQuoted = !!assessment.quotation_id;
+
+            // The tier chosen back in the live preview (before this
+            // assessment was even saved) was carried through on the record
+            // — open straight to it instead of making the owner pick again.
+            // "Compare all options" is still one click away if they want to
+            // change their mind.
+            reviewSelectedTier = ['budget', 'standard', 'luxury'].includes(assessment.selected_tier) ? assessment.selected_tier : 'standard';
+            reviewCompareMode = false;
 
             // Once a tier's been picked and a quotation exists, re-showing
             // all three tiers for re-comparison is pointless (and picking
@@ -725,6 +730,7 @@ document.getElementById('assessmentForm').addEventListener('submit', async event
         client_gstin: document.getElementById('clientGstin').value.trim(),
         client_type: document.getElementById('clientType').value,
         client_status: document.getElementById('clientStatus').value,
+        selected_tier: previewSelectedTier,
         bills,
         peak_sun_hours: document.getElementById('peakSunHours').value,
         system_efficiency: DEFAULT_EFFICIENCY / 100,
@@ -746,6 +752,8 @@ document.getElementById('assessmentForm').addEventListener('submit', async event
         document.getElementById('peakSunHours').value = 5;
         currentAssessmentId = null;
         ocrBillsData = {};
+        previewSelectedTier = 'standard';
+        previewCompareMode = true;
         document.getElementById('ocrResultsPanel').style.display = 'none';
         loadAssessments();
     } else showToast(result.error || 'Unable to save assessment', 'error');

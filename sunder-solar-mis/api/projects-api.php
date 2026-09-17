@@ -57,6 +57,7 @@ function handleGetProjects($supabase) {
                 $quotations = $supabase->getAll('quotations', ['project_id' => 'eq.' . $id]) ?: [];
                 $quotation = $quotations[0] ?? null;
                 if ($quotation) {
+                    $project['quotation_id'] = $quotation['id'] ?? null;
                     $project['quotation_number'] = $quotation['quotation_number'] ?? null;
                     $project['quotation_items'] = $supabase->getAll('quotation_items', ['quotation_id' => 'eq.' . $quotation['id']]) ?: [];
 

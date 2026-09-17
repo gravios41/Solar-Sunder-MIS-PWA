@@ -551,7 +551,13 @@ async function viewProject(id) {
         { label: 'Status',       value: project.status?.replace(/_/g, ' ') },
         { label: 'Progress',     value: project.progress + '%' },
         { label: 'Manager',      value: project.manager },
-        { label: 'Selected Package', value: project.selected_package },
+        {
+            label: 'Selected Package',
+            value: project.quotation_id
+                ? `<button type="button" class="btn btn-sm btn-secondary" onclick="viewProjectPackage(${project.quotation_id})"><i class="fas fa-eye"></i> ${escapeHtml(project.selected_package || 'View Package')}</button>`
+                : (project.selected_package || null),
+            html: !!project.quotation_id
+        },
         { label: 'Quotation',    value: project.quotation_number },
 
         { section: 'Timeline & Budget' },
@@ -577,6 +583,13 @@ async function viewProject(id) {
 async function editProject(id) {
     const project = projects.find(p => p.id === id);
     if (project) openProjectModal(project);
+}
+
+// "Selected Package" button in the project detail view — jumps to the
+// Quotations module and opens that exact quotation instead of leaving the
+// owner to go find it in the list themselves.
+function viewProjectPackage(quotationId) {
+    window.location.href = `../modules/quotations.php?view_quotation=${quotationId}`;
 }
 
 // Entry point for the "Upgrade" button on an existing project's card —

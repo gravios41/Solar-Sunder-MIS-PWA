@@ -396,8 +396,8 @@ function renderQuotations() {
                         <i class="fas fa-file-excel" style="color:#16a34a"></i>
                     </button>
                     ${(USER_ROLE === 'super_admin' || USER_ROLE === 'owner') && q.status !== 'approved' ? `
-                    <button onclick="approveQuotation(${q.id})" class="btn-icon" title="Approve — deducts inventory and creates the installation and tasks">
-                        <i class="fas fa-check-circle" style="color:#16a34a"></i>
+                    <button onclick="approveQuotation(${q.id})" class="btn btn-success btn-sm" title="Approve — deducts inventory and creates the installation and tasks">
+                        <i class="fas fa-check-circle"></i> Approve
                     </button>` : ''}
                     ${(USER_ROLE === 'super_admin' || USER_ROLE === 'owner') && q.status !== 'approved' ? `
                     <button onclick="editQuotation(${q.id})" class="btn-icon" title="Edit">
@@ -1063,7 +1063,7 @@ async function approveQuotation(id) {
     }
 
     showConfirmModal(
-        `<p class="deduction-intro">Approve "${escapeHtml(name)}"? This creates the installation and task list and deducts stock.</p>${deductionHtml}`,
+        `<p class="deduction-intro">Approve "${escapeHtml(name)}"? This deducts stock and schedules the work (a new installation and task list, or — for a project upgrade — a labeled task on the original project).</p>${deductionHtml}`,
         async () => {
             try {
                 const response = await fetch('../api/approve-quotation.php', {
@@ -1094,7 +1094,15 @@ document.getElementById('statusFilter')?.addEventListener('change', renderQuotat
 loadInventoryItems();
 loadCustomers();
 loadProjects();
-loadQuotations();
+loadQuotations().then(() => {
+    // Arrived from a project's "View Package" button — open straight to
+    // that quotation instead of making them find it in the list again.
+    const viewQuotationId = parseInt(new URLSearchParams(window.location.search).get('view_quotation'));
+    if (viewQuotationId) {
+        viewQuotation(viewQuotationId);
+        window.history.replaceState({}, '', window.location.pathname);
+    }
+});
 </script>
 
 <?php include_once __DIR__ . '/../includes/footer.php'; ?>

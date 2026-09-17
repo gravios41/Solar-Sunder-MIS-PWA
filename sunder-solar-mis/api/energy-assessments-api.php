@@ -112,6 +112,13 @@ try {
             }
         }
 
+        // Same carry-through as the initial save (see POST below) — a
+        // placeholder being finalized also has a tier picked in that
+        // moment's live preview.
+        if (isset($data['selected_tier']) && in_array($data['selected_tier'], ['budget', 'standard', 'luxury'], true)) {
+            $updateData['selected_tier'] = $data['selected_tier'];
+        }
+
         // Finalizing a placeholder assessment (created to attach OCR bill
         // uploads to) with real bill data — replaces its bills rather than
         // leaving the placeholder behind and creating a second record.
@@ -204,11 +211,17 @@ try {
     $clientFields['client_type'] = $customerId ? null : ($data['client_type'] ?? 'residential');
     $clientFields['client_status'] = $customerId ? null : ($data['client_status'] ?? 'active');
 
+    // Whichever tier was picked in the live preview before saving — carried
+    // through so the Review Recommendation modal doesn't have to ask again.
+    $selectedTier = in_array($data['selected_tier'] ?? '', ['budget', 'standard', 'luxury'], true)
+        ? $data['selected_tier'] : 'standard';
+
     $assessmentData = array_merge($sizing, $clientFields, [
         'customer_id' => $customerId ?: null,
         'client_name' => $customerId ? null : $clientName,
         'project_id' => $data['project_id'] ?? null,
         'status' => $isPlaceholder ? 'draft' : 'verified',
+        'selected_tier' => $selectedTier,
         'created_by' => $_SESSION['user_id'],
         'updated_at' => date('Y-m-d H:i:s')
     ]);

@@ -210,6 +210,29 @@ body {
 .sidebar.collapsed .logout-btn { display: none; }
 .sidebar.collapsed .sidebar-section-title { display: none; }
 
+/* Hover preview — a collapsed sidebar temporarily flies back out to full
+   width while the pointer is over it (main-content margin is untouched,
+   so this floats above the page rather than reflowing it), reverting to
+   the icon rail on mouseleave. The underlying collapsed/localStorage
+   state never changes just from hovering. */
+.sidebar.collapsed.hover-preview { width: var(--sidebar-width); }
+.sidebar.collapsed.hover-preview .logo-text,
+.sidebar.collapsed.hover-preview .nav-label,
+.sidebar.collapsed.hover-preview .nav-link span,
+.sidebar.collapsed.hover-preview .nav-link .nav-badge,
+.sidebar.collapsed.hover-preview .user-info,
+.sidebar.collapsed.hover-preview .logout-btn span,
+.sidebar.collapsed.hover-preview .sidebar-section-title { opacity: 1; pointer-events: auto; width: auto; overflow: visible; }
+.sidebar.collapsed.hover-preview .nav-link { justify-content: flex-start; padding: 11px 16px; }
+.sidebar.collapsed.hover-preview .nav-icon { margin: 0 12px 0 0; font-size: 1rem; }
+.sidebar.collapsed.hover-preview .logo { justify-content: flex-start; }
+.sidebar.collapsed.hover-preview .user-profile { justify-content: flex-start; }
+.sidebar.collapsed.hover-preview .user-avatar { margin: 0; }
+.sidebar.collapsed.hover-preview .logout-btn { display: flex; }
+.sidebar.collapsed.hover-preview .sidebar-section-title { display: block; }
+.sidebar.collapsed.hover-preview .nav-link[data-tooltip]:hover::after,
+.sidebar.collapsed.hover-preview .nav-link[data-tooltip]:hover::before { display: none; }
+
 /* Tooltip on collapsed */
 .sidebar.collapsed .nav-link { position: relative; }
 .sidebar.collapsed .nav-link[data-tooltip]:hover::after {

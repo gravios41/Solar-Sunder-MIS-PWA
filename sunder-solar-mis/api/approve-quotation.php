@@ -167,31 +167,95 @@ try {
         ];
     }
 
-    // Create installation
-    $installationData = [
-        'customer_id' => $customerId,
-        'project_id' => $projectId,
-        'installation_code' => generateSequentialCode($supabase, 'installations', 'installation_code', 'INS'),
-        'location' => $customer['address'] ?? '',
-        'installation_date' => date('Y-m-d', strtotime('+14 days')),
-        'status' => 'scheduled',
-        'progress' => 0,
-        'technician' => '',
-        'created_at' => date('Y-m-d H:i:s'),
-        'updated_at' => date('Y-m-d H:i:s')
-    ];
-    $installationResponse = $supabase->insert('installations', $installationData);
-    $installation = $installationResponse[0] ?? $installationResponse;
-    $installationId = $installation['id'] ?? null;
-
-    if (!$installationId) {
-        throw new Exception('Failed to create installation');
-    }
-
-    // Create installation tasks, spaced across the project timeline
+    // The project this quotation belongs to might itself be an Upgrade
+    // (created via the Installations → "Upgrade" flow) — that project
+    // exists only to record what's being added against an ALREADY
+    // installed original project, so it gets no installation/full task
+    // cycle of its own. Instead, a single labeled task is added straight
+    // onto the original project's existing task list.
     $projectRow = $supabase->getById('projects', $projectId);
-    $startDate = $projectRow['start_date'] ?? date('Y-m-d');
-    $standardTasks = [
+    $upgradeOfProjectId = $projectRow['upgrade_of_project_id'] ?? null;
+
+    $installationId = null;
+    $installationCode = null;
+    $createdTasks = [];
+
+    if ($upgradeOfProjectId) {
+        $originalProject = $supabase->getById('projects', $upgradeOfProjectId);
+        if (!$originalProject) {
+            throw new Exception('The original project for this upgrade could not be found');
+        }
+
+        $itemLines = [];
+        $checklist = [];
+        foreach ($quotationItems as $item) {
+            $desc = $item['description'] ?? '';
+            $qty = (float)($item['quantity'] ?? 0);
+            if (!$desc || $qty <= 0) continue;
+            $itemLines[] = sprintf('%s × %s', $desc, $qty);
+            $checklist[] = sprintf('Install %s × %s', $desc, $qty);
+        }
+        $checklist[] = 'Test and verify the upgraded system';
+
+        $taskData = [
+            'project_id' => $upgradeOfProjectId,
+            // "[Upgrade] " is a display tag, not a DB column — tasks.php
+            // detects it to show a badge and strips it from the title shown.
+            'task_title' => '[Upgrade] ' . ($quotation['quotation_number'] ?? 'New items'),
+            'description' => $itemLines ? ('Upgrade items: ' . implode(', ', $itemLines)) : 'See quotation ' . $quotation['quotation_number'],
+            'status' => 'pending',
+            'assigned_to' => '',
+            'priority' => 'medium',
+            'due_date' => date('Y-m-d', strtotime('+7 days')),
+            'checklist_count' => count($checklist),
+            'checklist_completed' => 0,
+            'progress_percent' => 0,
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s')
+        ];
+        $taskResponse = $supabase->insert('tasks', $taskData);
+        $task = $taskResponse[0] ?? $taskResponse;
+        $createdTasks[] = $task;
+
+        $taskId = $task['id'] ?? null;
+        if ($taskId) {
+            foreach ($checklist as $sequence => $item) {
+                $supabase->insert('task_checklists', [
+                    'task_id' => $taskId,
+                    'checklist_item' => $item,
+                    'is_completed' => false,
+                    'sequence' => $sequence + 1,
+                    'created_by' => $_SESSION['user_id'],
+                ]);
+            }
+        }
+    } else {
+
+        // Create installation
+        $installationData = [
+            'customer_id' => $customerId,
+            'project_id' => $projectId,
+            'installation_code' => generateSequentialCode($supabase, 'installations', 'installation_code', 'INS'),
+            'location' => $customer['address'] ?? '',
+            'installation_date' => date('Y-m-d', strtotime('+14 days')),
+            'status' => 'scheduled',
+            'progress' => 0,
+            'technician' => '',
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s')
+        ];
+        $installationResponse = $supabase->insert('installations', $installationData);
+        $installation = $installationResponse[0] ?? $installationResponse;
+        $installationId = $installation['id'] ?? null;
+
+        if (!$installationId) {
+            throw new Exception('Failed to create installation');
+        }
+        $installationCode = $installationData['installation_code'];
+
+        // Create installation tasks, spaced across the project timeline
+        $startDate = $projectRow['start_date'] ?? date('Y-m-d');
+        $standardTasks = [
         [
             'title' => 'Site Survey & Roof Assessment',
             'description' => 'Inspect roof structure and identify optimal panel placement (est. 2 hrs)',
@@ -278,7 +342,6 @@ try {
         ],
     ];
 
-    $createdTasks = [];
     foreach ($standardTasks as $taskTemplate) {
         $taskData = [
             'project_id' => $projectId,
@@ -315,6 +378,8 @@ try {
         }
     }
 
+    } // end else (standard, non-upgrade approval)
+
     // Mark the quotation approved
     $supabase->update('quotations', $quotationId, [
         'status' => 'approved',
@@ -335,20 +400,22 @@ try {
         ]);
     }
 
-    logActivity($_SESSION['user_id'], 'update', 'quotations', "Approved quotation {$quotation['quotation_number']} — created installation and tasks");
+    logActivity($_SESSION['user_id'], 'update', 'quotations', "Approved quotation {$quotation['quotation_number']} — " . ($upgradeOfProjectId ? 'added upgrade task to project #' . $upgradeOfProjectId : 'created installation and tasks'));
 
     echo json_encode([
         'success' => true,
-        'message' => $customerCreated
-            ? 'Quotation approved — customer record created, inventory deducted, installation scheduled, and tasks created.'
-            : 'Quotation approved — inventory deducted, installation scheduled, and tasks created.',
+        'message' => $upgradeOfProjectId
+            ? 'Quotation approved — inventory deducted, and an upgrade task was added to the original project.'
+            : ($customerCreated
+                ? 'Quotation approved — customer record created, inventory deducted, installation scheduled, and tasks created.'
+                : 'Quotation approved — inventory deducted, installation scheduled, and tasks created.'),
         'created' => [
             'customer_id' => $customerId,
             'customer_created' => $customerCreated,
             'project_id' => $projectId,
             'project_code' => $projectCode,
             'installation_id' => $installationId,
-            'installation_code' => $installationData['installation_code'],
+            'installation_code' => $installationCode,
             'task_count' => count($createdTasks),
             'inventory_deductions' => $inventoryDeductions
         ]

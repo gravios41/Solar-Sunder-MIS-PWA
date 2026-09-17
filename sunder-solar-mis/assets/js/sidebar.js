@@ -52,11 +52,42 @@ document.addEventListener('DOMContentLoaded', function () {
         mobileOverlay.addEventListener('click', closeMobileMenu);
     }
 
-    /* ── Close on nav link click (mobile) ── */
+    /* ── Close on nav link click (mobile) / auto-collapse (desktop) ── */
     sidebar.querySelectorAll('.nav-link').forEach(link => {
         link.addEventListener('click', function () {
-            if (window.innerWidth <= 768) closeMobileMenu();
+            if (window.innerWidth <= 768) {
+                closeMobileMenu();
+                return;
+            }
+            // Navigating to a module collapses the sidebar so the next
+            // page loads with it out of the way — hovering it (or the
+            // toggle button) brings it back.
+            sidebar.classList.add('collapsed');
+            mainContent?.classList.add('expanded');
+            localStorage.setItem('sidebarCollapsed', 'true');
         });
+    });
+
+    /* ── Auto-collapse on click outside the sidebar (desktop) ── */
+    document.addEventListener('click', function (e) {
+        if (window.innerWidth <= 768) return; // mobile uses the overlay instead
+        if (sidebar.classList.contains('collapsed')) return; // already collapsed
+        if (sidebar.contains(e.target) || e.target === mobileMenuBtn) return;
+        sidebar.classList.add('collapsed');
+        mainContent?.classList.add('expanded');
+        localStorage.setItem('sidebarCollapsed', 'true');
+        updateToggleIcon(true);
+    });
+
+    /* ── Hover preview — a collapsed sidebar flies back out while the
+       pointer is over it, without changing the persisted collapsed
+       state, and tucks back in on mouseleave ── */
+    sidebar.addEventListener('mouseenter', function () {
+        if (window.innerWidth <= 768) return;
+        if (sidebar.classList.contains('collapsed')) sidebar.classList.add('hover-preview');
+    });
+    sidebar.addEventListener('mouseleave', function () {
+        sidebar.classList.remove('hover-preview');
     });
 
     /* ── Resize handler ── */

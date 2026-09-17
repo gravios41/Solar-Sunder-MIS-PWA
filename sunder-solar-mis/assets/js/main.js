@@ -254,10 +254,13 @@ function showDetailModal(title, rows) {
             return `<div class="gmDetail-section">${escapeHtml(r.section)}</div>`;
         }
         const val = (r.value !== null && r.value !== undefined && r.value !== '') ? String(r.value) : '—';
+        // Rows are escaped by default — r.html opts a specific row (e.g. an
+        // action button) into raw markup instead, same pattern as
+        // showConfirmModal's html option.
         return `
         <div class="gmDetail-row">
             <span class="gmDetail-label">${escapeHtml(r.label)}</span>
-            <span class="gmDetail-value">${escapeHtml(val)}</span>
+            <span class="gmDetail-value">${r.html ? val : escapeHtml(val)}</span>
         </div>`;
     }).join('');
 

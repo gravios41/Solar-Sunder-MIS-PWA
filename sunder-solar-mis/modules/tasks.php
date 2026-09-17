@@ -203,6 +203,14 @@ function canEditChecklistFor(task) {
     return assignedName.toLowerCase() === (USER_FULL_NAME || '').trim().toLowerCase();
 }
 
+// A project upgrade adds one task to the ORIGINAL project's existing task
+// list rather than a whole new installation cycle (see approve-quotation.php)
+// — tagged with a "[Upgrade] " title prefix instead of a new DB column, so
+// it can be picked out with a badge and have the tag stripped from display.
+const UPGRADE_TASK_TAG = /^\[Upgrade\]\s*/;
+function isUpgradeTask(title) { return UPGRADE_TASK_TAG.test(title || ''); }
+function stripUpgradeTag(title) { return (title || '').replace(UPGRADE_TASK_TAG, ''); }
+
 async function loadTasks() {
     try {
         const response = await fetch('../api/tasks-api.php');
@@ -281,9 +289,9 @@ function renderTaskList(taskList) {
                 <div class="task-card">
                     <div class="flex justify-between items-start mb-2">
                         <span class="text-xs text-gray-500">#${t.id}</span>
-                        ${getPriorityBadgeHtml(t.priority)}
+                        <span style="display:flex;gap:4px">${isUpgradeTask(t.task_title) ? '<span class="badge badge-purple">Upgrade</span>' : ''}${getPriorityBadgeHtml(t.priority)}</span>
                     </div>
-                    <h5 class="font-medium mb-1">${escapeHtml(t.task_title)}</h5>
+                    <h5 class="font-medium mb-1">${escapeHtml(stripUpgradeTag(t.task_title))}</h5>
                     <p class="text-xs mb-2">${project
                         ? `<span onclick="event.stopPropagation();openProjectTasksModal(${project.id})" style="color:#F97316;cursor:pointer;font-weight:600" title="View all tasks for this project">${escapeHtml(project.project_name)}</span>`
                         : `<span class="text-gray-600">No Project</span>`}</p>
@@ -424,7 +432,7 @@ function renderSimpleTaskList(taskList) {
     }
     return taskList.map(t => `
         <div class="task-card">
-            <h5 class="font-medium mb-1">${escapeHtml(t.task_title)}</h5>
+            <h5 class="font-medium mb-1">${isUpgradeTask(t.task_title) ? '<span class="badge badge-purple" style="margin-right:6px">Upgrade</span>' : ''}${escapeHtml(stripUpgradeTag(t.task_title))}</h5>
             <p class="text-xs text-gray-500 mb-2">${escapeHtml(t.description || '')}</p>
             <div class="flex justify-between items-center text-xs mb-3">
                 <span><i class="fas fa-user mr-1"></i>${escapeHtml(t.assigned_to || 'Unassigned')}</span>
@@ -636,7 +644,7 @@ async function openTaskDetailModal(task) {
         <div style="background: white; border-radius: 8px; max-width: 700px; margin: 40px auto; padding: 24px;">
             <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 20px;">
                 <div>
-                    <h3 style="margin: 0; font-size: 20px; font-weight: 600;">${escapeHtml(task.task_title)}</h3>
+                    <h3 style="margin: 0; font-size: 20px; font-weight: 600;">${isUpgradeTask(task.task_title) ? '<span class="badge badge-purple" style="margin-right:8px;vertical-align:middle">Upgrade</span>' : ''}${escapeHtml(stripUpgradeTag(task.task_title))}</h3>
                     <p style="margin: 8px 0 0; color: #64748b; font-size: 14px;">${escapeHtml(project?.project_name || 'No Project')}</p>
                 </div>
                 <button onclick="closeTaskDetailModal()" style="background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
