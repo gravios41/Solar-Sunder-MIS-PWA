@@ -1,0 +1,853 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" agent="Sunder Solar MIS ERD generator" version="24.0.0">
+  <diagram id="erd-sunder-solar-mis" name="ERD - Sunder Solar MIS (live schema)">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1700" pageHeight="2200" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="tbl_users" value="users" style="swimlane;html=1;startSize=28;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontStyle=1;fontSize=13;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;horizontalStack=0;resizeParent=0;resizeParentMax=0;collapsible=0;marginBottom=0;swimlaneFillColor=#FFFFFF;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="40" width="250" height="280" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_users_id" value="PK id  :  integer *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;fontStyle=1;fillColor=#FFF2CC;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_users">
+          <mxGeometry y="28" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_users_username" value="username  :  text *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_users">
+          <mxGeometry y="46" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_users_email" value="email  :  text *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_users">
+          <mxGeometry y="64" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_users_password" value="password  :  text *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_users">
+          <mxGeometry y="82" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_users_full_name" value="full_name  :  text *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_users">
+          <mxGeometry y="100" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_users_role" value="role  :  text *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_users">
+          <mxGeometry y="118" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_users_phone" value="phone  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_users">
+          <mxGeometry y="136" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_users_is_active" value="is_active  :  boolean" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_users">
+          <mxGeometry y="154" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_users_last_login" value="last_login  :  timestamp with time zone" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_users">
+          <mxGeometry y="172" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_users_created_at" value="created_at  :  timestamp with time zone" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_users">
+          <mxGeometry y="190" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_users_updated_at" value="updated_at  :  timestamp with time zone" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_users">
+          <mxGeometry y="208" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_users_reset_token" value="reset_token  :  character varying" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_users">
+          <mxGeometry y="226" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_users_reset_token_expires" value="reset_token_expires  :  timestamp without time zone" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_users">
+          <mxGeometry y="244" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_users_avatar_url" value="avatar_url  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_users">
+          <mxGeometry y="262" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_customers" value="customers" style="swimlane;html=1;startSize=28;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontStyle=1;fontSize=13;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;horizontalStack=0;resizeParent=0;resizeParentMax=0;collapsible=0;marginBottom=0;swimlaneFillColor=#FFFFFF;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="350" y="40" width="250" height="334" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_customers_id" value="PK id  :  integer *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;fontStyle=1;fillColor=#FFF2CC;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_customers">
+          <mxGeometry y="28" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_customers_customer_code" value="customer_code  :  text *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_customers">
+          <mxGeometry y="46" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_customers_name" value="name  :  text *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_customers">
+          <mxGeometry y="64" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_customers_contact_person" value="contact_person  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_customers">
+          <mxGeometry y="82" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_customers_email" value="email  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_customers">
+          <mxGeometry y="100" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_customers_phone" value="phone  :  text *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_customers">
+          <mxGeometry y="118" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_customers_address" value="address  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_customers">
+          <mxGeometry y="136" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_customers_city" value="city  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_customers">
+          <mxGeometry y="154" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_customers_state" value="state  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_customers">
+          <mxGeometry y="172" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_customers_pincode" value="pincode  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_customers">
+          <mxGeometry y="190" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_customers_gstin" value="gstin  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_customers">
+          <mxGeometry y="208" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_customers_type" value="type  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_customers">
+          <mxGeometry y="226" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_customers_status" value="status  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_customers">
+          <mxGeometry y="244" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_customers_projects_count" value="projects_count  :  integer" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_customers">
+          <mxGeometry y="262" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_customers_created_at" value="created_at  :  timestamp with time zone" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_customers">
+          <mxGeometry y="280" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_customers_updated_at" value="updated_at  :  timestamp with time zone" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_customers">
+          <mxGeometry y="298" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_customers_deleted_at" value="deleted_at  :  timestamp with time zone" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_customers">
+          <mxGeometry y="316" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_projects" value="projects" style="swimlane;html=1;startSize=28;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontStyle=1;fontSize=13;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;horizontalStack=0;resizeParent=0;resizeParentMax=0;collapsible=0;marginBottom=0;swimlaneFillColor=#FFFFFF;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="660" y="40" width="250" height="298" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_projects_id" value="PK id  :  integer *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;fontStyle=1;fillColor=#FFF2CC;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_projects">
+          <mxGeometry y="28" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_projects_project_code" value="project_code  :  text *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_projects">
+          <mxGeometry y="46" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_projects_customer_id" value="FK customer_id  :  integer" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;fillColor=#F5F5F5;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_projects">
+          <mxGeometry y="64" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_projects_project_name" value="project_name  :  text *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_projects">
+          <mxGeometry y="82" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_projects_description" value="description  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_projects">
+          <mxGeometry y="100" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_projects_estimated_cost" value="estimated_cost  :  numeric" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_projects">
+          <mxGeometry y="118" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_projects_status" value="status  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_projects">
+          <mxGeometry y="136" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_projects_progress" value="progress  :  integer" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_projects">
+          <mxGeometry y="154" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_projects_start_date" value="start_date  :  date" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_projects">
+          <mxGeometry y="172" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_projects_expected_end_date" value="expected_end_date  :  date" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_projects">
+          <mxGeometry y="190" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_projects_manager" value="manager  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_projects">
+          <mxGeometry y="208" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_projects_created_at" value="created_at  :  timestamp with time zone" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_projects">
+          <mxGeometry y="226" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_projects_updated_at" value="updated_at  :  timestamp with time zone" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_projects">
+          <mxGeometry y="244" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_projects_deleted_at" value="deleted_at  :  timestamp with time zone" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_projects">
+          <mxGeometry y="262" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_projects_upgrade_of_project_id" value="FK upgrade_of_project_id  :  bigint" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;fillColor=#F5F5F5;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_projects">
+          <mxGeometry y="280" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_quotations" value="quotations" style="swimlane;html=1;startSize=28;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontStyle=1;fontSize=13;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;horizontalStack=0;resizeParent=0;resizeParentMax=0;collapsible=0;marginBottom=0;swimlaneFillColor=#FFFFFF;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="970" y="40" width="250" height="460" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_quotations_id" value="PK id  :  integer *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;fontStyle=1;fillColor=#FFF2CC;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_quotations">
+          <mxGeometry y="28" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_quotations_quotation_number" value="quotation_number  :  text *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_quotations">
+          <mxGeometry y="46" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_quotations_customer_id" value="FK customer_id  :  integer" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;fillColor=#F5F5F5;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_quotations">
+          <mxGeometry y="64" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_quotations_project_id" value="FK project_id  :  integer" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;fillColor=#F5F5F5;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_quotations">
+          <mxGeometry y="82" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_quotations_total_amount" value="total_amount  :  numeric" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_quotations">
+          <mxGeometry y="100" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_quotations_items_count" value="items_count  :  integer" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_quotations">
+          <mxGeometry y="118" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_quotations_status" value="status  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_quotations">
+          <mxGeometry y="136" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_quotations_quotation_date" value="quotation_date  :  date" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_quotations">
+          <mxGeometry y="154" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_quotations_valid_until" value="valid_until  :  date" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_quotations">
+          <mxGeometry y="172" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_quotations_notes" value="notes  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_quotations">
+          <mxGeometry y="190" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_quotations_created_at" value="created_at  :  timestamp with time zone" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_quotations">
+          <mxGeometry y="208" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_quotations_updated_at" value="updated_at  :  timestamp with time zone" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_quotations">
+          <mxGeometry y="226" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_quotations_deleted_at" value="deleted_at  :  timestamp with time zone" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_quotations">
+          <mxGeometry y="244" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_quotations_client_name" value="client_name  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_quotations">
+          <mxGeometry y="262" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_quotations_client_phone" value="client_phone  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_quotations">
+          <mxGeometry y="280" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_quotations_client_email" value="client_email  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_quotations">
+          <mxGeometry y="298" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_quotations_client_address" value="client_address  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_quotations">
+          <mxGeometry y="316" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_quotations_client_contact_person" value="client_contact_person  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_quotations">
+          <mxGeometry y="334" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_quotations_client_city" value="client_city  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_quotations">
+          <mxGeometry y="352" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_quotations_client_state" value="client_state  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_quotations">
+          <mxGeometry y="370" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_quotations_client_pincode" value="client_pincode  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_quotations">
+          <mxGeometry y="388" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_quotations_client_gstin" value="client_gstin  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_quotations">
+          <mxGeometry y="406" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_quotations_client_type" value="client_type  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_quotations">
+          <mxGeometry y="424" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_quotations_client_status" value="client_status  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_quotations">
+          <mxGeometry y="442" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_quotation_items" value="quotation_items" style="swimlane;html=1;startSize=28;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontStyle=1;fontSize=13;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;horizontalStack=0;resizeParent=0;resizeParentMax=0;collapsible=0;marginBottom=0;swimlaneFillColor=#FFFFFF;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="1280" y="40" width="250" height="172" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_quotation_items_id" value="PK id  :  integer *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;fontStyle=1;fillColor=#FFF2CC;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_quotation_items">
+          <mxGeometry y="28" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_quotation_items_quotation_id" value="FK quotation_id  :  integer" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;fillColor=#F5F5F5;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_quotation_items">
+          <mxGeometry y="46" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_quotation_items_description" value="description  :  text *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_quotation_items">
+          <mxGeometry y="64" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_quotation_items_quantity" value="quantity  :  integer" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_quotation_items">
+          <mxGeometry y="82" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_quotation_items_unit_price" value="unit_price  :  numeric" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_quotation_items">
+          <mxGeometry y="100" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_quotation_items_amount" value="amount  :  numeric" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_quotation_items">
+          <mxGeometry y="118" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_quotation_items_created_at" value="created_at  :  timestamp with time zone" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_quotation_items">
+          <mxGeometry y="136" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_quotation_items_deleted_at" value="deleted_at  :  timestamp with time zone" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_quotation_items">
+          <mxGeometry y="154" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_energy_assessments" value="energy_assessments" style="swimlane;html=1;startSize=28;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontStyle=1;fontSize=13;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;horizontalStack=0;resizeParent=0;resizeParentMax=0;collapsible=0;marginBottom=0;swimlaneFillColor=#FFFFFF;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="570" width="250" height="586" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_energy_assessments_id" value="PK id  :  uuid *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;fontStyle=1;fillColor=#FFF2CC;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_energy_assessments">
+          <mxGeometry y="28" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_energy_assessments_customer_id" value="FK customer_id  :  integer" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;fillColor=#F5F5F5;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_energy_assessments">
+          <mxGeometry y="46" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_energy_assessments_project_id" value="FK project_id  :  integer" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;fillColor=#F5F5F5;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_energy_assessments">
+          <mxGeometry y="64" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_energy_assessments_average_monthly_kwh" value="average_monthly_kwh  :  numeric *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_energy_assessments">
+          <mxGeometry y="82" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_energy_assessments_average_daily_kwh" value="average_daily_kwh  :  numeric *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_energy_assessments">
+          <mxGeometry y="100" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_energy_assessments_peak_sun_hours" value="peak_sun_hours  :  numeric *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_energy_assessments">
+          <mxGeometry y="118" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_energy_assessments_system_efficiency" value="system_efficiency  :  numeric *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_energy_assessments">
+          <mxGeometry y="136" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_energy_assessments_recommended_system_kw" value="recommended_system_kw  :  numeric *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_energy_assessments">
+          <mxGeometry y="154" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_energy_assessments_recommended_panel_count" value="recommended_panel_count  :  integer *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_energy_assessments">
+          <mxGeometry y="172" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_energy_assessments_panel_wattage" value="panel_wattage  :  integer *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_energy_assessments">
+          <mxGeometry y="190" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_energy_assessments_status" value="status  :  text *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_energy_assessments">
+          <mxGeometry y="208" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_energy_assessments_created_by" value="FK created_by  :  bigint" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;fillColor=#F5F5F5;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_energy_assessments">
+          <mxGeometry y="226" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_energy_assessments_created_at" value="created_at  :  timestamp with time zone *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_energy_assessments">
+          <mxGeometry y="244" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_energy_assessments_updated_at" value="updated_at  :  timestamp with time zone *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_energy_assessments">
+          <mxGeometry y="262" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_energy_assessments_approval_status" value="approval_status  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_energy_assessments">
+          <mxGeometry y="280" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_energy_assessments_approved_by" value="FK approved_by  :  bigint" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;fillColor=#F5F5F5;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_energy_assessments">
+          <mxGeometry y="298" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_energy_assessments_approved_at" value="approved_at  :  timestamp with time zone" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_energy_assessments">
+          <mxGeometry y="316" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_energy_assessments_approval_notes" value="approval_notes  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_energy_assessments">
+          <mxGeometry y="334" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_energy_assessments_client_name" value="client_name  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_energy_assessments">
+          <mxGeometry y="352" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_energy_assessments_client_phone" value="client_phone  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_energy_assessments">
+          <mxGeometry y="370" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_energy_assessments_client_email" value="client_email  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_energy_assessments">
+          <mxGeometry y="388" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_energy_assessments_client_address" value="client_address  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_energy_assessments">
+          <mxGeometry y="406" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_energy_assessments_quotation_id" value="FK quotation_id  :  bigint" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;fillColor=#F5F5F5;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_energy_assessments">
+          <mxGeometry y="424" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_energy_assessments_client_contact_person" value="client_contact_person  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_energy_assessments">
+          <mxGeometry y="442" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_energy_assessments_client_city" value="client_city  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_energy_assessments">
+          <mxGeometry y="460" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_energy_assessments_client_state" value="client_state  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_energy_assessments">
+          <mxGeometry y="478" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_energy_assessments_client_pincode" value="client_pincode  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_energy_assessments">
+          <mxGeometry y="496" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_energy_assessments_client_gstin" value="client_gstin  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_energy_assessments">
+          <mxGeometry y="514" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_energy_assessments_client_type" value="client_type  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_energy_assessments">
+          <mxGeometry y="532" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_energy_assessments_client_status" value="client_status  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_energy_assessments">
+          <mxGeometry y="550" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_energy_assessments_selected_tier" value="selected_tier  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_energy_assessments">
+          <mxGeometry y="568" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_energy_bill_readings" value="energy_bill_readings" style="swimlane;html=1;startSize=28;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontStyle=1;fontSize=13;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;horizontalStack=0;resizeParent=0;resizeParentMax=0;collapsible=0;marginBottom=0;swimlaneFillColor=#FFFFFF;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="350" y="570" width="250" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_energy_bill_readings_id" value="PK id  :  uuid *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;fontStyle=1;fillColor=#FFF2CC;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_energy_bill_readings">
+          <mxGeometry y="28" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_energy_bill_readings_assessment_id" value="FK assessment_id  :  uuid *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;fillColor=#F5F5F5;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_energy_bill_readings">
+          <mxGeometry y="46" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_energy_bill_readings_billing_period" value="billing_period  :  date *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_energy_bill_readings">
+          <mxGeometry y="64" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_energy_bill_readings_consumption_kwh" value="consumption_kwh  :  numeric *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_energy_bill_readings">
+          <mxGeometry y="82" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_energy_bill_readings_amount" value="amount  :  numeric" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_energy_bill_readings">
+          <mxGeometry y="100" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_energy_bill_readings_is_verified" value="is_verified  :  boolean *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_energy_bill_readings">
+          <mxGeometry y="118" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_energy_bill_readings_ocr_text" value="ocr_text  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_energy_bill_readings">
+          <mxGeometry y="136" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_energy_bill_readings_file_path" value="file_path  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_energy_bill_readings">
+          <mxGeometry y="154" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_energy_bill_readings_created_at" value="created_at  :  timestamp with time zone *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_energy_bill_readings">
+          <mxGeometry y="172" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_recommendation_items" value="recommendation_items" style="swimlane;html=1;startSize=28;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontStyle=1;fontSize=13;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;horizontalStack=0;resizeParent=0;resizeParentMax=0;collapsible=0;marginBottom=0;swimlaneFillColor=#FFFFFF;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="660" y="570" width="250" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_recommendation_items_id" value="PK id  :  uuid *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;fontStyle=1;fillColor=#FFF2CC;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_recommendation_items">
+          <mxGeometry y="28" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_recommendation_items_assessment_id" value="FK assessment_id  :  uuid *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;fillColor=#F5F5F5;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_recommendation_items">
+          <mxGeometry y="46" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_recommendation_items_inventory_id" value="FK inventory_id  :  integer" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;fillColor=#F5F5F5;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_recommendation_items">
+          <mxGeometry y="64" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_recommendation_items_item_name" value="item_name  :  text *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_recommendation_items">
+          <mxGeometry y="82" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_recommendation_items_category" value="category  :  text *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_recommendation_items">
+          <mxGeometry y="100" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_recommendation_items_quantity" value="quantity  :  integer *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_recommendation_items">
+          <mxGeometry y="118" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_recommendation_items_estimated_unit_price" value="estimated_unit_price  :  numeric" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_recommendation_items">
+          <mxGeometry y="136" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_recommendation_items_estimated_total_price" value="estimated_total_price  :  numeric" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_recommendation_items">
+          <mxGeometry y="154" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_recommendation_items_created_at" value="created_at  :  timestamp with time zone *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_recommendation_items">
+          <mxGeometry y="172" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_inventory" value="inventory" style="swimlane;html=1;startSize=28;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontStyle=1;fontSize=13;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;horizontalStack=0;resizeParent=0;resizeParentMax=0;collapsible=0;marginBottom=0;swimlaneFillColor=#FFFFFF;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="970" y="570" width="250" height="298" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_inventory_id" value="PK id  :  integer *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;fontStyle=1;fillColor=#FFF2CC;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_inventory">
+          <mxGeometry y="28" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_inventory_item_code" value="item_code  :  text *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_inventory">
+          <mxGeometry y="46" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_inventory_category" value="category  :  text *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_inventory">
+          <mxGeometry y="64" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_inventory_item_name" value="item_name  :  text *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_inventory">
+          <mxGeometry y="82" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_inventory_brand" value="brand  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_inventory">
+          <mxGeometry y="100" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_inventory_model" value="model  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_inventory">
+          <mxGeometry y="118" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_inventory_specification" value="specification  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_inventory">
+          <mxGeometry y="136" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_inventory_quantity" value="quantity  :  integer" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_inventory">
+          <mxGeometry y="154" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_inventory_unit" value="unit  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_inventory">
+          <mxGeometry y="172" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_inventory_unit_price" value="unit_price  :  numeric" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_inventory">
+          <mxGeometry y="190" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_inventory_reorder_level" value="reorder_level  :  integer" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_inventory">
+          <mxGeometry y="208" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_inventory_supplier" value="supplier  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_inventory">
+          <mxGeometry y="226" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_inventory_location" value="location  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_inventory">
+          <mxGeometry y="244" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_inventory_created_at" value="created_at  :  timestamp with time zone" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_inventory">
+          <mxGeometry y="262" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_inventory_updated_at" value="updated_at  :  timestamp with time zone" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_inventory">
+          <mxGeometry y="280" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_inventory_orders" value="inventory_orders" style="swimlane;html=1;startSize=28;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontStyle=1;fontSize=13;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;horizontalStack=0;resizeParent=0;resizeParentMax=0;collapsible=0;marginBottom=0;swimlaneFillColor=#FFFFFF;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="1280" y="570" width="250" height="298" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_inventory_orders_id" value="PK id  :  bigint *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;fontStyle=1;fillColor=#FFF2CC;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_inventory_orders">
+          <mxGeometry y="28" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_inventory_orders_inventory_id" value="inventory_id  :  bigint" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_inventory_orders">
+          <mxGeometry y="46" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_inventory_orders_item_name" value="item_name  :  text *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_inventory_orders">
+          <mxGeometry y="64" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_inventory_orders_item_code" value="item_code  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_inventory_orders">
+          <mxGeometry y="82" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_inventory_orders_quantity_ordered" value="quantity_ordered  :  integer *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_inventory_orders">
+          <mxGeometry y="100" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_inventory_orders_supplier" value="supplier  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_inventory_orders">
+          <mxGeometry y="118" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_inventory_orders_order_date" value="order_date  :  date *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_inventory_orders">
+          <mxGeometry y="136" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_inventory_orders_expected_delivery" value="expected_delivery  :  date" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_inventory_orders">
+          <mxGeometry y="154" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_inventory_orders_actual_delivery" value="actual_delivery  :  date" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_inventory_orders">
+          <mxGeometry y="172" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_inventory_orders_status" value="status  :  text *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_inventory_orders">
+          <mxGeometry y="190" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_inventory_orders_notes" value="notes  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_inventory_orders">
+          <mxGeometry y="208" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_inventory_orders_ordered_by" value="ordered_by  :  bigint" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_inventory_orders">
+          <mxGeometry y="226" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_inventory_orders_ordered_by_name" value="ordered_by_name  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_inventory_orders">
+          <mxGeometry y="244" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_inventory_orders_created_at" value="created_at  :  timestamp with time zone" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_inventory_orders">
+          <mxGeometry y="262" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_inventory_orders_updated_at" value="updated_at  :  timestamp with time zone" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_inventory_orders">
+          <mxGeometry y="280" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_inventory_transactions" value="inventory_transactions" style="swimlane;html=1;startSize=28;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontStyle=1;fontSize=13;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;horizontalStack=0;resizeParent=0;resizeParentMax=0;collapsible=0;marginBottom=0;swimlaneFillColor=#FFFFFF;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="1226" width="250" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_inventory_transactions_id" value="PK id  :  uuid *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;fontStyle=1;fillColor=#FFF2CC;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_inventory_transactions">
+          <mxGeometry y="28" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_inventory_transactions_inventory_id" value="FK inventory_id  :  integer *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;fillColor=#F5F5F5;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_inventory_transactions">
+          <mxGeometry y="46" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_inventory_transactions_transaction_type" value="transaction_type  :  text *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_inventory_transactions">
+          <mxGeometry y="64" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_inventory_transactions_quantity_change" value="quantity_change  :  integer *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_inventory_transactions">
+          <mxGeometry y="82" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_inventory_transactions_reference_type" value="reference_type  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_inventory_transactions">
+          <mxGeometry y="100" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_inventory_transactions_reference_id" value="reference_id  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_inventory_transactions">
+          <mxGeometry y="118" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_inventory_transactions_reason" value="reason  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_inventory_transactions">
+          <mxGeometry y="136" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_inventory_transactions_created_by" value="FK created_by  :  bigint" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;fillColor=#F5F5F5;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_inventory_transactions">
+          <mxGeometry y="154" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_inventory_transactions_created_at" value="created_at  :  timestamp with time zone *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_inventory_transactions">
+          <mxGeometry y="172" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_installations" value="installations" style="swimlane;html=1;startSize=28;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontStyle=1;fontSize=13;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;horizontalStack=0;resizeParent=0;resizeParentMax=0;collapsible=0;marginBottom=0;swimlaneFillColor=#FFFFFF;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="350" y="1226" width="250" height="280" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_installations_id" value="PK id  :  integer *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;fontStyle=1;fillColor=#FFF2CC;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_installations">
+          <mxGeometry y="28" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_installations_installation_code" value="installation_code  :  text *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_installations">
+          <mxGeometry y="46" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_installations_project_id" value="FK project_id  :  integer" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;fillColor=#F5F5F5;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_installations">
+          <mxGeometry y="64" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_installations_customer_id" value="FK customer_id  :  integer" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;fillColor=#F5F5F5;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_installations">
+          <mxGeometry y="82" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_installations_location" value="location  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_installations">
+          <mxGeometry y="100" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_installations_installation_date" value="installation_date  :  date" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_installations">
+          <mxGeometry y="118" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_installations_technician" value="technician  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_installations">
+          <mxGeometry y="136" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_installations_team" value="team  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_installations">
+          <mxGeometry y="154" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_installations_status" value="status  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_installations">
+          <mxGeometry y="172" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_installations_progress" value="progress  :  integer" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_installations">
+          <mxGeometry y="190" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_installations_notes" value="notes  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_installations">
+          <mxGeometry y="208" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_installations_created_at" value="created_at  :  timestamp with time zone" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_installations">
+          <mxGeometry y="226" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_installations_updated_at" value="updated_at  :  timestamp with time zone" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_installations">
+          <mxGeometry y="244" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_installations_deleted_at" value="deleted_at  :  timestamp with time zone" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_installations">
+          <mxGeometry y="262" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_tasks" value="tasks" style="swimlane;html=1;startSize=28;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontStyle=1;fontSize=13;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;horizontalStack=0;resizeParent=0;resizeParentMax=0;collapsible=0;marginBottom=0;swimlaneFillColor=#FFFFFF;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="660" y="1226" width="250" height="298" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_tasks_id" value="PK id  :  integer *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;fontStyle=1;fillColor=#FFF2CC;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_tasks">
+          <mxGeometry y="28" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_tasks_task_title" value="task_title  :  text *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_tasks">
+          <mxGeometry y="46" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_tasks_description" value="description  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_tasks">
+          <mxGeometry y="64" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_tasks_project_id" value="FK project_id  :  integer" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;fillColor=#F5F5F5;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_tasks">
+          <mxGeometry y="82" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_tasks_assigned_to" value="assigned_to  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_tasks">
+          <mxGeometry y="100" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_tasks_priority" value="priority  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_tasks">
+          <mxGeometry y="118" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_tasks_status" value="status  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_tasks">
+          <mxGeometry y="136" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_tasks_due_date" value="due_date  :  date" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_tasks">
+          <mxGeometry y="154" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_tasks_completed_date" value="completed_date  :  date" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_tasks">
+          <mxGeometry y="172" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_tasks_created_at" value="created_at  :  timestamp with time zone" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_tasks">
+          <mxGeometry y="190" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_tasks_updated_at" value="updated_at  :  timestamp with time zone" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_tasks">
+          <mxGeometry y="208" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_tasks_deleted_at" value="deleted_at  :  timestamp with time zone" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_tasks">
+          <mxGeometry y="226" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_tasks_progress_percent" value="progress_percent  :  integer" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_tasks">
+          <mxGeometry y="244" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_tasks_checklist_count" value="checklist_count  :  integer" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_tasks">
+          <mxGeometry y="262" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_tasks_checklist_completed" value="checklist_completed  :  integer" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_tasks">
+          <mxGeometry y="280" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_task_checklists" value="task_checklists" style="swimlane;html=1;startSize=28;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontStyle=1;fontSize=13;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;horizontalStack=0;resizeParent=0;resizeParentMax=0;collapsible=0;marginBottom=0;swimlaneFillColor=#FFFFFF;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="970" y="1226" width="250" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_task_checklists_id" value="PK id  :  uuid *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;fontStyle=1;fillColor=#FFF2CC;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_task_checklists">
+          <mxGeometry y="28" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_task_checklists_task_id" value="FK task_id  :  integer *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;fillColor=#F5F5F5;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_task_checklists">
+          <mxGeometry y="46" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_task_checklists_checklist_item" value="checklist_item  :  text *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_task_checklists">
+          <mxGeometry y="64" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_task_checklists_is_completed" value="is_completed  :  boolean *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_task_checklists">
+          <mxGeometry y="82" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_task_checklists_completed_by" value="FK completed_by  :  bigint" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;fillColor=#F5F5F5;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_task_checklists">
+          <mxGeometry y="100" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_task_checklists_completed_at" value="completed_at  :  timestamp with time zone" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_task_checklists">
+          <mxGeometry y="118" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_task_checklists_sequence" value="sequence  :  integer *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_task_checklists">
+          <mxGeometry y="136" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_task_checklists_created_by" value="FK created_by  :  bigint" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;fillColor=#F5F5F5;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_task_checklists">
+          <mxGeometry y="154" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_task_checklists_created_at" value="created_at  :  timestamp with time zone *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_task_checklists">
+          <mxGeometry y="172" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_activity_logs" value="activity_logs" style="swimlane;html=1;startSize=28;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontStyle=1;fontSize=13;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;horizontalStack=0;resizeParent=0;resizeParentMax=0;collapsible=0;marginBottom=0;swimlaneFillColor=#FFFFFF;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="1280" y="1226" width="250" height="136" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_activity_logs_id" value="PK id  :  integer *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;fontStyle=1;fillColor=#FFF2CC;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_activity_logs">
+          <mxGeometry y="28" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_activity_logs_user_id" value="FK user_id  :  integer" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;fillColor=#F5F5F5;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_activity_logs">
+          <mxGeometry y="46" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_activity_logs_action" value="action  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_activity_logs">
+          <mxGeometry y="64" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_activity_logs_module" value="module  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_activity_logs">
+          <mxGeometry y="82" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_activity_logs_description" value="description  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_activity_logs">
+          <mxGeometry y="100" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_activity_logs_created_at" value="created_at  :  timestamp with time zone" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_activity_logs">
+          <mxGeometry y="118" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_password_reset_tokens" value="password_reset_tokens" style="swimlane;html=1;startSize=28;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontStyle=1;fontSize=13;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;horizontalStack=0;resizeParent=0;resizeParentMax=0;collapsible=0;marginBottom=0;swimlaneFillColor=#FFFFFF;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="1594" width="250" height="136" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_password_reset_tokens_id" value="PK id  :  bigint *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;fontStyle=1;fillColor=#FFF2CC;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_password_reset_tokens">
+          <mxGeometry y="28" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_password_reset_tokens_user_id" value="FK user_id  :  bigint *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;fillColor=#F5F5F5;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_password_reset_tokens">
+          <mxGeometry y="46" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_password_reset_tokens_token_hash" value="token_hash  :  text *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_password_reset_tokens">
+          <mxGeometry y="64" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_password_reset_tokens_expires_at" value="expires_at  :  timestamp with time zone *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_password_reset_tokens">
+          <mxGeometry y="82" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_password_reset_tokens_used_at" value="used_at  :  timestamp with time zone" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_password_reset_tokens">
+          <mxGeometry y="100" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_password_reset_tokens_created_at" value="created_at  :  timestamp with time zone *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_password_reset_tokens">
+          <mxGeometry y="118" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_reports" value="reports" style="swimlane;html=1;startSize=28;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontStyle=1;fontSize=13;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;horizontalStack=0;resizeParent=0;resizeParentMax=0;collapsible=0;marginBottom=0;swimlaneFillColor=#FFFFFF;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="350" y="1594" width="250" height="226" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_reports_id" value="PK id  :  integer *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;fontStyle=1;fillColor=#FFF2CC;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_reports">
+          <mxGeometry y="28" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_reports_report_name" value="report_name  :  text *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_reports">
+          <mxGeometry y="46" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_reports_report_type" value="report_type  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_reports">
+          <mxGeometry y="64" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_reports_period" value="period  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_reports">
+          <mxGeometry y="82" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_reports_generated_date" value="generated_date  :  date" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_reports">
+          <mxGeometry y="100" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_reports_format" value="format  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_reports">
+          <mxGeometry y="118" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_reports_file_size" value="file_size  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_reports">
+          <mxGeometry y="136" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_reports_file_url" value="file_url  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_reports">
+          <mxGeometry y="154" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_reports_created_at" value="created_at  :  timestamp with time zone" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_reports">
+          <mxGeometry y="172" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_reports_date_from" value="date_from  :  date" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_reports">
+          <mxGeometry y="190" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_reports_date_to" value="date_to  :  date" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_reports">
+          <mxGeometry y="208" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_archives" value="archives" style="swimlane;html=1;startSize=28;fillColor=#DAE8FC;strokeColor=#6C8EBF;fontStyle=1;fontSize=13;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;horizontalStack=0;resizeParent=0;resizeParentMax=0;collapsible=0;marginBottom=0;swimlaneFillColor=#FFFFFF;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="660" y="1594" width="250" height="208" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_archives_id" value="PK id  :  bigint *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;fontStyle=1;fillColor=#FFF2CC;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_archives">
+          <mxGeometry y="28" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_archives_entity_type" value="entity_type  :  text *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_archives">
+          <mxGeometry y="46" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_archives_entity_id" value="entity_id  :  bigint" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_archives">
+          <mxGeometry y="64" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_archives_entity_code" value="entity_code  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_archives">
+          <mxGeometry y="82" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_archives_record_data" value="record_data  :  jsonb *" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_archives">
+          <mxGeometry y="100" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_archives_archived_by" value="archived_by  :  bigint" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_archives">
+          <mxGeometry y="118" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_archives_archived_by_name" value="archived_by_name  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_archives">
+          <mxGeometry y="136" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_archives_archived_at" value="archived_at  :  timestamp with time zone" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_archives">
+          <mxGeometry y="154" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_archives_notes" value="notes  :  text" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_archives">
+          <mxGeometry y="172" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="tbl_archives_created_at" value="created_at  :  timestamp with time zone" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;overflow=hidden;portConstraint=eastwest;" vertex="1" parent="tbl_archives">
+          <mxGeometry y="190" width="250" height="18" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_1" style="edgeStyle=entityRelationEdgeStyle;rounded=0;html=1;startArrow=ERmany;startFill=0;endArrow=ERone;endFill=0;fontSize=9;strokeColor=#333333;" edge="1" parent="1" source="tbl_projects_customer_id" target="tbl_customers_id">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_2" style="edgeStyle=entityRelationEdgeStyle;rounded=0;html=1;startArrow=ERmany;startFill=0;endArrow=ERone;endFill=0;fontSize=9;strokeColor=#333333;" edge="1" parent="1" source="tbl_projects_upgrade_of_project_id" target="tbl_projects_id">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_3" style="edgeStyle=entityRelationEdgeStyle;rounded=0;html=1;startArrow=ERmany;startFill=0;endArrow=ERone;endFill=0;fontSize=9;strokeColor=#333333;" edge="1" parent="1" source="tbl_quotations_customer_id" target="tbl_customers_id">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_4" style="edgeStyle=entityRelationEdgeStyle;rounded=0;html=1;startArrow=ERmany;startFill=0;endArrow=ERone;endFill=0;fontSize=9;strokeColor=#333333;" edge="1" parent="1" source="tbl_quotations_project_id" target="tbl_projects_id">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_5" style="edgeStyle=entityRelationEdgeStyle;rounded=0;html=1;startArrow=ERmany;startFill=0;endArrow=ERone;endFill=0;fontSize=9;strokeColor=#333333;" edge="1" parent="1" source="tbl_quotation_items_quotation_id" target="tbl_quotations_id">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_6" style="edgeStyle=entityRelationEdgeStyle;rounded=0;html=1;startArrow=ERmany;startFill=0;endArrow=ERone;endFill=0;fontSize=9;strokeColor=#333333;" edge="1" parent="1" source="tbl_energy_assessments_customer_id" target="tbl_customers_id">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_7" style="edgeStyle=entityRelationEdgeStyle;rounded=0;html=1;startArrow=ERmany;startFill=0;endArrow=ERone;endFill=0;fontSize=9;strokeColor=#333333;" edge="1" parent="1" source="tbl_energy_assessments_project_id" target="tbl_projects_id">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_8" style="edgeStyle=entityRelationEdgeStyle;rounded=0;html=1;startArrow=ERmany;startFill=0;endArrow=ERone;endFill=0;fontSize=9;strokeColor=#333333;" edge="1" parent="1" source="tbl_energy_assessments_created_by" target="tbl_users_id">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_9" style="edgeStyle=entityRelationEdgeStyle;rounded=0;html=1;startArrow=ERmany;startFill=0;endArrow=ERone;endFill=0;fontSize=9;strokeColor=#333333;" edge="1" parent="1" source="tbl_energy_assessments_approved_by" target="tbl_users_id">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_10" style="edgeStyle=entityRelationEdgeStyle;rounded=0;html=1;startArrow=ERmany;startFill=0;endArrow=ERone;endFill=0;fontSize=9;strokeColor=#333333;" edge="1" parent="1" source="tbl_energy_assessments_quotation_id" target="tbl_quotations_id">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_11" style="edgeStyle=entityRelationEdgeStyle;rounded=0;html=1;startArrow=ERmany;startFill=0;endArrow=ERone;endFill=0;fontSize=9;strokeColor=#333333;" edge="1" parent="1" source="tbl_energy_bill_readings_assessment_id" target="tbl_energy_assessments_id">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_12" style="edgeStyle=entityRelationEdgeStyle;rounded=0;html=1;startArrow=ERmany;startFill=0;endArrow=ERone;endFill=0;fontSize=9;strokeColor=#333333;" edge="1" parent="1" source="tbl_recommendation_items_assessment_id" target="tbl_energy_assessments_id">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_13" style="edgeStyle=entityRelationEdgeStyle;rounded=0;html=1;startArrow=ERmany;startFill=0;endArrow=ERone;endFill=0;fontSize=9;strokeColor=#333333;" edge="1" parent="1" source="tbl_recommendation_items_inventory_id" target="tbl_inventory_id">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_14" style="edgeStyle=entityRelationEdgeStyle;rounded=0;html=1;startArrow=ERmany;startFill=0;endArrow=ERone;endFill=0;fontSize=9;strokeColor=#333333;" edge="1" parent="1" source="tbl_inventory_transactions_inventory_id" target="tbl_inventory_id">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_15" style="edgeStyle=entityRelationEdgeStyle;rounded=0;html=1;startArrow=ERmany;startFill=0;endArrow=ERone;endFill=0;fontSize=9;strokeColor=#333333;" edge="1" parent="1" source="tbl_inventory_transactions_created_by" target="tbl_users_id">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_16" style="edgeStyle=entityRelationEdgeStyle;rounded=0;html=1;startArrow=ERmany;startFill=0;endArrow=ERone;endFill=0;fontSize=9;strokeColor=#333333;" edge="1" parent="1" source="tbl_installations_project_id" target="tbl_projects_id">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_17" style="edgeStyle=entityRelationEdgeStyle;rounded=0;html=1;startArrow=ERmany;startFill=0;endArrow=ERone;endFill=0;fontSize=9;strokeColor=#333333;" edge="1" parent="1" source="tbl_installations_customer_id" target="tbl_customers_id">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_18" style="edgeStyle=entityRelationEdgeStyle;rounded=0;html=1;startArrow=ERmany;startFill=0;endArrow=ERone;endFill=0;fontSize=9;strokeColor=#333333;" edge="1" parent="1" source="tbl_tasks_project_id" target="tbl_projects_id">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_19" style="edgeStyle=entityRelationEdgeStyle;rounded=0;html=1;startArrow=ERmany;startFill=0;endArrow=ERone;endFill=0;fontSize=9;strokeColor=#333333;" edge="1" parent="1" source="tbl_task_checklists_task_id" target="tbl_tasks_id">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_20" style="edgeStyle=entityRelationEdgeStyle;rounded=0;html=1;startArrow=ERmany;startFill=0;endArrow=ERone;endFill=0;fontSize=9;strokeColor=#333333;" edge="1" parent="1" source="tbl_task_checklists_completed_by" target="tbl_users_id">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_21" style="edgeStyle=entityRelationEdgeStyle;rounded=0;html=1;startArrow=ERmany;startFill=0;endArrow=ERone;endFill=0;fontSize=9;strokeColor=#333333;" edge="1" parent="1" source="tbl_task_checklists_created_by" target="tbl_users_id">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_22" style="edgeStyle=entityRelationEdgeStyle;rounded=0;html=1;startArrow=ERmany;startFill=0;endArrow=ERone;endFill=0;fontSize=9;strokeColor=#333333;" edge="1" parent="1" source="tbl_activity_logs_user_id" target="tbl_users_id">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_23" style="edgeStyle=entityRelationEdgeStyle;rounded=0;html=1;startArrow=ERmany;startFill=0;endArrow=ERone;endFill=0;fontSize=9;strokeColor=#333333;" edge="1" parent="1" source="tbl_password_reset_tokens_user_id" target="tbl_users_id">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="edge_24" style="edgeStyle=entityRelationEdgeStyle;rounded=0;html=1;dashed=1;startArrow=ERmany;startFill=0;endArrow=ERone;endFill=0;fontSize=9;strokeColor=#999999;" edge="1" parent="1" source="tbl_inventory_orders_inventory_id" target="tbl_inventory_id">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="legend" value="Legend" style="swimlane;html=1;startSize=26;fillColor=#FFFFFF;strokeColor=#666666;fontStyle=1;align=center;verticalAlign=top;collapsible=0;" vertex="1" parent="1"><mxGeometry x="40" y="1890" width="420" height="130" as="geometry"/></mxCell>
+        <mxCell id="legend_l0" value="PK = Primary Key   ·   FK = Foreign Key   ·   * = NOT NULL (required)" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;" vertex="1" parent="legend"><mxGeometry y="26" width="420" height="24" as="geometry"/></mxCell>
+        <mxCell id="legend_l1" value="Yellow row = Primary Key   ·   Grey row = Foreign Key" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;" vertex="1" parent="legend"><mxGeometry y="50" width="420" height="24" as="geometry"/></mxCell>
+        <mxCell id="legend_l2" value="Solid line = enforced DB foreign key (crow&apos;s foot: many → one)" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;" vertex="1" parent="legend"><mxGeometry y="74" width="420" height="24" as="geometry"/></mxCell>
+        <mxCell id="legend_l3" value="Dashed grey line = relationship used in app code, no DB constraint" style="text;html=1;align=left;verticalAlign=middle;spacingLeft=8;fontSize=11;whiteSpace=nowrap;" vertex="1" parent="legend"><mxGeometry y="98" width="420" height="24" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
